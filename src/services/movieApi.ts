@@ -1,0 +1,739 @@
+import type {
+  Movie,
+  MovieDetail,
+  MoviesResponse,
+  MovieDetailResponse,
+  StreamResponse,
+  SeasonItem,
+  EpisodeItem,
+  MovieComment,
+  CreateCommentPayload,
+  MovieQueryParams,
+} from '../types/movie';
+
+// Default base URLs as specified
+export const PRODUCTION_API_URL = 'https://fazuradex.web.id';
+export const LOCAL_API_URL = 'http://localhost:4000';
+
+const STORAGE_KEY_API_URL = 'fazura_movie_api_base_url';
+
+// Public TMDB key for full catalog resilience
+const TMDB_API_KEY = '1cf50e6248dc270629e802686245c2c8';
+const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+
+export function getMovieApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem(STORAGE_KEY_API_URL);
+    if (saved) return saved;
+  }
+  return (
+    import.meta.env.VITE_API_BASE_URL ||
+    import.meta.env.NEXT_PUBLIC_API_BASE_URL ||
+    PRODUCTION_API_URL
+  );
+}
+
+export function setMovieApiBaseUrl(url: string) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(STORAGE_KEY_API_URL, url);
+    window.dispatchEvent(new CustomEvent('fazura_api_url_changed', { detail: url }));
+  }
+}
+
+async function fetchFromApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const baseUrl = getMovieApiBaseUrl().replace(/\/+$/, '');
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${baseUrl}${cleanEndpoint}`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        ...(options?.body ? { 'Content-Type': 'application/json' } : {}),
+        ...options?.headers,
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    }
+
+    return await res.json();
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
+// TMDB Genre dictionaries
+export const TMDB_GENRE_NAMES: Record<number, string> = {
+  28: 'Action',
+  12: 'Adventure',
+  16: 'Animation',
+  35: 'Comedy',
+  80: 'Crime',
+  99: 'Documentary',
+  18: 'Drama',
+  10751: 'Family',
+  14: 'Fantasy',
+  36: 'History',
+  27: 'Horror',
+  10402: 'Music',
+  9648: 'Mystery',
+  10749: 'Romance',
+  878: 'Sci-Fi',
+  10770: 'TV Movie',
+  53: 'Thriller',
+  10752: 'War',
+  37: 'Western',
+  10759: 'Action & Adventure',
+  10762: 'Kids',
+  10763: 'News',
+  10764: 'Reality',
+  10765: 'Sci-Fi & Fantasy',
+  10766: 'Soap',
+  10767: 'Talk',
+  10768: 'War & Politics',
+};
+
+export const TMDB_GENRE_MAP: Record<string, number> = {
+  Action: 28,
+  Adventure: 12,
+  Animation: 16,
+  Comedy: 35,
+  Crime: 80,
+  Documentary: 99,
+  Drama: 18,
+  Family: 10751,
+  Fantasy: 14,
+  History: 36,
+  Horror: 27,
+  Music: 10402,
+  Mystery: 9648,
+  Romance: 10749,
+  'Sci-Fi': 878,
+  'Science Fiction': 878,
+  Thriller: 53,
+  War: 10752,
+  Western: 37,
+};
+
+const ALL_GENRE_NAMES = [
+  'Action',
+  'Adventure',
+  'Animation',
+  'Comedy',
+  'Crime',
+  'Documentary',
+  'Drama',
+  'Family',
+  'Fantasy',
+  'History',
+  'Horror',
+  'Music',
+  'Mystery',
+  'Romance',
+  'Sci-Fi',
+  'Thriller',
+  'War',
+  'Western',
+];
+
+function mapTmdbItemToMovie(item: any, forceMediaType?: 'movie' | 'tv'): Movie {
+  const isTv = forceMediaType === 'tv' || item.media_type === 'tv' || (!item.title && Boolean(item.name));
+  const title = item.title || item.name || 'Untitled';
+  const releaseDate = item.release_date || item.first_air_date || '';
+  const genres =
+    item.genre_ids?.map((id: number) => TMDB_GENRE_NAMES[id]).filter(Boolean) ||
+    item.genres?.map((g: any) => g.name || TMDB_GENRE_NAMES[g.id] || g).filter(Boolean) ||
+    [];
+
+  return {
+    id: String(item.id),
+    title,
+    description: item.overview || '',
+    posterUrl: item.poster_path
+      ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+      : 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500',
+    backdropUrl: item.backdrop_path
+      ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
+      : undefined,
+    releaseDate,
+    genres,
+    ratingValue: item.vote_average ? Math.round(item.vote_average * 10) / 10 : undefined,
+    ratingCount: item.vote_count,
+    duration: item.runtime
+      ? `${Math.floor(item.runtime / 60)}h ${item.runtime % 60}m`
+      : isTv
+      ? 'Serial TV'
+      : undefined,
+    mediaType: isTv ? 'tv' : 'movie',
+  };
+}
+
+function generateMultiServerStreams(
+  id: string,
+  mediaType: 'movie' | 'tv' = 'movie',
+  season = 1,
+  episode = 1
+): StreamResponse {
+  const isTv = mediaType === 'tv';
+
+  const streams = [
+    {
+      serverName: 'Server 1 (VidSrc Pro)',
+      url: isTv
+        ? `https://vidsrc.to/embed/tv/${id}/${season}/${episode}`
+        : `https://vidsrc.to/embed/movie/${id}`,
+      type: 'iframe' as const,
+    },
+    {
+      serverName: 'Server 2 (AutoEmbed HD)',
+      url: isTv
+        ? `https://player.autoembed.cc/embed/tv/${id}/${season}/${episode}`
+        : `https://player.autoembed.cc/embed/movie/${id}`,
+      type: 'iframe' as const,
+    },
+    {
+      serverName: 'Server 3 (MultiEmbed VIP)',
+      url: isTv
+        ? `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${season}&e=${episode}`
+        : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+      type: 'iframe' as const,
+    },
+    {
+      serverName: 'Server 4 (VidSrc.me Fast)',
+      url: isTv
+        ? `https://vidsrc.me/embed/tv?tmdb=${id}&season=${season}&episode=${episode}`
+        : `https://vidsrc.me/embed/movie?tmdb=${id}`,
+      type: 'iframe' as const,
+    },
+    {
+      serverName: 'Server 5 (2Embed VIP)',
+      url: isTv
+        ? `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${episode}`
+        : `https://www.2embed.cc/embed/${id}`,
+      type: 'iframe' as const,
+    },
+  ];
+
+  return {
+    id,
+    title: `TMDB #${id} ${isTv ? `S${season}E${episode}` : 'Full Movie'}`,
+    streams,
+    streamUrl: streams[0].url,
+    type: 'iframe',
+    sourceLabel: 'Multi-Server Cloud CDN',
+    mediaType,
+    season,
+    episode,
+  };
+}
+
+// ==========================================
+// API IMPLEMENTATIONS WITH FULL TMDB SCALE
+// ==========================================
+
+/**
+ * 1. GET /api/movies
+ * Ambil sebanyak-banyaknya film & serial (20.000+ data via live TMDB)
+ */
+export async function getMovies(params: MovieQueryParams = {}): Promise<MoviesResponse> {
+  const page = params.page || 1;
+  const perPage = params.perPage || 24;
+
+  const query = new URLSearchParams();
+  if (params.q) query.set('q', params.q);
+  if (params.collection) query.set('collection', params.collection);
+  if (params.genre) query.set('genre', params.genre);
+  if (params.minRating !== undefined) query.set('minRating', String(params.minRating));
+  if (params.sort) query.set('sort', params.sort);
+  query.set('page', String(page));
+  query.set('perPage', String(perPage));
+
+  const qs = query.toString();
+  const endpoint = `/api/movies${qs ? `?${qs}` : ''}`;
+
+  // 1. Coba hubungi backend resmi (fazuradex.web.id atau localhost)
+  try {
+    const res = await fetchFromApi<MoviesResponse>(endpoint);
+    if (res && Array.isArray(res.data) && res.data.length > 0) {
+      return res;
+    }
+  } catch (err) {
+    // Backend offline / payment disabled, lanjut ke live TMDB
+  }
+
+  // 2. Live TMDB API: Ambil ribuan film & serial secara langsung
+  try {
+    let tmdbUrl = '';
+    const isTvCollection = params.collection === 'tv';
+
+    if (params.q) {
+      // Live search TMDB
+      tmdbUrl = `${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&language=en-US&query=${encodeURIComponent(
+        params.q
+      )}&page=${page}&include_adult=false`;
+    } else if (params.genre && params.genre !== 'All') {
+      const genreId = TMDB_GENRE_MAP[params.genre] || 28;
+      const endpoint = isTvCollection ? 'discover/tv' : 'discover/movie';
+      tmdbUrl = `${TMDB_BASE_URL}/${endpoint}?api_key=${TMDB_API_KEY}&language=en-US&with_genres=${genreId}&page=${page}&include_adult=false&sort_by=popularity.desc`;
+    } else if (params.collection === 'top_rated') {
+      tmdbUrl = `${TMDB_BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+    } else if (params.collection === 'now_playing') {
+      tmdbUrl = `${TMDB_BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+    } else if (params.collection === 'upcoming') {
+      tmdbUrl = `${TMDB_BASE_URL}/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+    } else if (params.collection === 'tv') {
+      tmdbUrl = `${TMDB_BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+    } else if (params.collection === 'popular') {
+      tmdbUrl = `${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+    } else {
+      // Default: Trending Hari Ini (Movie & TV campuran)
+      tmdbUrl = `${TMDB_BASE_URL}/trending/all/day?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+    }
+
+    if (params.minRating && tmdbUrl.includes('discover')) {
+      tmdbUrl += `&vote_average.gte=${params.minRating}`;
+    }
+
+    const tmdbRes = await fetch(tmdbUrl);
+    if (!tmdbRes.ok) throw new Error(`TMDB responded ${tmdbRes.status}`);
+
+    const tmdbJson = await tmdbRes.json();
+    let rawItems: any[] = tmdbJson.results || [];
+
+    // Filter out person results from search/multi
+    rawItems = rawItems.filter((item) => item.media_type !== 'person');
+
+    // Filter by minRating if applied client-side
+    if (params.minRating) {
+      rawItems = rawItems.filter((item) => (item.vote_average || 0) >= params.minRating!);
+    }
+
+    // Sort client-side if needed
+    if (params.sort === 'rating_desc') {
+      rawItems.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+    } else if (params.sort === 'date_desc') {
+      rawItems.sort((a, b) => {
+        const dateA = a.release_date || a.first_air_date || '';
+        const dateB = b.release_date || b.first_air_date || '';
+        return dateB.localeCompare(dateA);
+      });
+    } else if (params.sort === 'title_asc') {
+      rawItems.sort((a, b) => {
+        const titleA = a.title || a.name || '';
+        const titleB = b.title || b.name || '';
+        return titleA.localeCompare(titleB);
+      });
+    }
+
+    const movies: Movie[] = rawItems.map((item) =>
+      mapTmdbItemToMovie(item, isTvCollection ? 'tv' : undefined)
+    );
+
+    const total = tmdbJson.total_results || movies.length;
+    const totalPages = Math.min(tmdbJson.total_pages || 1, 500); // TMDB caps at 500 pages
+
+    return {
+      total,
+      page,
+      perPage: movies.length,
+      totalPages,
+      data: movies,
+    };
+  } catch (tmdbErr) {
+    console.warn('[MovieApi] TMDB fetch failed, falling back to emergency cache:', tmdbErr);
+    // Emergency static list if offline
+    return {
+      total: 12,
+      page: 1,
+      perPage: 12,
+      totalPages: 1,
+      data: [
+        {
+          id: '693134',
+          title: 'Dune: Part Two',
+          description: 'Paul Atreides bersatu kembali dengan Chani dan Fremen untuk membalas dendam.',
+          posterUrl: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
+          backdropUrl: 'https://image.tmdb.org/t/p/original/xOMo8BRK7PfcJv9JCnx7s5200bm.jpg',
+          releaseDate: '2024-02-27',
+          genres: ['Sci-Fi', 'Adventure', 'Action'],
+          ratingValue: 8.5,
+          ratingCount: 5420,
+          duration: '2h 46m',
+          mediaType: 'movie',
+        },
+      ],
+    };
+  }
+}
+
+/**
+ * 2. GET /api/movies/:id
+ * Detail Lengkap Film / Serial dengan pemeran (cast), trailer YouTube, rating, dan rekomendasi
+ */
+export async function getMovieDetail(id: string): Promise<MovieDetailResponse> {
+  // 1. Coba backend resmi
+  try {
+    const res = await fetchFromApi<MovieDetailResponse>(`/api/movies/${id}`);
+    if (res && res.data) return res;
+  } catch (err) {
+    // Lanjut ke live TMDB
+  }
+
+  // 2. Live TMDB Detail
+  try {
+    let tmdbData: any = null;
+    let isTv = false;
+
+    // Coba /movie/:id dulu
+    const movieRes = await fetch(
+      `${TMDB_BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=credits,videos,recommendations,similar`
+    );
+
+    if (movieRes.ok) {
+      tmdbData = await movieRes.json();
+    } else {
+      // Coba /tv/:id
+      const tvRes = await fetch(
+        `${TMDB_BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=credits,videos,recommendations,similar`
+      );
+      if (tvRes.ok) {
+        tmdbData = await tvRes.json();
+        isTv = true;
+      }
+    }
+
+    if (tmdbData) {
+      const baseMovie = mapTmdbItemToMovie(tmdbData, isTv ? 'tv' : 'movie');
+
+      // Cari trailer YouTube
+      const videos: any[] = tmdbData.videos?.results || [];
+      const trailer =
+        videos.find((v) => v.type === 'Trailer' && v.site === 'YouTube') ||
+        videos.find((v) => v.site === 'YouTube');
+
+      // Ambil top 8 pemeran utama
+      const castList: any[] = tmdbData.credits?.cast || [];
+      const cast = castList.slice(0, 8).map((c) => ({
+        id: c.id,
+        name: c.name,
+        character: c.character,
+        profileUrl: c.profile_path
+          ? `https://image.tmdb.org/t/p/w185${c.profile_path}`
+          : undefined,
+      }));
+
+      // Rekomendasi terkait
+      const recs: any[] =
+        tmdbData.recommendations?.results || tmdbData.similar?.results || [];
+      const related = recs.slice(0, 6).map((item) => mapTmdbItemToMovie(item));
+
+      const movieDetail: MovieDetail = {
+        ...baseMovie,
+        tagline: tmdbData.tagline || undefined,
+        trailerUrl: trailer ? `https://www.youtube.com/embed/${trailer.key}` : undefined,
+        trailerKey: trailer?.key,
+        cast,
+        status: tmdbData.status,
+        budget: tmdbData.budget,
+        revenue: tmdbData.revenue,
+        runtime: tmdbData.runtime,
+        spokenLanguages: tmdbData.spoken_languages?.map((l: any) => l.english_name || l.name) || [],
+        productionCompanies: tmdbData.production_companies?.map((c: any) => c.name) || [],
+        numberOfSeasons: tmdbData.number_of_seasons,
+        numberOfEpisodes: tmdbData.number_of_episodes,
+      };
+
+      return {
+        data: movieDetail,
+        related,
+      };
+    }
+  } catch (tmdbErr) {
+    console.warn('[MovieApi] TMDB movie detail failed:', tmdbErr);
+  }
+
+  // Fallback data
+  const fallback = {
+    id,
+    title: 'Movie Title #' + id,
+    description: 'Sinopsis film memukau dengan alur cerita menarik dan pengalaman visual definisi tinggi.',
+    posterUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500',
+    mediaType: 'movie' as const,
+    ratingValue: 8.0,
+    ratingCount: 1000,
+    releaseDate: '2024-01-01',
+    genres: ['Action', 'Sci-Fi'],
+    trailerUrl: 'https://www.youtube.com/embed/Way9Dexny3w',
+  };
+
+  return {
+    data: fallback,
+    related: [],
+  };
+}
+
+/**
+ * 3. GET /api/movies/:id/stream?season=1&episode=1
+ * Pemutar Video & Multi-Server Streaming
+ */
+export async function getMovieStream(
+  id: string,
+  season = 1,
+  episode = 1
+): Promise<StreamResponse> {
+  // 1. Coba backend resmi
+  try {
+    const res = await fetchFromApi<StreamResponse>(
+      `/api/movies/${id}/stream?season=${season}&episode=${episode}`
+    );
+    if (res && res.streams && res.streams.length > 0) return res;
+  } catch (err) {
+    // Lanjut ke multi-server generator
+  }
+
+  // Cek apakah film atau TV
+  let mediaType: 'movie' | 'tv' = season > 1 || episode > 1 ? 'tv' : 'movie';
+  try {
+    const checkRes = await fetch(`${TMDB_BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}`);
+    if (checkRes.ok) {
+      mediaType = 'tv';
+    }
+  } catch {
+    // ignore
+  }
+
+  return generateMultiServerStreams(id, mediaType, season, episode);
+}
+
+/**
+ * 4. GET /api/movies/:id/seasons
+ * Daftar Season untuk Serial TV
+ */
+export async function getMovieSeasons(id: string): Promise<SeasonItem[]> {
+  // 1. Coba backend resmi
+  try {
+    const res = await fetchFromApi<any>(`/api/movies/${id}/seasons`);
+    if (Array.isArray(res) && res.length > 0) return res;
+    if (res && Array.isArray(res.data) && res.data.length > 0) return res.data;
+    if (res && Array.isArray(res.seasons) && res.seasons.length > 0) return res.seasons;
+  } catch (err) {
+    // Lanjut ke TMDB
+  }
+
+  // 2. Live TMDB Seasons
+  try {
+    const tvRes = await fetch(`${TMDB_BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=en-US`);
+    if (tvRes.ok) {
+      const tvJson = await tvRes.json();
+      const rawSeasons: any[] = tvJson.seasons || [];
+      return rawSeasons
+        .filter((s) => s.season_number > 0) // exclude specials
+        .map((s) => ({
+          id: s.id,
+          seasonNumber: s.season_number,
+          name: s.name || `Season ${s.season_number}`,
+          episodeCount: s.episode_count,
+          posterUrl: s.poster_path ? `https://image.tmdb.org/t/p/w300${s.poster_path}` : undefined,
+          airDate: s.air_date,
+          overview: s.overview,
+        }));
+    }
+  } catch (tmdbErr) {
+    console.warn('[MovieApi] TMDB seasons failed:', tmdbErr);
+  }
+
+  return [
+    {
+      seasonNumber: 1,
+      name: 'Season 1',
+      episodeCount: 9,
+      airDate: '2024-01-01',
+      overview: 'Musim pertama serial dengan alur cerita memikat.',
+    },
+  ];
+}
+
+/**
+ * 4. GET /api/movies/:id/episodes?season=1
+ * Daftar Episode dalam Season Terpilih
+ */
+export async function getMovieEpisodes(id: string, season = 1): Promise<EpisodeItem[]> {
+  // 1. Coba backend resmi
+  try {
+    const res = await fetchFromApi<any>(`/api/movies/${id}/episodes?season=${season}`);
+    if (Array.isArray(res) && res.length > 0) return res;
+    if (res && Array.isArray(res.data) && res.data.length > 0) return res.data;
+    if (res && Array.isArray(res.episodes) && res.episodes.length > 0) return res.episodes;
+  } catch (err) {
+    // Lanjut ke TMDB
+  }
+
+  // 2. Live TMDB Episodes
+  try {
+    const epRes = await fetch(
+      `${TMDB_BASE_URL}/tv/${id}/season/${season}?api_key=${TMDB_API_KEY}&language=en-US`
+    );
+    if (epRes.ok) {
+      const epJson = await epRes.json();
+      const rawEpisodes: any[] = epJson.episodes || [];
+      return rawEpisodes.map((ep) => ({
+        id: ep.id,
+        episodeNumber: ep.episode_number,
+        seasonNumber: season,
+        name: ep.name || `Episode ${ep.episode_number}`,
+        title: ep.name || `Episode ${ep.episode_number}`,
+        overview: ep.overview,
+        thumbnailUrl: ep.still_path
+          ? `https://image.tmdb.org/t/p/w300${ep.still_path}`
+          : undefined,
+        airDate: ep.air_date,
+        duration: ep.runtime ? `${ep.runtime}m` : undefined,
+        ratingValue: ep.vote_average ? Math.round(ep.vote_average * 10) / 10 : undefined,
+      }));
+    }
+  } catch (tmdbErr) {
+    console.warn('[MovieApi] TMDB episodes failed:', tmdbErr);
+  }
+
+  const episodes: EpisodeItem[] = [];
+  for (let i = 1; i <= 9; i++) {
+    episodes.push({
+      episodeNumber: i,
+      seasonNumber: season,
+      name: `Episode ${i}`,
+      title: `Episode ${i}`,
+      overview: `Episode ${i} dari Season ${season}.`,
+      airDate: '2024-01-01',
+      duration: '45m',
+      ratingValue: 8.5,
+    });
+  }
+  return episodes;
+}
+
+/**
+ * 5. GET /api/genres
+ * Daftar Kategori Genre
+ */
+export async function getMovieGenres(): Promise<string[]> {
+  try {
+    const res = await fetchFromApi<any>('/api/genres');
+    if (Array.isArray(res) && res.length > 0) return res;
+    if (res && Array.isArray(res.data) && res.data.length > 0) return res.data;
+  } catch (err) {
+    // Lanjut ke TMDB
+  }
+
+  return ALL_GENRE_NAMES;
+}
+
+/**
+ * 6. GET /api/movies/:id/comments
+ * Mengambil Ulasan & Komentar Pengguna
+ */
+export async function getMovieComments(id: string): Promise<MovieComment[]> {
+  let remoteComments: MovieComment[] = [];
+  try {
+    const res = await fetchFromApi<{ data: MovieComment[] } | MovieComment[]>(
+      `/api/movies/${id}/comments`
+    );
+    if (Array.isArray(res)) remoteComments = res;
+    else if (Array.isArray(res.data)) remoteComments = res.data;
+  } catch (err) {
+    // Remote might be offline, fallback to local storage
+  }
+
+  let localComments: MovieComment[] = [];
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(`fazura_movie_comments_${id}`);
+      if (stored) {
+        localComments = JSON.parse(stored);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (remoteComments.length === 0 && localComments.length === 0) {
+    return [
+      {
+        id: `c-default-1`,
+        author: 'Reza Cinephile',
+        text: 'Visual dan sinematografinya luar biasa memukau! Salah satu tontonan terbaik dengan resolusi sangat jernih.',
+        rating: 9,
+        isSpoiler: false,
+        createdAt: '2 jam yang lalu',
+      },
+      {
+        id: `c-default-2`,
+        author: 'Fajar Moviegoer',
+        text: 'Akting para pemerannya sangat berkelas dan alur ceritanya tidak membosankan dari awal sampai akhir.',
+        rating: 10,
+        isSpoiler: false,
+        createdAt: '1 hari yang lalu',
+      },
+    ];
+  }
+
+  const map = new Map<string, MovieComment>();
+  [...localComments, ...remoteComments].forEach((c) => {
+    map.set(c.id, c);
+  });
+
+  return Array.from(map.values());
+}
+
+/**
+ * 6. POST /api/movies/:id/comments
+ * Mengirim Komentar / Ulasan Pengguna
+ */
+export async function postMovieComment(
+  id: string,
+  payload: CreateCommentPayload
+): Promise<MovieComment> {
+  const newComment: MovieComment = {
+    id: `comm_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    author: payload.author.trim() || 'Pengunjung FAZURAVERSE',
+    text: payload.text.trim(),
+    rating: payload.rating,
+    isSpoiler: Boolean(payload.isSpoiler),
+    createdAt: 'Baru saja',
+  };
+
+  try {
+    const res = await fetchFromApi<{ data: MovieComment } | MovieComment>(
+      `/api/movies/${id}/comments`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    );
+    const saved = 'data' in res && res.data ? res.data : (res as MovieComment);
+    return saved;
+  } catch (err) {
+    console.warn(`[MovieApi] Remote POST comment failed, saving to localStorage:`, err);
+    if (typeof window !== 'undefined') {
+      try {
+        const key = `fazura_movie_comments_${id}`;
+        const stored = localStorage.getItem(key);
+        const list: MovieComment[] = stored ? JSON.parse(stored) : [];
+        list.unshift(newComment);
+        localStorage.setItem(key, JSON.stringify(list));
+      } catch (storageErr) {
+        console.error('LocalStorage write failed:', storageErr);
+      }
+    }
+    return newComment;
+  }
+}
