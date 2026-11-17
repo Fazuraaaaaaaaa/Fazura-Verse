@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Play, Pause, MoreHorizontal, Plus, ListPlus, Check } from 'lucide-react';
+import { Play, Pause, MoreHorizontal, Plus, ListPlus, Check, PictureInPicture2 } from 'lucide-react';
 import { Track } from '@/types/music';
 import { usePlayerStore } from '@/stores/usePlayerStore';
 import { useLibraryStore } from '@/stores/useLibraryStore';
+import { useContextMenuStore } from '@/stores/useContextMenuStore';
+import { useToastStore } from '@/stores/useToastStore';
 import LikeButton from '@/components/common/LikeButton';
 import { formatDuration, cn } from '@/lib/utils';
 
@@ -29,15 +30,18 @@ export default function TrackRow({
 }: TrackRowProps) {
   const { currentTrack, isPlaying, playTrack, togglePlay, addToQueue, playNext } = usePlayerStore();
   const { myPlaylists, addSongToPlaylist } = useLibraryStore();
+  const { openContextMenu } = useContextMenuStore();
+  const { showToast } = useToastStore();
   const [showMenu, setShowMenu] = useState(false);
   const [addedPlaylistId, setAddedPlaylistId] = useState<string | null>(null);
 
-  const isCurrentTrack =
+  const isCurrentTrack = Boolean(
     currentTrack &&
-    ((currentTrack.id && currentTrack.id === track.id) ||
-      (currentTrack.youtubeId && currentTrack.youtubeId === track.youtubeId));
+      ((currentTrack.id && currentTrack.id === track.id) ||
+        (currentTrack.youtubeId && currentTrack.youtubeId === track.youtubeId))
+  );
 
-  const isTrackPlaying = isCurrentTrack && isPlaying;
+  const isTrackPlaying = Boolean(isCurrentTrack && isPlaying);
 
   const handlePlayToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -56,9 +60,14 @@ export default function TrackRow({
     }
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    openContextMenu(e, track, playlistContext);
+  };
+
   return (
     <div
       onClick={handleRowClick}
+      onContextMenu={handleContextMenu}
       className={cn(
         'group relative grid grid-cols-[16px_1fr_auto] sm:grid-cols-[20px_4fr_2fr_auto] md:grid-cols-[24px_6fr_4fr_3fr_auto] items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2 sm:py-2.5 rounded-md hover:bg-white/10 transition-colors select-none cursor-pointer',
         isCurrentTrack && 'bg-white/5'
@@ -184,85 +193,19 @@ export default function TrackRow({
           {track.durationFormatted || formatDuration(track.duration)}
         </span>
 
-        {/* More actions menu */}
+        {/* More actions menu (Triggers context menu or popup) */}
         <div className="relative">
           <button
             type="button"
             title="More options"
             onClick={(e) => {
               e.stopPropagation();
-              setShowMenu((prev) => !prev);
+              openContextMenu(e, track, playlistContext);
             }}
             className="p-1 rounded-full text-[#B3B3B3] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
           >
             <MoreHorizontal size={18} />
           </button>
-
-          {showMenu && (
-            <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowMenu(false);
-                }}
-              />
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-8 z-50 w-52 rounded-md bg-[#282828] p-1.5 shadow-2xl border border-white/10 text-sm text-white animate-in fade-in zoom-in-95 duration-100"
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    addToQueue(track);
-                    setShowMenu(false);
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded px-3 py-2 text-left hover:bg-white/10"
-                >
-                  <ListPlus size={16} />
-                  <span>Add to queue</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    playNext(track);
-                    setShowMenu(false);
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded px-3 py-2 text-left hover:bg-white/10"
-                >
-                  <Play size={16} />
-                  <span>Play next</span>
-                </button>
-                <div className="my-1 border-t border-white/10" />
-                <div className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#B3B3B3]">
-                  Add to playlist
-                </div>
-                {myPlaylists.length === 0 ? (
-                  <div className="px-3 py-1.5 text-xs text-[#B3B3B3]">No custom playlists yet</div>
-                ) : (
-                  myPlaylists.map((pl) => (
-                    <button
-                      key={pl.id}
-                      type="button"
-                      onClick={() => {
-                        addSongToPlaylist(pl.id, track);
-                        setAddedPlaylistId(pl.id);
-                        setTimeout(() => setShowMenu(false), 500);
-                      }}
-                      className="flex w-full items-center justify-between rounded px-3 py-1.5 text-left text-xs hover:bg-white/10"
-                    >
-                      <span className="truncate max-w-[130px]">{pl.title}</span>
-                      {addedPlaylistId === pl.id ? (
-                        <Check size={14} className="text-[#1DB954]" />
-                      ) : (
-                        <Plus size={14} className="text-[#B3B3B3]" />
-                      )}
-                    </button>
-                  ))
-                )}
-              </div>
-            </>
-          )}
         </div>
       </div>
     </div>

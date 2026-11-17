@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { Track } from '@/types/music';
 import { usePlayerStore } from '@/stores/usePlayerStore';
+import { useContextMenuStore } from '@/stores/useContextMenuStore';
 import PlayButton from '@/components/common/PlayButton';
 import { cn } from '@/lib/utils';
 
@@ -14,11 +14,13 @@ interface QuickPickCardProps {
 
 export default function QuickPickCard({ track, playlistContext }: QuickPickCardProps) {
   const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayerStore();
+  const { openContextMenu } = useContextMenuStore();
 
-  const isCurrentTrack =
+  const isCurrentTrack = Boolean(
     currentTrack &&
-    ((currentTrack.id && currentTrack.id === track.id) ||
-      (currentTrack.youtubeId && currentTrack.youtubeId === track.youtubeId));
+      ((currentTrack.id && currentTrack.id === track.id) ||
+        (currentTrack.youtubeId && currentTrack.youtubeId === track.youtubeId))
+  );
 
   const isCurrentPlaying = Boolean(isCurrentTrack && isPlaying);
 
@@ -32,9 +34,14 @@ export default function QuickPickCard({ track, playlistContext }: QuickPickCardP
     }
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    openContextMenu(e, track, playlistContext);
+  };
+
   return (
     <div
       onClick={handlePlay}
+      onContextMenu={handleContextMenu}
       className={cn(
         'group relative flex items-center gap-3 sm:gap-4 overflow-hidden rounded bg-white/5 hover:bg-white/20 transition-all duration-300 cursor-pointer shadow-sm pr-3 sm:pr-4 select-none',
         isCurrentTrack && 'bg-white/15'

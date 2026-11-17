@@ -10,8 +10,13 @@ import {
   FALLBACK_ALBUMS,
   FALLBACK_PLAYLISTS,
   FALLBACK_LYRICS,
+  INDONESIAN_HITS,
+  GLOBAL_TOP_50,
+  KPOP_DAEBAK,
+  CHILL_LOFI,
+  ROCK_CLASSICS,
 } from './fallbackData';
-import { Track, Artist, Album, Playlist, SearchResults, LyricsData } from '@/types/music';
+import { Track, Artist, Album, Playlist, SearchResults, LyricsData, HomeFeedSection } from '@/types/music';
 
 export class FallbackProvider implements MusicProvider {
   name = 'fallback';
@@ -94,15 +99,82 @@ export class FallbackProvider implements MusicProvider {
   }
 
   async getTrending(): Promise<TrendingResponse> {
-    const topTracks = FALLBACK_TRACKS.slice(0, 10);
-    const trendingTracks = FALLBACK_TRACKS.slice(10, 20);
+    const topTracks = FALLBACK_TRACKS.slice(0, 15);
+    const trendingTracks = FALLBACK_TRACKS.slice(15, 35);
     const quickPicks = [
-      FALLBACK_TRACKS[3], // Espresso
-      FALLBACK_TRACKS[5], // Birds of a Feather
-      FALLBACK_TRACKS[0], // Blinding Lights
-      FALLBACK_TRACKS[13], // Not Like Us
-      FALLBACK_TRACKS[18], // Do I Wanna Know
-      FALLBACK_TRACKS[24], // Magnetic
+      FALLBACK_TRACKS[0],  // Satu Bulan (Bernadya)
+      FALLBACK_TRACKS[20], // Die With A Smile (Lady Gaga, Bruno Mars)
+      FALLBACK_TRACKS[3],  // Gala Bunga Matahari (Sal Priadi)
+      FALLBACK_TRACKS[21], // Espresso (Sabrina Carpenter)
+      FALLBACK_TRACKS[24], // BIRDS OF A FEATHER (Billie Eilish)
+      FALLBACK_TRACKS[27], // Blinding Lights (The Weeknd)
+    ];
+
+    const shelves = {
+      indonesianHits: INDONESIAN_HITS,
+      globalTop50: GLOBAL_TOP_50,
+      kpopDaebak: KPOP_DAEBAK,
+      chillLofi: CHILL_LOFI,
+      rockClassics: ROCK_CLASSICS,
+    };
+
+    const sections: HomeFeedSection[] = [
+      {
+        id: 'sec_indo_hits',
+        title: 'Indonesian Top Hits & Viral',
+        subtitle: 'Lagu terpopuler dari Bernadya, Sal Priadi, Mahalini, Hindia, Nadin Amizah, Tulus, Sheila On 7',
+        type: 'tracks',
+        items: INDONESIAN_HITS,
+      },
+      {
+        id: 'sec_global_top',
+        title: 'Global Top 50',
+        subtitle: 'The biggest hits across the world right now',
+        type: 'tracks',
+        items: GLOBAL_TOP_50,
+      },
+      {
+        id: 'sec_kpop_daebak',
+        title: 'K-Pop Daebak!',
+        subtitle: 'The best of K-Pop: NewJeans, BTS, BLACKPINK, aespa, LE SSERAFIM, ILLIT',
+        type: 'tracks',
+        items: KPOP_DAEBAK,
+      },
+      {
+        id: 'sec_chill_lofi',
+        title: 'Chill Lo-Fi Beats',
+        subtitle: 'Calm beats to study, code and unwind',
+        type: 'tracks',
+        items: CHILL_LOFI,
+      },
+      {
+        id: 'sec_rock_classics',
+        title: 'Rock & Alternative Classics',
+        subtitle: 'Legendary anthems and modern rock hits',
+        type: 'tracks',
+        items: ROCK_CLASSICS,
+      },
+      {
+        id: 'sec_featured_playlists',
+        title: 'Featured Playlists',
+        subtitle: 'Hand-picked by Sonora editors',
+        type: 'playlists',
+        items: FALLBACK_PLAYLISTS,
+      },
+      {
+        id: 'sec_popular_artists',
+        title: 'Popular Artists',
+        subtitle: 'Top trending artists today',
+        type: 'artists',
+        items: FALLBACK_ARTISTS,
+      },
+      {
+        id: 'sec_new_releases',
+        title: 'Popular Albums & Releases',
+        subtitle: 'New music for you',
+        type: 'albums',
+        items: FALLBACK_ALBUMS,
+      },
     ];
 
     return {
@@ -111,6 +183,8 @@ export class FallbackProvider implements MusicProvider {
       newReleases: FALLBACK_ALBUMS,
       quickPicks,
       featuredPlaylists: FALLBACK_PLAYLISTS,
+      shelves,
+      sections,
     };
   }
 

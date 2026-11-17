@@ -51,7 +51,7 @@ export class YoutubeProvider implements MusicProvider {
     return { title, artist };
   }
 
-  async search(query: string, filter = 'all', limit = 20): Promise<SearchResults> {
+  async search(query: string, filter = 'all', limit = 50): Promise<SearchResults> {
     const q = (query || '').trim();
     if (!q) {
       return {
@@ -148,6 +148,74 @@ export class YoutubeProvider implements MusicProvider {
               name: p.shortBylineText?.runs?.[0]?.text || 'YouTube',
             },
           });
+        }
+      }
+
+      // If requested limit is high (e.g. 50-100) and we need more tracks, run secondary query
+      if (limit > 25 && tracks.length < limit) {
+        try {
+          const res2 = await fetch('https://www.youtube.com/youtubei/v1/search', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'User-Agent': this.userAgent,
+            },
+            body: JSON.stringify({
+              context: {
+                client: {
+                  clientName: 'WEB',
+                  clientVersion: '2.20231201.00.00',
+                  hl: 'en',
+                  gl: 'US',
+                },
+              },
+              query: `${q} songs playlist music`,
+            }),
+          });
+          if (res2.ok) {
+            const data2 = await res2.json();
+            const contents2 =
+              data2?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents || [];
+            const itemSection2 = contents2.find((c: any) => c.itemSectionRenderer)?.itemSectionRenderer;
+            const rawItems2 = itemSection2?.contents || [];
+            const existingIds = new Set(tracks.map(t => t.id));
+
+            for (const item of rawItems2) {
+              if (item.videoRenderer) {
+                const v = item.videoRenderer;
+                const videoId = v.videoId;
+                if (!videoId || existingIds.has(videoId)) continue;
+
+                const rawTitle = v.title?.runs?.map((r: any) => r.text).join('') || 'Unknown Song';
+                const rawChannel = v.ownerText?.runs?.map((r: any) => r.text).join('') || '';
+                const { title, artist } = this.cleanTitleAndArtist(rawTitle, rawChannel);
+                const durationFormatted = v.lengthText?.simpleText || '3:30';
+                const duration = this.parseDurationToSeconds(durationFormatted);
+                const thumbnail =
+                  v.thumbnail?.thumbnails?.[v.thumbnail.thumbnails.length - 1]?.url ||
+                  `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+                const views = v.viewCountText?.simpleText || '';
+                const releaseDate = v.publishedTimeText?.simpleText || '';
+
+                tracks.push({
+                  id: videoId,
+                  youtubeId: videoId,
+                  title,
+                  artist,
+                  artists: [{ name: artist }],
+                  duration,
+                  durationFormatted,
+                  thumbnail,
+                  views,
+                  releaseDate,
+                });
+                existingIds.add(videoId);
+                if (tracks.length >= limit) break;
+              }
+            }
+          }
+        } catch (e) {
+          // secondary query is best-effort
         }
       }
 

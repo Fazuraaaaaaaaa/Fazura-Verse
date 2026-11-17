@@ -55,15 +55,27 @@ export class YouTubeMusicService implements MusicProvider {
     ]);
   }
 
-  async search(query: string, filter = 'all', limit = 20): Promise<SearchResults> {
-    const cacheKey = `search:${query.toLowerCase().trim()}:${filter}:${limit}`;
+  async search(query: string, filter = 'all', limit = 50): Promise<SearchResults> {
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const cacheKey = `search:${query.toLowerCase().trim()}:${filter}:${safeLimit}`;
     const cached = this.getCached<SearchResults>(cacheKey);
     if (cached) return cached;
 
     // Try YouTube provider first
     try {
-      const res = await this.withTimeout(this.primary.search(query, filter, limit), 4000);
+      const res = await this.withTimeout(this.primary.search(query, filter, safeLimit), 4000);
       if (res.tracks.length > 0 || res.artists.length > 0 || res.albums.length > 0) {
+        // If we want more tracks up to limit, enrich with matching fallback tracks
+        if (res.tracks.length < safeLimit) {
+          const fallbackRes = await this.fallback.search(query, filter, safeLimit);
+          const existingIds = new Set(res.tracks.map(t => t.id));
+          for (const ft of fallbackRes.tracks) {
+            if (!existingIds.has(ft.id) && res.tracks.length < safeLimit) {
+              res.tracks.push(ft);
+              existingIds.add(ft.id);
+            }
+          }
+        }
         this.setCache(cacheKey, res, 600); // 10 min
         return res;
       }
@@ -72,7 +84,7 @@ export class YouTubeMusicService implements MusicProvider {
     }
 
     // Fallback provider
-    const fallbackRes = await this.fallback.search(query, filter, limit);
+    const fallbackRes = await this.fallback.search(query, filter, safeLimit);
     this.setCache(cacheKey, fallbackRes, 180);
     return fallbackRes;
   }
@@ -82,19 +94,21 @@ export class YouTubeMusicService implements MusicProvider {
     const cached = this.getCached<TrendingResponse>(cacheKey);
     if (cached) return cached;
 
+    const fallbackTrending = await this.fallback.getTrending();
+
     try {
       const res = await this.withTimeout(this.primary.getTrending(), 4000);
       if (res && res.topTracks.length > 0) {
-        // Enrich playlists or new releases if primary search didn't return them
-        if (!res.featuredPlaylists || res.featuredPlaylists.length === 0 || !res.newReleases || res.newReleases.length === 0) {
-          const fallbackTrending = await this.fallback.getTrending();
-          if (!res.featuredPlaylists || res.featuredPlaylists.length === 0) {
-            res.featuredPlaylists = fallbackTrending.featuredPlaylists;
-          }
-          if (!res.newReleases || res.newReleases.length === 0) {
-            res.newReleases = fallbackTrending.newReleases;
-          }
+        // Enrich playlists, new releases, shelves and sections
+        if (!res.featuredPlaylists || res.featuredPlaylists.length === 0) {
+          res.featuredPlaylists = fallbackTrending.featuredPlaylists;
         }
+        if (!res.newReleases || res.newReleases.length === 0) {
+          res.newReleases = fallbackTrending.newReleases;
+        }
+        res.shelves = fallbackTrending.shelves;
+        res.sections = fallbackTrending.sections;
+
         this.setCache(cacheKey, res, 900); // 15 min
         return res;
       }
@@ -102,9 +116,8 @@ export class YouTubeMusicService implements MusicProvider {
       console.warn('[YouTubeMusicService] Primary getTrending failed, using fallback:', (err as any)?.message || err);
     }
 
-    const fallbackRes = await this.fallback.getTrending();
-    this.setCache(cacheKey, fallbackRes, 300);
-    return fallbackRes;
+    this.setCache(cacheKey, fallbackTrending, 300);
+    return fallbackTrending;
   }
 
   async getSong(id: string): Promise<SongDetailsResponse | null> {

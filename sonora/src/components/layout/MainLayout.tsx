@@ -6,9 +6,13 @@ import TopNav from './TopNav';
 import MobileNav from './MobileNav';
 import BottomPlayer from '@/components/player/BottomPlayer';
 import YouTubePlayer from '@/components/player/YouTubePlayer';
+import AudioKeepAlive from '@/components/player/AudioKeepAlive';
 import FullscreenPlayer from '@/components/player/FullscreenPlayer';
 import QueueDrawer from '@/components/player/QueueDrawer';
 import LyricsPanel from '@/components/lyrics/LyricsPanel';
+import ContextMenu from '@/components/common/ContextMenu';
+import ToastContainer from '@/components/common/ToastContainer';
+import KeyboardShortcuts from '@/components/common/KeyboardShortcuts';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -17,8 +21,12 @@ interface MainLayoutProps {
 export default function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="relative flex h-screen w-full flex-col bg-black text-white overflow-hidden select-none">
-      {/* Hidden YouTube playback engine */}
+      {/* Global Keyboard shortcuts */}
+      <KeyboardShortcuts />
+
+      {/* Hidden YouTube playback engine & background keepalive */}
       <YouTubePlayer />
+      <AudioKeepAlive />
 
       {/* Main app body */}
       <div className="flex flex-1 overflow-hidden p-0 md:p-2 md:gap-2">
@@ -45,10 +53,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
       {/* Mobile Bottom Navigation Bar */}
       <MobileNav />
 
-      {/* Global Overlays */}
+      {/* Global Overlays & Modals */}
       <LyricsPanel />
       <QueueDrawer />
       <FullscreenPlayer />
+      <ContextMenu />
+      <ToastContainer />
     </div>
   );
 }

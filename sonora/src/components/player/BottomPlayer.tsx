@@ -14,6 +14,7 @@ import {
   Volume1,
   VolumeX,
   Maximize2,
+  PictureInPicture2,
   ListMusic,
   Mic2,
   Heart,
@@ -81,6 +82,36 @@ export const BottomPlayer: React.FC = () => {
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10);
     setVolume(val);
+  };
+
+  const handleOpenMiniPlayer = async () => {
+    if (typeof window === 'undefined') return;
+
+    if ('documentPictureInPicture' in window) {
+      try {
+        const pipWindow = await (window as any).documentPictureInPicture.requestWindow({
+          width: 380,
+          height: 520,
+        });
+        pipWindow.location.href = '/miniplayer';
+        return;
+      } catch {
+        // Fallback to window.open
+      }
+    }
+
+    const width = 380;
+    const height = 540;
+    const left = window.screen.width - width - 40;
+    const top = window.screen.height - height - 80;
+    const popup = window.open(
+      '/miniplayer',
+      'SonoraMiniPlayer',
+      `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes`
+    );
+    if (popup) {
+      popup.focus();
+    }
   };
 
   return (
@@ -350,6 +381,16 @@ export const BottomPlayer: React.FC = () => {
             />
           </div>
         </div>
+
+        {/* Pop-up Mini Player Button */}
+        <button
+          onClick={handleOpenMiniPlayer}
+          className="p-1.5 text-[#b3b3b3] hover:text-white transition-transform active:scale-95 hidden sm:block"
+          title="Pop-up Mini Player (P)"
+          aria-label="Open mini player"
+        >
+          <PictureInPicture2 className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
 
         {/* Fullscreen Button */}
         <button

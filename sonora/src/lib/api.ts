@@ -3,6 +3,168 @@ import { MOCK_TRACKS, MOCK_ARTISTS, MOCK_ALBUMS, MOCK_PLAYLISTS, MOCK_GENRES, MO
 
 const BASE_URL = '/api/ytmusic';
 
+export const INDONESIAN_HITS: Track[] = [
+  {
+    id: 'zO_85EwV-J0',
+    youtubeId: 'zO_85EwV-J0',
+    title: 'Satu Bulan',
+    artist: 'Bernadya',
+    album: 'Sialnya, Hidup Harus Tetap Berjalan',
+    duration: 194,
+    durationFormatted: '3:14',
+    thumbnail: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=500&auto=format&fit=crop&q=80',
+    views: '125M',
+    releaseDate: '2024',
+  },
+  {
+    id: '0qWvQeO43c0',
+    youtubeId: '0qWvQeO43c0',
+    title: 'Gala Bunga Matahari',
+    artist: 'Sal Priadi',
+    album: 'MARKERS AND SUCH PENS FLASHDISKS',
+    duration: 232,
+    durationFormatted: '3:52',
+    thumbnail: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=500&auto=format&fit=crop&q=80',
+    views: '98M',
+    releaseDate: '2024',
+  },
+  {
+    id: 'VqjGf_m7v0Y',
+    youtubeId: 'VqjGf_m7v0Y',
+    title: 'Sial',
+    artist: 'Mahalini',
+    album: 'Fabula',
+    duration: 243,
+    durationFormatted: '4:03',
+    thumbnail: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
+    views: '210M',
+    releaseDate: '2023',
+  },
+  {
+    id: 'g_w7FvN45mU',
+    youtubeId: 'g_w7FvN45mU',
+    title: 'Evaluasi',
+    artist: 'Hindia',
+    album: 'Menari Dengan Bayangan',
+    duration: 205,
+    durationFormatted: '3:25',
+    thumbnail: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&auto=format&fit=crop&q=80',
+    views: '180M',
+    releaseDate: '2019',
+  },
+  {
+    id: 'oR1_h94xQ1E',
+    youtubeId: 'oR1_h94xQ1E',
+    title: 'Rayuan Perempuan Gila',
+    artist: 'Nadin Amizah',
+    album: 'Untuk Dunia, Cinta, dan Kotornya',
+    duration: 228,
+    durationFormatted: '3:48',
+    thumbnail: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80',
+    views: '115M',
+    releaseDate: '2023',
+  },
+  {
+    id: 'k-p0d_Hh3p4',
+    youtubeId: 'k-p0d_Hh3p4',
+    title: 'Hati-Hati di Jalan',
+    artist: 'Tulus',
+    album: 'Manusia',
+    duration: 242,
+    durationFormatted: '4:02',
+    thumbnail: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=500&auto=format&fit=crop&q=80',
+    views: '290M',
+    releaseDate: '2022',
+  },
+  {
+    id: '1bF-0N2aW2Y',
+    youtubeId: '1bF-0N2aW2Y',
+    title: 'Lantas',
+    artist: 'Juicy Luicy',
+    album: 'Sentimental',
+    duration: 228,
+    durationFormatted: '3:48',
+    thumbnail: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500&auto=format&fit=crop&q=80',
+    views: '160M',
+    releaseDate: '2020',
+  },
+  {
+    id: '6KqG0u8pY8w',
+    youtubeId: '6KqG0u8pY8w',
+    title: 'Dan...',
+    artist: 'Sheila On 7',
+    album: 'Sheila on 7',
+    duration: 286,
+    durationFormatted: '4:46',
+    thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80',
+    views: '190M',
+    releaseDate: '1999',
+  },
+];
+
+export const KPOP_DAEBAK: Track[] = [
+  {
+    id: 'ArmDp-zijuc',
+    youtubeId: 'ArmDp-zijuc',
+    title: 'Super Shy',
+    artist: 'NewJeans',
+    album: 'Get Up',
+    duration: 154,
+    durationFormatted: '2:34',
+    thumbnail: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500&auto=format&fit=crop&q=80',
+    views: '280M',
+    releaseDate: '2023',
+  },
+  {
+    id: 'pSUydWEq46U',
+    youtubeId: 'pSUydWEq46U',
+    title: 'Ditto',
+    artist: 'NewJeans',
+    album: 'OMG',
+    duration: 185,
+    durationFormatted: '3:05',
+    thumbnail: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=500&auto=format&fit=crop&q=80',
+    views: '310M',
+    releaseDate: '2022',
+  },
+  {
+    id: 'gdZLi9oWNZg',
+    youtubeId: 'gdZLi9oWNZg',
+    title: 'Dynamite',
+    artist: 'BTS',
+    album: 'BE',
+    duration: 199,
+    durationFormatted: '3:19',
+    thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80',
+    views: '1.8B',
+    releaseDate: '2020',
+  },
+  {
+    id: 'ioNng23DkIM',
+    youtubeId: 'ioNng23DkIM',
+    title: 'How You Like That',
+    artist: 'BLACKPINK',
+    album: 'THE ALBUM',
+    duration: 181,
+    durationFormatted: '3:01',
+    thumbnail: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&auto=format&fit=crop&q=80',
+    views: '1.3B',
+    releaseDate: '2020',
+  },
+  {
+    id: 'Vk5-c_v4gMU',
+    youtubeId: 'Vk5-c_v4gMU',
+    title: 'Magnetic',
+    artist: 'ILLIT',
+    album: 'SUPER REAL ME',
+    duration: 160,
+    durationFormatted: '2:40',
+    thumbnail: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80',
+    views: '240M',
+    releaseDate: '2024',
+  },
+];
+
 export async function fetchHomeFeed(): Promise<HomeFeedSection[]> {
   try {
     const res = await fetch(`${BASE_URL}/trending`);
@@ -10,6 +172,46 @@ export async function fetchHomeFeed(): Promise<HomeFeedSection[]> {
       const data = await res.json();
       if (data) {
         const sections: HomeFeedSection[] = [];
+
+        // 1. Indonesian Top Hits & Viral
+        if (data.shelves?.indonesianHits?.length > 0) {
+          sections.push({
+            id: 'indonesian-hits',
+            title: 'Indonesian Top Hits & Viral',
+            subtitle: 'Lagu terpopuler dari Bernadya, Sal Priadi, Mahalini, Hindia & Sheila On 7',
+            type: 'tracks',
+            items: data.shelves.indonesianHits,
+          });
+        } else {
+          sections.push({
+            id: 'indonesian-hits',
+            title: 'Indonesian Top Hits & Viral',
+            subtitle: 'Lagu terpopuler dari Bernadya, Sal Priadi, Mahalini, Hindia & Sheila On 7',
+            type: 'tracks',
+            items: INDONESIAN_HITS,
+          });
+        }
+
+        // 2. Global Top 50
+        if (data.shelves?.globalTop50?.length > 0) {
+          sections.push({
+            id: 'global-top-50',
+            title: 'Global Top 50',
+            subtitle: 'The biggest tracks on earth right now',
+            type: 'tracks',
+            items: data.shelves.globalTop50,
+          });
+        } else if (data.topTracks?.length > 0) {
+          sections.push({
+            id: 'global-top-50',
+            title: 'Global Top 50',
+            subtitle: 'The biggest tracks on earth right now',
+            type: 'tracks',
+            items: data.topTracks,
+          });
+        }
+
+        // 3. Made For You
         if (data.featuredPlaylists?.length > 0) {
           sections.push({
             id: 'made-for-you',
@@ -19,15 +221,27 @@ export async function fetchHomeFeed(): Promise<HomeFeedSection[]> {
             items: data.featuredPlaylists,
           });
         }
-        if (data.trendingTracks?.length > 0) {
+
+        // 4. K-Pop Daebak
+        if (data.shelves?.kpopDaebak?.length > 0) {
           sections.push({
-            id: 'trending',
-            title: 'Trending Songs',
-            subtitle: 'The hottest tracks taking over the charts worldwide',
+            id: 'kpop-daebak',
+            title: 'K-Pop Daebak!',
+            subtitle: 'The best K-Pop bops from NewJeans, BTS, and BLACKPINK',
             type: 'tracks',
-            items: data.trendingTracks,
+            items: data.shelves.kpopDaebak,
+          });
+        } else {
+          sections.push({
+            id: 'kpop-daebak',
+            title: 'K-Pop Daebak!',
+            subtitle: 'The best K-Pop bops from NewJeans, BTS, and BLACKPINK',
+            type: 'tracks',
+            items: KPOP_DAEBAK,
           });
         }
+
+        // 5. Popular Artists
         sections.push({
           id: 'popular-artists',
           title: 'Popular Artists',
@@ -35,6 +249,8 @@ export async function fetchHomeFeed(): Promise<HomeFeedSection[]> {
           type: 'artists',
           items: MOCK_ARTISTS,
         });
+
+        // 6. Popular Albums
         sections.push({
           id: 'popular-albums',
           title: 'Popular Albums',
@@ -42,24 +258,52 @@ export async function fetchHomeFeed(): Promise<HomeFeedSection[]> {
           type: 'albums',
           items: MOCK_ALBUMS,
         });
-        if (data.newReleases?.length > 0) {
+
+        // 7. Chill Lo-Fi Beats
+        if (data.shelves?.chillLofi?.length > 0) {
           sections.push({
-            id: 'new-releases',
-            title: 'New Releases',
-            subtitle: 'Fresh arrivals hot off the press',
+            id: 'chill-lofi',
+            title: 'Chill Lo-Fi Beats',
+            subtitle: 'Relaxing instrumental soundscapes for coding and focus',
             type: 'tracks',
-            items: data.newReleases,
+            items: data.shelves.chillLofi,
           });
         }
+
+        // 8. Rock Classics
+        if (data.shelves?.rockClassics?.length > 0) {
+          sections.push({
+            id: 'rock-classics',
+            title: 'Rock & Alternative Classics',
+            subtitle: 'Timeless guitar anthems and legendary rock hits',
+            type: 'tracks',
+            items: data.shelves.rockClassics,
+          });
+        }
+
         if (sections.length > 0) return sections;
       }
     }
   } catch (e) {
-    console.warn('Backend API trending fetch error, using fallback data', e);
+    console.warn('Backend API trending fetch error, using rich fallback shelves', e);
   }
 
-  // Fallback rich home feed sections
+  // Fallback rich home feed sections with full multi-shelves
   return [
+    {
+      id: 'indonesian-hits',
+      title: 'Indonesian Top Hits & Viral',
+      subtitle: 'Lagu terpopuler dari Bernadya, Sal Priadi, Mahalini, Hindia & Sheila On 7',
+      type: 'tracks',
+      items: INDONESIAN_HITS,
+    },
+    {
+      id: 'global-top-50',
+      title: 'Global Top 50',
+      subtitle: 'The biggest tracks on earth right now',
+      type: 'tracks',
+      items: MOCK_TRACKS.slice(0, 8),
+    },
     {
       id: 'made-for-you',
       title: 'Made For You',
@@ -68,18 +312,11 @@ export async function fetchHomeFeed(): Promise<HomeFeedSection[]> {
       items: MOCK_PLAYLISTS,
     },
     {
-      id: 'recently-played',
-      title: 'Recently Played',
-      subtitle: 'Pick up where you left off',
+      id: 'kpop-daebak',
+      title: 'K-Pop Daebak!',
+      subtitle: 'The best K-Pop bops from NewJeans, BTS, and BLACKPINK',
       type: 'tracks',
-      items: MOCK_TRACKS.slice(0, 6),
-    },
-    {
-      id: 'trending',
-      title: 'Trending Songs',
-      subtitle: 'The hottest tracks taking over the charts worldwide',
-      type: 'tracks',
-      items: [MOCK_TRACKS[0], MOCK_TRACKS[5], MOCK_TRACKS[7], MOCK_TRACKS[1], MOCK_TRACKS[2]],
+      items: KPOP_DAEBAK,
     },
     {
       id: 'popular-artists',
@@ -131,9 +368,10 @@ export async function searchMusic(query: string, filter?: string): Promise<Searc
     console.warn('Backend API search error, using fallback search', e);
   }
 
-  // Fallback local search
+  // Fallback local search including Indonesian and KPop catalog
   const lowerQ = q.toLowerCase();
-  const matchedTracks = MOCK_TRACKS.filter(
+  const allTracks = [...MOCK_TRACKS, ...INDONESIAN_HITS, ...KPOP_DAEBAK];
+  const matchedTracks = allTracks.filter(
     (t) => t.title.toLowerCase().includes(lowerQ) || t.artist.toLowerCase().includes(lowerQ)
   );
   const matchedArtists = MOCK_ARTISTS.filter((a) => a.name.toLowerCase().includes(lowerQ));

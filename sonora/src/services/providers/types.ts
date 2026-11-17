@@ -1,4 +1,12 @@
-import { Track, Artist, Album, Playlist, SearchResults, LyricsData } from '@/types/music';
+import { Track, Artist, Album, Playlist, SearchResults, LyricsData, HomeFeedSection } from '@/types/music';
+
+export interface HomeShelves {
+  indonesianHits: Track[];
+  globalTop50: Track[];
+  kpopDaebak: Track[];
+  chillLofi: Track[];
+  rockClassics: Track[];
+}
 
 export interface TrendingResponse {
   topTracks: Track[];
@@ -6,12 +14,20 @@ export interface TrendingResponse {
   newReleases: Album[];
   quickPicks: Track[];
   featuredPlaylists: Playlist[];
+  shelves?: HomeShelves;
+  sections?: HomeFeedSection[];
 }
 
 export interface SongDetailsResponse {
   track: Track;
   related: Track[];
   lyrics?: LyricsData;
+  streamInfo?: {
+    youtubeId: string;
+    streamType: string;
+    embedUrl: string;
+    watchUrl: string;
+  };
 }
 
 export interface RecommendationResponse {
