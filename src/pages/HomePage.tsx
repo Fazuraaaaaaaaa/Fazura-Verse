@@ -63,7 +63,7 @@ export function HomePage() {
     : popularData?.komikList || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-12">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-12 min-w-0">
       {/* 1. Hero Spotlight Carousel */}
       <section>
         <MangaHero items={featuredList} isLoading={recLoading && popularLoading} />

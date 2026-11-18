@@ -174,16 +174,16 @@ export function DonghuaHubPage() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 min-w-0">
       {/* 1. Donghua Hub Banner & Search */}
       <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#0c1a14] via-[#0f241c] to-[#0c1a14] border border-emerald-500/20 p-6 sm:p-8 shadow-2xl">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 text-center md:text-left">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-2 text-left">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider border border-emerald-500/30">
               <Tv className="w-3.5 h-3.5" />
               Katalog Lengkap Animasi 3D & 2D Tiongkok
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
               FAZURAVERSE <span className="text-emerald-400">DONGHUA</span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
@@ -238,7 +238,7 @@ export function DonghuaHubPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           <button
             onClick={() => handleTabChange('ongoing')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all border ${
               activeTab !== 'genres'
                 ? 'bg-emerald-500 text-black border-emerald-400'
                 : 'bg-[#111622] hover:bg-slate-800 text-slate-300 border-white/5'
@@ -253,7 +253,7 @@ export function DonghuaHubPage() {
               <button
                 key={chip}
                 onClick={() => handleGenreSelect(chip)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap capitalize transition-all border ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 capitalize transition-all border ${
                   isSelected
                     ? 'bg-emerald-500 text-black font-bold border-emerald-400 shadow-md shadow-emerald-500/20'
                     : 'bg-[#111622] hover:bg-slate-800 text-slate-300 border-white/5'
@@ -271,7 +271,7 @@ export function DonghuaHubPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs sm:text-sm font-bold">
           <button
             onClick={() => handleTabChange('ongoing')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
               activeTab === 'ongoing' && !searchParam
                 ? 'bg-emerald-500 text-black shadow-md shadow-emerald-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -283,7 +283,7 @@ export function DonghuaHubPage() {
 
           <button
             onClick={() => handleTabChange('completed')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
               activeTab === 'completed' && !searchParam
                 ? 'bg-emerald-500 text-black shadow-md shadow-emerald-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -295,7 +295,7 @@ export function DonghuaHubPage() {
 
           <button
             onClick={() => handleTabChange('schedule')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
               activeTab === 'schedule' && !searchParam
                 ? 'bg-emerald-500 text-black shadow-md shadow-emerald-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -307,7 +307,7 @@ export function DonghuaHubPage() {
 
           <button
             onClick={() => handleTabChange('genres')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
               activeTab === 'genres' && !searchParam
                 ? 'bg-emerald-500 text-black shadow-md shadow-emerald-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -363,12 +363,12 @@ export function DonghuaHubPage() {
       ) : activeTab === 'schedule' ? (
         /* SECTION B: Weekly Schedule View (Senin - Minggu) */
         <div className="space-y-6">
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+          <div className="flex items-center justify-start gap-2 overflow-x-auto pb-2 scrollbar-none w-full">
             {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map((day) => (
               <button
                 key={day}
                 onClick={() => setSelectedDay(day)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold shrink-0 whitespace-nowrap transition-all border ${
                   selectedDay.toLowerCase() === day.toLowerCase()
                     ? 'bg-emerald-500 text-black border-emerald-400 shadow-md shadow-emerald-500/20'
                     : 'bg-[#111622] hover:bg-slate-800 text-slate-300 border-white/5'
@@ -498,7 +498,7 @@ export function DonghuaHubPage() {
 
           {/* Interactive Pagination Toolbar */}
           {totalPages > 1 && (
-            <div className="space-y-4 pt-8 border-t border-white/5">
+            <div className="w-full space-y-4 pt-8 border-t border-white/5">
               <div className="flex items-center justify-center gap-1 sm:gap-2 max-w-full overflow-x-auto scrollbar-none px-1 py-1">
                 <button
                   onClick={() => handlePageChange(Math.max(1, page - 1))}

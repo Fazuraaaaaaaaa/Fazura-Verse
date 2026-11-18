@@ -105,7 +105,7 @@ export function SearchPage() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 min-w-0">
       {/* Search Header */}
       <div className="max-w-3xl mx-auto text-center space-y-4">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-indigo/10 border border-accent-indigo/20 text-accent-indigo text-xs font-bold uppercase tracking-wider">
@@ -187,10 +187,10 @@ export function SearchPage() {
             </div>
 
             {/* Media Filter Tabs */}
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-[#111622] border border-white/5 text-xs font-semibold overflow-x-auto">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-[#111622] border border-white/5 text-xs font-semibold overflow-x-auto scrollbar-none max-w-full">
               <button
                 onClick={() => setActiveTab('all')}
-                className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap shrink-0 ${
                   activeTab === 'all'
                     ? 'bg-white/10 text-white'
                     : 'text-slate-400 hover:text-white'
@@ -200,7 +200,7 @@ export function SearchPage() {
               </button>
               <button
                 onClick={() => setActiveTab('manga')}
-                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'manga'
                     ? 'bg-indigo-600 text-white'
                     : 'text-slate-400 hover:text-white'
@@ -211,7 +211,7 @@ export function SearchPage() {
               </button>
               <button
                 onClick={() => setActiveTab('anime')}
-                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'anime'
                     ? 'bg-amber-500 text-black font-bold'
                     : 'text-slate-400 hover:text-white'
@@ -222,7 +222,7 @@ export function SearchPage() {
               </button>
               <button
                 onClick={() => setActiveTab('donghua')}
-                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'donghua'
                     ? 'bg-emerald-500 text-black font-bold'
                     : 'text-slate-400 hover:text-white'
@@ -233,7 +233,7 @@ export function SearchPage() {
               </button>
               <button
                 onClick={() => setActiveTab('movie')}
-                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'movie'
                     ? 'bg-rose-600 text-white font-bold'
                     : 'text-slate-400 hover:text-white'
@@ -244,7 +244,7 @@ export function SearchPage() {
               </button>
               <button
                 onClick={() => setActiveTab('music')}
-                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'music'
                     ? 'bg-[#1DB954] text-black font-bold shadow-md shadow-[#1DB954]/20'
                     : 'text-slate-400 hover:text-white'

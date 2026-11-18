@@ -100,7 +100,7 @@ export function AnimeWatchPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6 min-w-0">
       {/* Top Header & Episode Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
         <div className="flex items-center gap-3 min-w-0">
@@ -122,7 +122,7 @@ export function AnimeWatchPage() {
         </div>
 
         {/* Previous & Next Episode Navigation */}
-        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end shrink-0">
           <button
             onClick={() => {
               setCustomStreamUrl('');
@@ -132,7 +132,7 @@ export function AnimeWatchPage() {
               }
             }}
             disabled={!episode.hasPrev || !episode.prevEpisodeId}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-card hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold border border-white/5"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-card hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold border border-white/5"
           >
             <ChevronLeft className="w-4 h-4" />
             Prev Ep
@@ -147,7 +147,7 @@ export function AnimeWatchPage() {
               }
             }}
             disabled={!episode.hasNext || !episode.nextEpisodeId}
-            className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-30 text-black text-xs font-bold"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-30 text-black text-xs font-bold"
           >
             Next Ep
             <ChevronRight className="w-4 h-4" />
@@ -224,7 +224,7 @@ export function AnimeWatchPage() {
       {/* Server & Quality Selection Bar (Otakudesu & Samehadaku) */}
       {episode.servers && episode.servers.length > 0 && (
         <div className="p-5 rounded-2xl bg-card border border-white/10 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-white/5 pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-white/5 pb-3">
             <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
               <Server className="w-4 h-4 text-amber-400" />
               Pilihan Kualitas & Server Pemutar (1080p Mega, 720p HD, 480p SD, 360p Blogspot)

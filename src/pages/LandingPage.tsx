@@ -161,7 +161,7 @@ export function LandingPage() {
   }, [spotlightChannel, topAnime, topManga, topDonghua, topMovie]);
 
   return (
-    <div className="min-h-screen bg-[#080a10] text-slate-100 pb-20">
+    <div className="min-h-screen bg-[#080a10] text-slate-100 pb-20 w-full overflow-x-hidden min-w-0">
       {/* 1. Cinematic Media Billboard Hero */}
       <div className="relative w-full min-h-[480px] sm:min-h-[580px] flex items-end overflow-hidden border-b border-white/5">
         {/* Background Backdrop Artwork */}

@@ -54,9 +54,9 @@ function Layout({ children }: { children: React.ReactNode }) {
   const isMusicPage = location.pathname.startsWith('/music');
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-slate-100 selection:bg-accent-indigo selection:text-white relative">
+    <div className="min-h-screen flex flex-col bg-background text-slate-100 selection:bg-accent-indigo selection:text-white relative w-full overflow-x-hidden min-w-0">
       {!isReaderPage && <Navbar />}
-      <main className="flex-1 flex flex-col">{children}</main>
+      <main className="flex-1 flex flex-col w-full min-w-0">{children}</main>
       {!isReaderPage && !isMusicPage && <Footer />}
     </div>
   );

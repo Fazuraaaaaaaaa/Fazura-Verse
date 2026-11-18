@@ -88,7 +88,7 @@ export function AnimeDetailPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 min-w-0">
       {/* Header Backdrop */}
       <div className="relative rounded-3xl overflow-hidden bg-card border border-white/10 p-6 sm:p-10 shadow-2xl">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -178,11 +178,11 @@ export function AnimeDetailPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center md:justify-start gap-3 pt-3">
               {firstEpisode && (
                 <Link
                   to={`/anime/watch/${provider || 'otakudesu'}/${firstEpisode.episodeId}`}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-sm shadow-lg shadow-amber-500/20 transition-all transform hover:scale-[1.02]"
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-sm shadow-lg shadow-amber-500/20 transition-all transform hover:scale-[1.02] text-center"
                 >
                   <Play className="w-4 h-4 fill-black" />
                   Nonton {formatEpisodeName(firstEpisode.title, firstEpisode.episodeId)}
@@ -190,7 +190,7 @@ export function AnimeDetailPage() {
               )}
               <Link
                 to="/anime"
-                className="flex items-center gap-2 px-4 py-3 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-white/10"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-white/10 text-center"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Kembali ke Hub

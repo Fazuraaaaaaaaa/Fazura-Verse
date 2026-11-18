@@ -300,7 +300,7 @@ export function MovieHubPage() {
                 onClick={() => {
                   updateParams({ collection: tab.id, page: 1 });
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 transition-all ${
                   isActive
                     ? 'bg-rose-600 text-white shadow-md shadow-rose-600/25 border border-rose-500'
                     : 'bg-card text-slate-300 hover:text-white hover:bg-slate-800 border border-white/5'
@@ -318,7 +318,7 @@ export function MovieHubPage() {
           <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
             <button
               onClick={() => updateParams({ genre: undefined, page: 1 })}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
                 !selectedGenre
                   ? 'bg-white/20 text-white font-bold border border-white/30'
                   : 'bg-card/70 text-slate-400 hover:text-white border border-white/5'
@@ -332,7 +332,7 @@ export function MovieHubPage() {
                 <button
                   key={g}
                   onClick={() => updateParams({ genre: isSelected ? undefined : g, page: 1 })}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
                     isSelected
                       ? 'bg-rose-500 text-white font-bold shadow-sm'
                       : 'bg-card/70 text-slate-400 hover:text-white hover:bg-card border border-white/5'

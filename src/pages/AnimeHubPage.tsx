@@ -42,6 +42,7 @@ export function AnimeHubPage() {
   const [selectedGenre, setSelectedGenre] = useState<string>(genreParam);
   const [selectedDay, setSelectedDay] = useState<string>('Senin');
   const [searchInput, setSearchInput] = useState(searchParam);
+  const [jumpPageInput, setJumpPageInput] = useState('');
 
   // Sync state with search params
   useEffect(() => {
@@ -125,6 +126,15 @@ export function AnimeHubPage() {
     setSearchParams(currentParams);
   };
 
+  const handleJumpPage = (e: React.FormEvent) => {
+    e.preventDefault();
+    const target = parseInt(jumpPageInput, 10);
+    if (!isNaN(target) && target >= 1 && target <= currentPagination.totalPages) {
+      handlePageChange(target);
+      setJumpPageInput('');
+    }
+  };
+
   const handleGenreSelect = (genreId: string) => {
     setSelectedGenre(genreId);
     setActiveTab('genres');
@@ -172,16 +182,16 @@ export function AnimeHubPage() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 min-w-0">
       {/* 1. Anime Hub Banner & Search */}
       <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#111622] via-[#141b2a] to-[#111622] border border-white/10 p-6 sm:p-8 shadow-2xl">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 text-center md:text-left">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-2 text-left">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold uppercase tracking-wider border border-amber-500/30">
               <Film className="w-3.5 h-3.5" />
               Katalog Lengkap Ribuan Judul Anime
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
               FAZURAVERSE <span className="text-amber-400">ANIME</span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
@@ -236,7 +246,7 @@ export function AnimeHubPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           <button
             onClick={() => handleTabChange('ongoing')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all border ${
               activeTab !== 'genres'
                 ? 'bg-amber-500 text-black border-amber-400'
                 : 'bg-[#111622] hover:bg-slate-800 text-slate-300 border-white/5'
@@ -251,7 +261,7 @@ export function AnimeHubPage() {
               <button
                 key={chip}
                 onClick={() => handleGenreSelect(chip)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap capitalize transition-all border ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 capitalize transition-all border ${
                   isSelected
                     ? 'bg-amber-500 text-black font-bold border-amber-400 shadow-md shadow-amber-500/20'
                     : 'bg-[#111622] hover:bg-slate-800 text-slate-300 border-white/5'
@@ -269,7 +279,7 @@ export function AnimeHubPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs sm:text-sm font-bold">
           <button
             onClick={() => handleTabChange('ongoing')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
               activeTab === 'ongoing' && !searchParam
                 ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -281,19 +291,19 @@ export function AnimeHubPage() {
 
           <button
             onClick={() => handleTabChange('completed')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
               activeTab === 'completed' && !searchParam
                 ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
             <CheckCircle className="w-4 h-4" />
-            Tamat (67 Hal / ~1.670+ Judul)
+            Tamat (Completed • 67 Hal)
           </button>
 
           <button
             onClick={() => handleTabChange('genres')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
               activeTab === 'genres' && !searchParam
                 ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -305,7 +315,7 @@ export function AnimeHubPage() {
 
           <button
             onClick={() => handleTabChange('schedule')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
               activeTab === 'schedule' && !searchParam
                 ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -361,12 +371,12 @@ export function AnimeHubPage() {
       ) : activeTab === 'schedule' ? (
         /* SECTION B: Schedule View (Senin - Minggu) */
         <div className="space-y-6">
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+          <div className="flex items-center justify-start gap-2 overflow-x-auto pb-2 scrollbar-none w-full">
             {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map((day) => (
               <button
                 key={day}
                 onClick={() => setSelectedDay(day)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold shrink-0 whitespace-nowrap transition-all border ${
                   selectedDay.toLowerCase() === day.toLowerCase()
                     ? 'bg-amber-500 text-black border-amber-400 shadow-md shadow-amber-500/20'
                     : 'bg-[#111622] hover:bg-slate-800 text-slate-300 border-white/5'
@@ -475,73 +485,99 @@ export function AnimeHubPage() {
 
           {/* Interactive Pagination Toolbar */}
           {currentPagination.totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-8 border-t border-white/5">
-              <button
-                onClick={() => handlePageChange(Math.max(1, page - 1))}
-                disabled={page <= 1 || isLoading}
-                className="flex items-center gap-1 px-4 py-2 rounded-xl bg-[#111622] hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold border border-white/5 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Sebelumnya
-              </button>
-
-              {/* Page Number Pills */}
-              <div className="flex items-center gap-1">
-                {page > 2 && (
-                  <button
-                    onClick={() => handlePageChange(1)}
-                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5"
-                  >
-                    1
-                  </button>
-                )}
-
-                {page > 3 && <span className="text-slate-600 px-1">...</span>}
-
-                {page > 1 && (
-                  <button
-                    onClick={() => handlePageChange(page - 1)}
-                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5"
-                  >
-                    {page - 1}
-                  </button>
-                )}
-
-                <button className="w-9 h-9 rounded-xl bg-amber-500 text-black text-xs font-black shadow-md shadow-amber-500/30">
-                  {page}
+            <div className="w-full space-y-4 pt-8 border-t border-white/5">
+              <div className="flex items-center justify-center gap-1 sm:gap-2 max-w-full overflow-x-auto scrollbar-none px-1 py-1">
+                <button
+                  onClick={() => handlePageChange(Math.max(1, page - 1))}
+                  disabled={page <= 1 || isLoading}
+                  className="flex items-center gap-1 px-2.5 sm:px-4 py-2 rounded-xl bg-[#111622] hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold border border-white/5 transition-colors shrink-0"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Sebelumnya</span>
                 </button>
 
-                {page < currentPagination.totalPages && (
-                  <button
-                    onClick={() => handlePageChange(page + 1)}
-                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5"
-                  >
-                    {page + 1}
-                  </button>
-                )}
+                {/* Page Number Pills */}
+                <div className="flex items-center gap-1 shrink-0">
+                  {page > 2 && (
+                    <button
+                      onClick={() => handlePageChange(1)}
+                      className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
+                    >
+                      1
+                    </button>
+                  )}
 
-                {page < currentPagination.totalPages - 2 && (
-                  <span className="text-slate-600 px-1">...</span>
-                )}
+                  {page > 3 && <span className="text-slate-600 px-0.5 sm:px-1 text-xs">...</span>}
 
-                {page < currentPagination.totalPages - 1 && (
-                  <button
-                    onClick={() => handlePageChange(currentPagination.totalPages)}
-                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5"
-                  >
-                    {currentPagination.totalPages}
+                  {page > 1 && (
+                    <button
+                      onClick={() => handlePageChange(page - 1)}
+                      className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
+                    >
+                      {page - 1}
+                    </button>
+                  )}
+
+                  <button className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-amber-500 text-black text-xs font-black shadow-md shadow-amber-500/30 shrink-0">
+                    {page}
                   </button>
-                )}
+
+                  {page < currentPagination.totalPages && (
+                    <button
+                      onClick={() => handlePageChange(page + 1)}
+                      className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
+                    >
+                      {page + 1}
+                    </button>
+                  )}
+
+                  {page < currentPagination.totalPages - 2 && (
+                    <span className="text-slate-600 px-0.5 sm:px-1 text-xs">...</span>
+                  )}
+
+                  {page < currentPagination.totalPages - 1 && (
+                    <button
+                      onClick={() => handlePageChange(currentPagination.totalPages)}
+                      className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
+                    >
+                      {currentPagination.totalPages}
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => handlePageChange(Math.min(currentPagination.totalPages, page + 1))}
+                  disabled={page >= currentPagination.totalPages || isLoading}
+                  className="flex items-center gap-1 px-2.5 sm:px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-30 text-black text-xs font-bold transition-colors shadow shrink-0"
+                >
+                  <span className="hidden sm:inline">Selanjutnya</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
 
-              <button
-                onClick={() => handlePageChange(Math.min(currentPagination.totalPages, page + 1))}
-                disabled={page >= currentPagination.totalPages || isLoading}
-                className="flex items-center gap-1 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-30 text-black text-xs font-bold transition-colors shadow"
-              >
-                Selanjutnya
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              {currentPagination.totalPages > 3 && (
+                <form
+                  onSubmit={handleJumpPage}
+                  className="flex items-center justify-center gap-2 text-xs text-slate-400"
+                >
+                  <span>Lompat ke halaman:</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={currentPagination.totalPages}
+                    placeholder={String(page)}
+                    value={jumpPageInput}
+                    onChange={(e) => setJumpPageInput(e.target.value)}
+                    className="w-16 px-2.5 py-1.5 rounded-lg bg-[#111622] border border-white/10 text-white text-center focus:border-amber-500 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-amber-500 hover:text-black text-white font-semibold transition-colors border border-white/5"
+                  >
+                    Buka
+                  </button>
+                </form>
+              )}
             </div>
           )}
         </div>

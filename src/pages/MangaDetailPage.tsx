@@ -122,7 +122,7 @@ export function MangaDetailPage() {
       : 'bg-indigo-500/90 text-white border-indigo-400/40';
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 min-w-0">
       {/* Backdrop Header */}
       <div className="relative rounded-3xl overflow-hidden bg-card border border-white/10 p-6 sm:p-10 shadow-2xl">
         {/* Blurred Cover Backdrop */}
@@ -247,12 +247,12 @@ export function MangaDetailPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center md:justify-start gap-3 pt-4">
               {/* Continue Reading or Start Reading */}
               {lastRead ? (
                 <Link
                   to={`/chapter/${lastRead.chapterSlug}`}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-accent-indigo hover:bg-accent-indigo/90 text-white font-bold text-sm shadow-lg shadow-accent-indigo/30 transition-all transform hover:scale-[1.02]"
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-accent-indigo hover:bg-accent-indigo/90 text-white font-bold text-sm shadow-lg shadow-accent-indigo/30 transition-all transform hover:scale-[1.02] text-center"
                 >
                   <PlayCircle className="w-4 h-4" />
                   Continue {lastRead.chapterTitle}
@@ -260,7 +260,7 @@ export function MangaDetailPage() {
               ) : firstChapter ? (
                 <Link
                   to={`/chapter/${firstChapter.slug}`}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-accent-indigo hover:bg-accent-indigo/90 text-white font-bold text-sm shadow-lg shadow-accent-indigo/30 transition-all transform hover:scale-[1.02]"
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-accent-indigo hover:bg-accent-indigo/90 text-white font-bold text-sm shadow-lg shadow-accent-indigo/30 transition-all transform hover:scale-[1.02] text-center"
                 >
                   <BookOpen className="w-4 h-4" />
                   Start Reading (Ch. 1)
@@ -278,7 +278,7 @@ export function MangaDetailPage() {
                     type: manga.type,
                   })
                 }
-                className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold border transition-all ${
+                className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold border transition-all text-center ${
                   bookmarked
                     ? 'bg-accent-cyan/15 border-accent-cyan/30 text-accent-cyan'
                     : 'bg-card hover:bg-slate-800 text-slate-200 border-white/10 hover:text-white'

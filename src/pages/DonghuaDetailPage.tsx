@@ -95,7 +95,7 @@ export function DonghuaDetailPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 min-w-0">
       {/* Header Backdrop */}
       <div className="relative rounded-3xl overflow-hidden bg-card border border-white/10 p-6 sm:p-10 shadow-2xl">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -183,11 +183,11 @@ export function DonghuaDetailPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center md:justify-start gap-3 pt-3">
               {latestEpisode && (
                 <Link
                   to={`/donghua/watch/${latestEpisode.slug}`}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-sm shadow-lg shadow-emerald-500/20 transition-all transform hover:scale-[1.02]"
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-sm shadow-lg shadow-emerald-500/20 transition-all transform hover:scale-[1.02] text-center"
                 >
                   <Play className="w-4 h-4 fill-black" />
                   Episode Terbaru
@@ -196,7 +196,7 @@ export function DonghuaDetailPage() {
               {firstEpisode && (
                 <Link
                   to={`/donghua/watch/${firstEpisode.slug}`}
-                  className="flex items-center gap-2 px-5 py-3 rounded-xl bg-card hover:bg-slate-800 text-slate-200 text-xs font-semibold border border-white/10"
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-card hover:bg-slate-800 text-slate-200 text-xs font-semibold border border-white/10 text-center"
                 >
                   <Play className="w-3.5 h-3.5" />
                   Episode 1
@@ -204,7 +204,7 @@ export function DonghuaDetailPage() {
               )}
               <Link
                 to="/donghua"
-                className="flex items-center gap-2 px-4 py-3 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-white/10"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-white/10 text-center"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Kembali ke Hub

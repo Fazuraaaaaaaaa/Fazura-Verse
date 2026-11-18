@@ -64,7 +64,7 @@ export function DonghuaWatchPage() {
     slug?.replace(/-episode-\d+.*$/i, '');
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6 min-w-0">
       {/* Top Breadcrumb & Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
         <div className="flex items-center gap-3 min-w-0">
@@ -86,14 +86,14 @@ export function DonghuaWatchPage() {
         </div>
 
         {/* Next / Prev Navigation */}
-        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end shrink-0">
           <button
             onClick={() =>
               episode.navigation.prevSlug &&
               navigate(`/donghua/watch/${episode.navigation.prevSlug}`)
             }
             disabled={!episode.navigation.prevSlug}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-card hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold border border-white/5"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-card hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold border border-white/5"
           >
             <ChevronLeft className="w-4 h-4" />
             Prev Ep
@@ -105,7 +105,7 @@ export function DonghuaWatchPage() {
               navigate(`/donghua/watch/${episode.navigation.nextSlug}`)
             }
             disabled={!episode.navigation.nextSlug}
-            className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 text-black text-xs font-bold"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 text-black text-xs font-bold"
           >
             Next Ep
             <ChevronRight className="w-4 h-4" />
@@ -203,21 +203,23 @@ export function DonghuaWatchPage() {
           </h3>
           <div className="space-y-2">
             {Object.entries(episode.downloads).map(([quality, links]) => (
-              <div key={quality} className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="font-bold text-slate-300 w-28 uppercase">
+              <div key={quality} className="flex flex-col sm:flex-row sm:items-center gap-2 text-xs p-2.5 rounded-xl bg-surface/70 border border-white/5">
+                <span className="font-bold text-slate-300 sm:w-28 uppercase shrink-0">
                   {quality.replace('download_url_', '')}:
                 </span>
-                {Object.entries(links).map(([host, url]) => (
-                  <a
-                    key={host}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-2.5 py-1 rounded-lg bg-surface hover:bg-emerald-600/20 text-slate-300 hover:text-emerald-400 border border-white/5 transition-colors"
-                  >
-                    {host}
-                  </a>
-                ))}
+                <div className="flex flex-wrap items-center gap-2">
+                  {Object.entries(links).map(([host, url]) => (
+                    <a
+                      key={host}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 rounded-lg bg-card hover:bg-emerald-600/20 text-slate-300 hover:text-emerald-400 border border-white/5 transition-colors"
+                    >
+                      {host}
+                    </a>
+                  ))}
+                </div>
               </div>
             ))}
           </div>

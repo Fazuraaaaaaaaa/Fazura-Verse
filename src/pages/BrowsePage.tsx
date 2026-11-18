@@ -160,12 +160,12 @@ export function BrowsePage() {
   const hasNextPage = data?.hasNextPage || false;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 min-w-0">
       {/* Page Header & Search */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/5 pb-6">
         <div className="space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-black text-white flex items-center gap-3">
-            <Compass className="w-8 h-8 text-indigo-400" />
+          <h1 className="text-2xl sm:text-4xl font-black text-white flex items-center gap-3">
+            <Compass className="w-7 h-7 sm:w-8 sm:h-8 text-indigo-400 shrink-0" />
             Manga & Komik Directory
           </h1>
           <p className="text-sm text-slate-400">
@@ -205,7 +205,7 @@ export function BrowsePage() {
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-white/5">
         <button
           onClick={() => handleTabChange('all')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 whitespace-nowrap ${
             activeTab === 'all' && !selectedGenre
               ? 'bg-accent-indigo text-white shadow-md shadow-accent-indigo/20'
               : 'bg-card/70 hover:bg-card text-slate-300 hover:text-white'
@@ -217,7 +217,7 @@ export function BrowsePage() {
 
         <button
           onClick={() => handleTabChange('latest')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 whitespace-nowrap ${
             activeTab === 'latest'
               ? 'bg-accent-indigo text-white shadow-md shadow-accent-indigo/20'
               : 'bg-card/70 hover:bg-card text-slate-300 hover:text-white'
@@ -229,7 +229,7 @@ export function BrowsePage() {
 
         <button
           onClick={() => handleTabChange('popular')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 whitespace-nowrap ${
             activeTab === 'popular'
               ? 'bg-accent-indigo text-white shadow-md shadow-accent-indigo/20'
               : 'bg-card/70 hover:bg-card text-slate-300 hover:text-white'
@@ -241,7 +241,7 @@ export function BrowsePage() {
 
         <button
           onClick={() => handleTabChange('manga')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 whitespace-nowrap ${
             activeTab === 'manga'
               ? 'bg-accent-indigo text-white shadow-md shadow-accent-indigo/20'
               : 'bg-card/70 hover:bg-card text-slate-300 hover:text-white'
@@ -253,7 +253,7 @@ export function BrowsePage() {
 
         <button
           onClick={() => handleTabChange('manhwa')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 whitespace-nowrap ${
             activeTab === 'manhwa'
               ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
               : 'bg-card/70 hover:bg-card text-slate-300 hover:text-white'
@@ -265,7 +265,7 @@ export function BrowsePage() {
 
         <button
           onClick={() => handleTabChange('manhua')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 whitespace-nowrap ${
             activeTab === 'manhua'
               ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
               : 'bg-card/70 hover:bg-card text-slate-300 hover:text-white'
@@ -277,7 +277,7 @@ export function BrowsePage() {
 
         <button
           onClick={() => handleTabChange('colored')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 whitespace-nowrap ${
             activeTab === 'colored'
               ? 'bg-accent-indigo text-white shadow-md shadow-accent-indigo/20'
               : 'bg-card/70 hover:bg-card text-slate-300 hover:text-white'
@@ -289,7 +289,7 @@ export function BrowsePage() {
 
         <button
           onClick={() => handleTabChange('genres')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 whitespace-nowrap ${
             activeTab === 'genres' || selectedGenre
               ? 'bg-accent-indigo text-white shadow-md shadow-accent-indigo/20'
               : 'bg-card/70 hover:bg-card text-slate-300 hover:text-white'
@@ -353,7 +353,7 @@ export function BrowsePage() {
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="space-y-4 pt-8 border-t border-white/5">
+          <div className="w-full space-y-4 pt-8 border-t border-white/5">
             <div className="flex items-center justify-center gap-1 sm:gap-2 max-w-full overflow-x-auto scrollbar-none px-1 py-1">
               <button
                 onClick={() => handlePageChange(Math.max(1, page - 1))}
