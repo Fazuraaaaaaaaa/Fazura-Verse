@@ -13,6 +13,7 @@ import {
   X,
   Loader2,
   Clapperboard,
+  Headphones,
 } from 'lucide-react';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { search as searchManga } from '../services/api';
@@ -169,7 +170,7 @@ export function Navbar() {
               FAZURA<span className="text-accent-indigo">VERSE</span>
             </span>
             <span className="text-[9px] text-slate-400 -mt-1 font-bold tracking-wider uppercase">
-              Manga • Anime • Donghua • Movie
+              Manga • Anime • Donghua • Movie • Music
             </span>
           </div>
         </Link>
@@ -244,6 +245,20 @@ export function Navbar() {
           >
             <Clapperboard className="w-4 h-4 text-rose-400" />
             Movies
+          </NavLink>
+
+          <NavLink
+            to="/music"
+            className={({ isActive }) =>
+              `px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+                isActive
+                  ? 'bg-[#1DB954]/20 text-[#1DB954] font-bold border border-[#1DB954]/30'
+                  : 'text-slate-300 hover:text-white hover:bg-card'
+              }`
+            }
+          >
+            <Headphones className="w-4 h-4 text-[#1DB954]" />
+            Music
           </NavLink>
         </nav>
 
@@ -437,6 +452,15 @@ export function Navbar() {
           >
             <Clapperboard className="w-4 h-4 text-rose-400" />
             Movie & Series (Bioskop)
+          </NavLink>
+
+          <NavLink
+            to="/music"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-200 hover:bg-card"
+          >
+            <Headphones className="w-4 h-4 text-[#1DB954]" />
+            Musik (SONORA Spotify Player)
           </NavLink>
 
           <NavLink

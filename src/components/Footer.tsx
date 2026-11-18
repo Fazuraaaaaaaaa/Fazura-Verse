@@ -53,6 +53,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/music" className="hover:text-[#1DB954] transition-colors">
+                  Musik & Lagu (SONORA Player)
+                </Link>
+              </li>
+              <li>
                 <Link to="/manga" className="hover:text-accent-indigo transition-colors">
                   Direktori Manga Lengkap
                 </Link>
@@ -86,7 +91,7 @@ export function Footer() {
         <div className="border-t border-white/5 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>© {new Date().getFullYear()} FAZURAVERSE. All rights reserved.</p>
           <p className="flex items-center gap-1">
-            Manga • Anime • Donghua Digital Hub
+            Manga • Anime • Donghua • Movie • Music Digital Hub
           </p>
         </div>
       </div>

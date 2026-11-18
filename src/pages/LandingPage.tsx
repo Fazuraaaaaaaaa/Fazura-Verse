@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Sparkles,
   Clapperboard,
+  Headphones,
 } from 'lucide-react';
 import { getLatest, getPopular } from '../services/api';
 import { getOtakudesuHome } from '../services/animeApi';
@@ -22,8 +23,8 @@ import { getMovies } from '../services/movieApi';
 
 export function LandingPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeMediaTab, setActiveMediaTab] = useState<'all' | 'manga' | 'anime' | 'donghua' | 'movie'>('all');
-  const [spotlightChannel, setSpotlightChannel] = useState<'anime' | 'manga' | 'donghua' | 'movie'>('movie');
+  const [activeMediaTab, setActiveMediaTab] = useState<'all' | 'manga' | 'anime' | 'donghua' | 'movie' | 'music'>('all');
+  const [spotlightChannel, setSpotlightChannel] = useState<'anime' | 'manga' | 'donghua' | 'movie' | 'music'>('movie');
   const navigate = useNavigate();
 
   // Queries for live content feeds
@@ -117,6 +118,23 @@ export function LandingPage() {
       };
     }
 
+    if (spotlightChannel === 'music') {
+      return {
+        title: 'Die With A Smile - Lady Gaga & Bruno Mars',
+        type: 'MUSIK • SPOTIFY-STYLE STREAMING',
+        tag: 'Spotlight Release',
+        description:
+          'Streaming musik modern YouTube Music API di SONORA: jutaan lagu hits internasional & Indonesia, playlist viral, audio background playback, lirik interaktif, dan kontrol pemutar Spotify Web Player.',
+        backdrop:
+          'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1600&q=80',
+        actionLink: '/music',
+        actionText: 'Putar Musik Sekarang',
+        channelLink: '/music',
+        channelText: 'Buka SONORA Player',
+        color: 'emerald',
+      };
+    }
+
     // Default to Anime Spotlight
     return {
       title: topAnime?.title || 'Psyren',
@@ -202,6 +220,17 @@ export function LandingPage() {
             >
               <Tv className="w-3.5 h-3.5" />
               Donghua Spotlight
+            </button>
+            <button
+              onClick={() => setSpotlightChannel('music')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                spotlightChannel === 'music'
+                  ? 'bg-[#1DB954] text-black shadow-md shadow-[#1DB954]/20'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Headphones className="w-3.5 h-3.5" />
+              Music Spotlight
             </button>
           </div>
 
@@ -300,7 +329,7 @@ export function LandingPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-5">
           {/* Channel 1: Manga */}
           <Link
             to="/manga"
@@ -422,6 +451,37 @@ export function LandingPage() {
             <div className="pt-6 mt-4 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-slate-300 group-hover:text-white">
               <span>Buka Saluran Movies</span>
               <ChevronRight className="w-4 h-4 text-rose-400 transform group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+
+          {/* Channel 5: Music (SONORA) */}
+          <Link
+            to="/music"
+            className="group relative rounded-2xl overflow-hidden bg-[#111622] border border-white/5 hover:border-[#1DB954]/50 transition-all duration-300 p-6 flex flex-col justify-between"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-xl bg-[#1DB954]/10 border border-[#1DB954]/20 flex items-center justify-center text-[#1DB954]">
+                  <Headphones className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#1DB954] bg-[#1DB954]/10 px-2.5 py-1 rounded-md border border-[#1DB954]/20">
+                  Spotify Style
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold text-white group-hover:text-[#1DB954] transition-colors">
+                  SONORA Music
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Streaming musik YouTube Music API: jutaan lagu, playlist trending, background playback, smart autoplay, lirik interaktif & mini player.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-6 mt-4 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-slate-300 group-hover:text-white">
+              <span>Buka Saluran Musik</span>
+              <ChevronRight className="w-4 h-4 text-[#1DB954] transform group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
         </div>

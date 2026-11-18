@@ -25,6 +25,8 @@ import { DonghuaWatchPage } from './pages/DonghuaWatchPage';
 import { MovieHubPage } from './pages/MovieHubPage';
 import { MovieDetailPage } from './pages/MovieDetailPage';
 import { MovieWatchPage } from './pages/MovieWatchPage';
+import { MusicHubPage } from './pages/MusicHubPage';
+import { FloatingMusicWidget } from './components/FloatingMusicWidget';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,12 +52,14 @@ function ScrollToTop() {
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const isReaderPage = location.pathname.startsWith('/chapter/');
+  const isMusicPage = location.pathname.startsWith('/music');
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-slate-100 selection:bg-accent-indigo selection:text-white">
+    <div className="min-h-screen flex flex-col bg-background text-slate-100 selection:bg-accent-indigo selection:text-white relative">
       {!isReaderPage && <Navbar />}
-      <main className="flex-1">{children}</main>
-      {!isReaderPage && <Footer />}
+      <main className="flex-1 flex flex-col">{children}</main>
+      {!isReaderPage && !isMusicPage && <Footer />}
+      <FloatingMusicWidget />
     </div>
   );
 }
@@ -92,6 +96,9 @@ export default function App() {
             <Route path="/movies/:id" element={<MovieDetailPage />} />
             <Route path="/movies/watch/:id" element={<MovieWatchPage />} />
             <Route path="/movies/:id/watch" element={<MovieWatchPage />} />
+
+            {/* Music Portal (SONORA Spotify-Style Music Streaming) */}
+            <Route path="/music" element={<MusicHubPage />} />
 
             {/* Personal Library */}
             <Route path="/bookmarks" element={<BookmarksPage />} />
