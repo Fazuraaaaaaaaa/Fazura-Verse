@@ -55,7 +55,7 @@ export default function PlaylistPage() {
     return () => {
       isMounted = false;
     };
-  }, [id, userPlaylist]);
+  }, [id, userPlaylist?.id, userPlaylist?.tracks?.length, userPlaylist?.title]);
 
   if (loading) {
     return (

@@ -8,38 +8,47 @@ function TopNavContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [searchValue, setSearchValue] = useState(searchParams.get('q') || '');
+  const [searchValue, setSearchValue] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const isSearchPage = pathname === '/search';
 
-  // Sync input with url
+  // Sync input with url when on search page, or clear when leaving search page
   useEffect(() => {
     if (isSearchPage) {
       setSearchValue(searchParams.get('q') || '');
+    } else {
+      setSearchValue('');
     }
-  }, [searchParams, isSearchPage]);
+  }, [pathname, searchParams, isSearchPage]);
 
-  // Handle live debounce
-  useEffect(() => {
-    if (!isSearchPage && searchValue) {
-      const timer = setTimeout(() => {
-        router.push(`/search?q=${encodeURIComponent(searchValue)}`);
-      }, 300);
-      return () => clearTimeout(timer);
-    } else if (isSearchPage) {
-      const timer = setTimeout(() => {
-        const currentQ = searchParams.get('q') || '';
-        if (searchValue !== currentQ) {
-          if (searchValue.trim()) {
-            router.replace(`/search?q=${encodeURIComponent(searchValue.trim())}`);
-          } else {
-            router.replace('/search');
-          }
-        }
-      }, 300);
-      return () => clearTimeout(timer);
+  // Handle typing in search input
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchValue(val);
+
+    // If typing from another page, navigate to search page
+    if (!isSearchPage && val.trim()) {
+      router.push(`/search?q=${encodeURIComponent(val.trim())}`);
     }
+  };
+
+  // Debounced search ONLY when actively on search page
+  useEffect(() => {
+    if (!isSearchPage) return;
+
+    const timer = setTimeout(() => {
+      const currentQ = searchParams.get('q') || '';
+      if (searchValue !== currentQ) {
+        if (searchValue.trim()) {
+          router.replace(`/search?q=${encodeURIComponent(searchValue.trim())}`);
+        } else {
+          router.replace('/search');
+        }
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [searchValue, isSearchPage, router, searchParams]);
 
   return (
@@ -73,7 +82,7 @@ function TopNavContent() {
           <input
             type="text"
             value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
+            onChange={handleInputChange}
             placeholder="What do you want to play?"
             className="w-full rounded-full bg-[#242424] py-2 pl-9 pr-8 text-xs sm:text-sm text-white placeholder-[#727272] transition-all hover:bg-[#2a2a2a] hover:ring-1 hover:ring-white/20 focus:bg-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-white"
           />
