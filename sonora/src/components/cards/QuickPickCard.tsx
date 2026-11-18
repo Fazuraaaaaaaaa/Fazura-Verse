@@ -43,11 +43,12 @@ export default function QuickPickCard({ track, playlistContext }: QuickPickCardP
       onClick={handlePlay}
       onContextMenu={handleContextMenu}
       className={cn(
-        'group relative flex items-center gap-3 sm:gap-4 overflow-hidden rounded bg-white/5 hover:bg-white/20 transition-all duration-300 cursor-pointer shadow-sm pr-3 sm:pr-4 select-none',
+        'group relative flex items-center gap-2.5 sm:gap-3.5 overflow-hidden rounded-md bg-white/5 hover:bg-white/15 active:bg-white/20 transition-all duration-200 cursor-pointer shadow-sm pr-2 sm:pr-3 select-none h-14 sm:h-16',
         isCurrentTrack && 'bg-white/15'
       )}
     >
-      <div className="relative h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 bg-[#282828] shadow-md">
+      {/* Square Artwork */}
+      <div className="relative h-14 w-14 sm:h-16 sm:w-16 flex-shrink-0 bg-[#282828] shadow">
         {track.thumbnail ? (
           <img
             src={track.thumbnail}
@@ -56,34 +57,37 @@ export default function QuickPickCard({ track, playlistContext }: QuickPickCardP
             loading="lazy"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-lg text-[#B3B3B3]">♪</div>
+          <div className="flex h-full w-full items-center justify-center text-base text-[#B3B3B3]">♪</div>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col justify-center min-w-0">
+      {/* Title & Artist */}
+      <div className="flex flex-1 flex-col justify-center min-w-0 pr-1">
         <span
           className={cn(
-            'font-bold text-sm sm:text-base line-clamp-2 transition-colors',
+            'font-bold text-xs sm:text-sm line-clamp-1 transition-colors leading-tight',
             isCurrentTrack ? 'text-[#1DB954]' : 'text-white'
           )}
+          title={track.title}
         >
           {track.title}
         </span>
-        <span className="text-xs text-[#B3B3B3] line-clamp-1 mt-0.5">
+        <span className="text-[11px] text-[#B3B3B3] line-clamp-1 mt-0.5 leading-tight">
           {track.artist}
         </span>
       </div>
 
+      {/* Floating Hover Play Button */}
       <div
         className={cn(
-          'transition-all duration-200 transform',
+          'transition-all duration-200 transform flex-shrink-0 hidden sm:block',
           isCurrentPlaying
             ? 'opacity-100 scale-100'
             : 'opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100'
         )}
       >
         <PlayButton
-          size="md"
+          size="sm"
           isPlaying={isCurrentPlaying}
           onClick={handlePlay}
         />

@@ -42,24 +42,24 @@ export default function SectionCarousel({
   if (!items || items.length === 0) return null;
 
   return (
-    <section className="relative my-6 sm:my-8">
+    <section className="relative my-5 sm:my-7">
       {/* Section Header */}
-      <div className="flex items-end justify-between mb-3 px-1">
+      <div className="flex items-end justify-between mb-2.5 sm:mb-3 px-1">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white hover:underline cursor-pointer">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white hover:underline cursor-pointer tracking-tight">
             {seeAllHref ? <Link href={seeAllHref}>{title}</Link> : title}
           </h2>
           {subtitle && (
-            <p className="text-xs sm:text-sm text-[#B3B3B3] mt-0.5 line-clamp-1">{subtitle}</p>
+            <p className="text-xs sm:text-sm text-[#B3B3B3] mt-0.5 line-clamp-1 leading-snug">{subtitle}</p>
           )}
         </div>
 
-        {/* Navigation arrow buttons */}
+        {/* Navigation Arrow Buttons */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {seeAllHref && (
             <Link
               href={seeAllHref}
-              className="text-xs sm:text-sm font-bold text-[#B3B3B3] hover:text-white hover:underline mr-2"
+              className="text-xs sm:text-sm font-bold text-[#B3B3B3] hover:text-white hover:underline mr-1.5"
             >
               Show all
             </Link>
@@ -68,42 +68,42 @@ export default function SectionCarousel({
             type="button"
             title="Scroll left"
             onClick={() => scroll('left')}
-            className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-black/40 hover:bg-white/10 text-white transition-colors"
+            className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-white transition-all active:scale-90"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={17} />
           </button>
           <button
             type="button"
             title="Scroll right"
             onClick={() => scroll('right')}
-            className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-black/40 hover:bg-white/10 text-white transition-colors"
+            className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-white transition-all active:scale-90"
           >
-            <ChevronRight size={18} />
+            <ChevronRight size={17} />
           </button>
         </div>
       </div>
 
-      {/* Horizontal Carousel */}
+      {/* Horizontal Carousel with Touch Momentum */}
       <div
         ref={scrollRef}
-        className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-none pb-2 pt-1 scroll-smooth snap-x"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        className="flex gap-3 sm:gap-4 lg:gap-5 overflow-x-auto scrollbar-none pb-2 pt-1 scroll-smooth snap-x snap-mandatory"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
       >
         {items.map((item, idx) => {
           return (
             <div
               key={`${item.id}-${idx}`}
-              className="w-36 sm:w-44 md:w-48 flex-shrink-0 snap-start"
+              className="w-36 sm:w-44 md:w-48 lg:w-52 flex-shrink-0 snap-start"
             >
               {type === 'tracks' && (
                 <TrackCard
                   track={item as Track}
-                  playlistContext={items.filter((i): i is Track => 'duration' in i)}
+                  playlistContext={items.filter((i) => 'duration' in i) as Track[]}
                 />
               )}
-              {type === 'artists' && <ArtistCard artist={item as Artist} />}
               {type === 'albums' && <AlbumCard album={item as Album} />}
               {type === 'playlists' && <PlaylistCard playlist={item as Playlist} />}
+              {type === 'artists' && <ArtistCard artist={item as Artist} />}
             </div>
           );
         })}

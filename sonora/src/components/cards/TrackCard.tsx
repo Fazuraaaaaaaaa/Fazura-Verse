@@ -44,16 +44,16 @@ export default function TrackCard({ track, playlistContext }: TrackCardProps) {
       onClick={handlePlay}
       onContextMenu={handleContextMenu}
       className={cn(
-        'group relative flex flex-col rounded-md bg-[#181818] p-3 sm:p-4 hover:bg-[#282828] transition-all duration-300 cursor-pointer shadow-md select-none',
-        isCurrentTrack && 'bg-[#242424]'
+        'group relative flex flex-col rounded-lg bg-[#181818] p-3 sm:p-3.5 hover:bg-[#282828] transition-all duration-300 cursor-pointer shadow-md select-none border border-white/[0.03] hover:border-white/[0.08] hover:shadow-2xl',
+        isCurrentTrack && 'bg-[#222]'
       )}
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-md bg-[#282828] mb-3 shadow">
+      <div className="relative aspect-square w-full overflow-hidden rounded-md bg-[#242424] mb-3 shadow">
         {track.thumbnail ? (
           <img
             src={track.thumbnail}
             alt={track.title}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
           />
         ) : (
@@ -65,8 +65,8 @@ export default function TrackCard({ track, playlistContext }: TrackCardProps) {
           className={cn(
             'absolute bottom-2 right-2 transition-all duration-300 ease-out transform',
             isCurrentPlaying
-              ? 'opacity-100 translate-y-0 shadow-xl'
-              : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-hover:shadow-xl'
+              ? 'opacity-100 translate-y-0 shadow-2xl scale-100'
+              : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 shadow-2xl scale-95 group-hover:scale-100'
           )}
         >
           <PlayButton
@@ -80,14 +80,14 @@ export default function TrackCard({ track, playlistContext }: TrackCardProps) {
       <div className="flex flex-col min-w-0">
         <span
           className={cn(
-            'font-bold text-sm sm:text-base truncate transition-colors',
+            'font-bold text-xs sm:text-sm truncate transition-colors leading-snug',
             isCurrentTrack ? 'text-[#1DB954]' : 'text-white'
           )}
           title={track.title}
         >
           {track.title}
         </span>
-        <span className="text-xs sm:text-sm text-[#B3B3B3] truncate mt-1">
+        <span className="text-[11px] sm:text-xs text-[#B3B3B3] truncate mt-1 leading-tight">
           {track.artist}
         </span>
       </div>

@@ -43,18 +43,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <TopNav />
 
           {/* Page Content */}
-          <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 pb-36 md:pb-28">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 sm:p-6 pb-36 md:pb-28 scroll-smooth">
             {children}
           </main>
         </div>
       </div>
 
-      {/* Persistent Bottom Player Bar */}
-      <div className="relative z-40 mb-14 md:mb-0">
-        <BottomPlayer />
-      </div>
+      {/* Persistent Bottom Player Bar (Dual-mode: mobile floating mini-bar & desktop 3-col player) */}
+      <BottomPlayer />
 
-      {/* Mobile Bottom Navigation Bar */}
+      {/* Mobile Bottom Navigation Bar (Fixed bottom-0 on mobile) */}
       <MobileNav />
 
       {/* Global Overlays & Modals */}
