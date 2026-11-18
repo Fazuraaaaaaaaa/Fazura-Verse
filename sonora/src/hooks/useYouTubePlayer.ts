@@ -22,15 +22,23 @@ export function useYouTubePlayer() {
     volume,
     isMuted,
     repeatMode,
+    playbackSpeed,
     seekRequest,
     setIsPlaying,
     setCurrentTime,
     setDuration,
     nextTrack,
     clearSeekRequest,
+    restorePlaybackState,
+    triggerAutoplay,
   } = usePlayerStore();
 
-  // Load YouTube IFrame API script once
+  // 1. Restore persistent playback state on initial app load
+  useEffect(() => {
+    restorePlaybackState();
+  }, [restorePlaybackState]);
+
+  // 2. Load YouTube IFrame API script once
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -43,7 +51,7 @@ export function useYouTubePlayer() {
     }
   }, []);
 
-  // Initialize YouTube Player
+  // 3. Initialize YouTube Player
   const initPlayer = useCallback(() => {
     if (typeof window === 'undefined' || !window.YT || !window.YT.Player) return;
     if (playerRef.current) return;
@@ -77,6 +85,12 @@ export function useYouTubePlayer() {
               p.setVolume(volume);
             }
 
+            if (playbackSpeed && playbackSpeed !== 1 && typeof p.setPlaybackRate === 'function') {
+              try {
+                p.setPlaybackRate(playbackSpeed);
+              } catch {}
+            }
+
             if (currentTrack?.youtubeId) {
               lastLoadedIdRef.current = currentTrack.youtubeId;
               if (isPlaying) {
@@ -92,12 +106,20 @@ export function useYouTubePlayer() {
             // YT.PlayerState: ENDED = 0, PLAYING = 1, PAUSED = 2, BUFFERING = 3, CUED = 5
             if (state === 0) {
               // ENDED
-              const currentRepeat = usePlayerStore.getState().repeatMode;
-              if (currentRepeat === 'one') {
+              const store = usePlayerStore.getState();
+              if (store.repeatMode === 'one') {
                 event.target.seekTo(0, true);
                 event.target.playVideo();
+              } else if (
+                store.queueIndex + 1 < store.queue.length ||
+                store.repeatMode === 'all' ||
+                store.isShuffle
+              ) {
+                store.nextTrack();
+              } else if (store.autoplay) {
+                store.triggerAutoplay();
               } else {
-                usePlayerStore.getState().nextTrack();
+                store.nextTrack();
               }
             } else if (state === 1) {
               // PLAYING
@@ -114,9 +136,16 @@ export function useYouTubePlayer() {
           onError: (event: any) => {
             console.warn('[SONORA Player] YouTube playback error code:', event.data);
             // Error 100: not found, 101/150: playback restricted by owner
-            // Automatically skip to next track after 1s
+            // Automatically skip or trigger autoplay
             setTimeout(() => {
-              usePlayerStore.getState().nextTrack();
+              const store = usePlayerStore.getState();
+              if (store.queueIndex + 1 < store.queue.length) {
+                store.nextTrack();
+              } else if (store.autoplay) {
+                store.triggerAutoplay();
+              } else {
+                store.nextTrack();
+              }
             }, 1000);
           },
         },
@@ -124,7 +153,7 @@ export function useYouTubePlayer() {
     } catch (err) {
       console.error('[SONORA Player] Failed to instantiate YouTube player:', err);
     }
-  }, [currentTrack?.youtubeId, isPlaying, isMuted, volume, setIsPlaying, setDuration]);
+  }, [currentTrack?.youtubeId, isPlaying, isMuted, volume, playbackSpeed, setIsPlaying, setDuration]);
 
   // Handle YouTube API ready callback
   useEffect(() => {
@@ -203,6 +232,19 @@ export function useYouTubePlayer() {
       // Ignore
     }
   }, [volume, isMuted, isPlayerReady]);
+
+  // Synchronize Playback Speed
+  useEffect(() => {
+    if (!isPlayerReady || !playerRef.current) return;
+
+    try {
+      if (typeof playerRef.current.setPlaybackRate === 'function') {
+        playerRef.current.setPlaybackRate(playbackSpeed);
+      }
+    } catch (err) {
+      // Ignore
+    }
+  }, [playbackSpeed, isPlayerReady]);
 
   // Synchronize Seek Requests
   useEffect(() => {

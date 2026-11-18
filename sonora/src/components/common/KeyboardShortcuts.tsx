@@ -3,10 +3,10 @@
 import React, { useEffect } from 'react';
 import { usePlayerStore } from '@/stores/usePlayerStore';
 import { useToastStore } from '@/stores/useToastStore';
+import { useShortcutsModalStore } from '@/stores/useShortcutsModalStore';
 
 export default function KeyboardShortcuts() {
   const {
-    currentTrack,
     isPlaying,
     isMuted,
     togglePlay,
@@ -17,6 +17,7 @@ export default function KeyboardShortcuts() {
     toggleQueue,
   } = usePlayerStore();
   const { showToast } = useToastStore();
+  const { toggleModal } = useShortcutsModalStore();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -28,6 +29,13 @@ export default function KeyboardShortcuts() {
           target.tagName === 'TEXTAREA' ||
           target.isContentEditable)
       ) {
+        return;
+      }
+
+      // ?: Toggle Shortcuts Modal
+      if (e.key === '?') {
+        e.preventDefault();
+        toggleModal();
         return;
       }
 
@@ -104,6 +112,7 @@ export default function KeyboardShortcuts() {
     toggleMute,
     toggleLyrics,
     toggleQueue,
+    toggleModal,
     showToast,
   ]);
 

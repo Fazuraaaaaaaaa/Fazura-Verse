@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, Music } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Image as ImageIcon } from 'lucide-react';
 import { useLibraryStore } from '@/stores/useLibraryStore';
 
 interface CreatePlaylistModalProps {
@@ -10,6 +10,7 @@ interface CreatePlaylistModalProps {
   playlistIdToEdit?: string;
   initialTitle?: string;
   initialDescription?: string;
+  initialCover?: string;
 }
 
 export default function CreatePlaylistModal({
@@ -18,10 +19,18 @@ export default function CreatePlaylistModal({
   playlistIdToEdit,
   initialTitle = '',
   initialDescription = '',
+  initialCover = '',
 }: CreatePlaylistModalProps) {
   const { createPlaylist, updatePlaylist } = useLibraryStore();
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
+  const [cover, setCover] = useState(initialCover);
+
+  useEffect(() => {
+    setTitle(initialTitle);
+    setDescription(initialDescription);
+    setCover(initialCover);
+  }, [initialTitle, initialDescription, initialCover, isOpen]);
 
   if (!isOpen) return null;
 
@@ -31,15 +40,15 @@ export default function CreatePlaylistModal({
       updatePlaylist(playlistIdToEdit, {
         title: title.trim() || 'My Playlist',
         description: description.trim(),
+        cover: cover.trim() || undefined,
       });
     } else {
       createPlaylist(
         title.trim() || undefined,
-        description.trim() || undefined
+        description.trim() || undefined,
+        cover.trim() || undefined
       );
     }
-    setTitle('');
-    setDescription('');
     onClose();
   };
 
@@ -90,6 +99,26 @@ export default function CreatePlaylistModal({
               placeholder="Add an optional description"
               className="w-full rounded bg-[#3E3E3E] px-3.5 py-2.5 text-sm text-white placeholder-[#727272] focus:outline-none focus:ring-2 focus:ring-white resize-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#B3B3B3] mb-1.5">
+              Cover Image URL (optional)
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="url"
+                value={cover}
+                onChange={(e) => setCover(e.target.value)}
+                placeholder="https://images.unsplash.com/..."
+                className="w-full rounded bg-[#3E3E3E] px-3.5 py-2 text-xs text-white placeholder-[#727272] focus:outline-none focus:ring-2 focus:ring-white"
+              />
+              {cover && (
+                <div className="h-9 w-9 rounded overflow-hidden bg-black flex-shrink-0 border border-white/10">
+                  <img src={cover} alt="" className="h-full w-full object-cover" />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4">

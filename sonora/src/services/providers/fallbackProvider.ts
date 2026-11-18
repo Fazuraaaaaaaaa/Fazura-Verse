@@ -3,6 +3,7 @@ import {
   TrendingResponse,
   SongDetailsResponse,
   RecommendationResponse,
+  HomeShelves,
 } from './types';
 import {
   FALLBACK_TRACKS,
@@ -17,6 +18,12 @@ import {
   ROCK_CLASSICS,
 } from './fallbackData';
 import { Track, Artist, Album, Playlist, SearchResults, LyricsData, HomeFeedSection } from '@/types/music';
+import {
+  generateDailyMixes,
+  generateDiscoverWeekly,
+  generateRadioStation,
+  RadioStationResponse,
+} from '@/lib/recommendation';
 
 export class FallbackProvider implements MusicProvider {
   name = 'fallback';
@@ -100,7 +107,7 @@ export class FallbackProvider implements MusicProvider {
 
   async getTrending(): Promise<TrendingResponse> {
     const topTracks = FALLBACK_TRACKS.slice(0, 15);
-    const trendingTracks = FALLBACK_TRACKS.slice(15, 35);
+    const trendingTracks = FALLBACK_TRACKS.slice(15, 30);
     const quickPicks = [
       FALLBACK_TRACKS[0],  // Satu Bulan (Bernadya)
       FALLBACK_TRACKS[20], // Die With A Smile (Lady Gaga, Bruno Mars)
@@ -110,15 +117,80 @@ export class FallbackProvider implements MusicProvider {
       FALLBACK_TRACKS[27], // Blinding Lights (The Weeknd)
     ];
 
-    const shelves = {
+    const hipHopBeats = FALLBACK_TRACKS.filter(t =>
+      t.artist.includes('Kendrick') ||
+      t.artist.includes('Drake') ||
+      t.artist.includes('Travis') ||
+      t.artist.includes('Eminem')
+    ).slice(0, 15);
+
+    const rbSoul = FALLBACK_TRACKS.filter(t =>
+      t.artist.includes('SZA') ||
+      t.artist.includes('Bruno Mars') ||
+      t.title.includes('All The Stars')
+    ).slice(0, 15);
+
+    const electronicDance = FALLBACK_TRACKS.filter(t =>
+      t.artist.includes('Daft Punk') ||
+      t.artist.includes('Avicii') ||
+      t.title.includes('Starboy')
+    ).slice(0, 10);
+
+    const moodChill = [
+      FALLBACK_TRACKS[0],  // Satu Bulan
+      FALLBACK_TRACKS[3],  // Gala Bunga Matahari
+      FALLBACK_TRACKS[11], // Rayuan Perempuan Gila
+      FALLBACK_TRACKS[24], // Birds of a Feather
+      ...CHILL_LOFI,
+    ].slice(0, 15);
+
+    const moodEnergy = [
+      FALLBACK_TRACKS[20], // Die With A Smile
+      FALLBACK_TRACKS[21], // Espresso
+      FALLBACK_TRACKS[44], // Supernova (aespa)
+      FALLBACK_TRACKS[48], // Dynamite (BTS)
+      FALLBACK_TRACKS[65], // Numb (Linkin Park)
+      FALLBACK_TRACKS[68], // Don't Stop Me Now (Queen)
+      FALLBACK_TRACKS[74], // FE!N (Travis Scott)
+    ];
+
+    const moodFocus = [
+      ...CHILL_LOFI,
+      FALLBACK_TRACKS[13], // Bertaut
+      FALLBACK_TRACKS[8],  // Evaluasi
+    ].slice(0, 15);
+
+    const dailyMixes = generateDailyMixes();
+    const discoverWeekly = generateDiscoverWeekly().tracks;
+
+    const shelves: HomeShelves = {
+      trendingNow: topTracks,
+      popularSongs: trendingTracks,
+      newReleases: FALLBACK_ALBUMS,
+      quickPicks,
+      dailyMixes,
+      discoverWeekly,
       indonesianHits: INDONESIAN_HITS,
       globalTop50: GLOBAL_TOP_50,
       kpopDaebak: KPOP_DAEBAK,
-      chillLofi: CHILL_LOFI,
       rockClassics: ROCK_CLASSICS,
+      chillLofi: CHILL_LOFI,
+      hipHopBeats,
+      rbSoul,
+      electronicDance,
+      moodChill,
+      moodEnergy,
+      moodFocus,
     };
 
     const sections: HomeFeedSection[] = [
+      {
+        id: 'sec_quick_picks',
+        title: 'Quick Picks',
+        subtitle: 'Listen back to your favorite tunes',
+        type: 'tracks',
+        items: quickPicks,
+      },
       {
         id: 'sec_indo_hits',
         title: 'Indonesian Top Hits & Viral',
@@ -141,6 +213,27 @@ export class FallbackProvider implements MusicProvider {
         items: KPOP_DAEBAK,
       },
       {
+        id: 'sec_trending_now',
+        title: 'Trending Now',
+        subtitle: 'Trending songs catching fire today',
+        type: 'tracks',
+        items: topTracks,
+      },
+      {
+        id: 'sec_popular_songs',
+        title: 'Popular Songs',
+        subtitle: 'All-time crowd favorites',
+        type: 'tracks',
+        items: trendingTracks,
+      },
+      {
+        id: 'sec_discover_weekly',
+        title: 'Discover Weekly',
+        subtitle: 'Fresh music discoveries picked just for you',
+        type: 'tracks',
+        items: discoverWeekly,
+      },
+      {
         id: 'sec_chill_lofi',
         title: 'Chill Lo-Fi Beats',
         subtitle: 'Calm beats to study, code and unwind',
@@ -155,6 +248,48 @@ export class FallbackProvider implements MusicProvider {
         items: ROCK_CLASSICS,
       },
       {
+        id: 'sec_hiphop_beats',
+        title: 'Hip-Hop & Rap Heavyweights',
+        subtitle: 'Kendrick Lamar, Drake, Travis Scott, Eminem',
+        type: 'tracks',
+        items: hipHopBeats,
+      },
+      {
+        id: 'sec_rb_soul',
+        title: 'R&B & Soul Essentials',
+        subtitle: 'Smooth vocals and heartfelt grooves',
+        type: 'tracks',
+        items: rbSoul,
+      },
+      {
+        id: 'sec_electronic_dance',
+        title: 'Electronic & Dance Anthems',
+        subtitle: 'Daft Punk, Avicii and pulse-pounding club anthems',
+        type: 'tracks',
+        items: electronicDance,
+      },
+      {
+        id: 'sec_mood_chill',
+        title: 'Mellow & Chill Moods',
+        subtitle: 'Gentle melodies to soothe your soul',
+        type: 'tracks',
+        items: moodChill,
+      },
+      {
+        id: 'sec_mood_energy',
+        title: 'High Energy & Workout',
+        subtitle: 'Pump up your heartbeat with intense rhythm',
+        type: 'tracks',
+        items: moodEnergy,
+      },
+      {
+        id: 'sec_mood_focus',
+        title: 'Deep Focus & Coding',
+        subtitle: 'Instrumental tunes designed for deep concentration',
+        type: 'tracks',
+        items: moodFocus,
+      },
+      {
         id: 'sec_featured_playlists',
         title: 'Featured Playlists',
         subtitle: 'Hand-picked by Sonora editors',
@@ -162,16 +297,9 @@ export class FallbackProvider implements MusicProvider {
         items: FALLBACK_PLAYLISTS,
       },
       {
-        id: 'sec_popular_artists',
-        title: 'Popular Artists',
-        subtitle: 'Top trending artists today',
-        type: 'artists',
-        items: FALLBACK_ARTISTS,
-      },
-      {
         id: 'sec_new_releases',
         title: 'Popular Albums & Releases',
-        subtitle: 'New music for you',
+        subtitle: 'New albums and singles to explore',
         type: 'albums',
         items: FALLBACK_ALBUMS,
       },
@@ -186,6 +314,50 @@ export class FallbackProvider implements MusicProvider {
       shelves,
       sections,
     };
+  }
+
+  async getSearchSuggestions(query: string): Promise<string[]> {
+    const q = (query || '').trim().toLowerCase();
+    if (!q) {
+      return ['Bernadya', 'Sal Priadi', 'Taylor Swift', 'NewJeans', 'Lofi Girl', 'Coldplay'];
+    }
+
+    const suggestions = new Set<string>();
+
+    // 1. Check artists
+    for (const artist of FALLBACK_ARTISTS) {
+      if (artist.name.toLowerCase().includes(q)) {
+        suggestions.add(artist.name);
+      }
+    }
+
+    // 2. Check tracks
+    for (const track of FALLBACK_TRACKS) {
+      if (track.title.toLowerCase().includes(q)) {
+        suggestions.add(track.title);
+      }
+      if (`${track.title} ${track.artist}`.toLowerCase().includes(q)) {
+        suggestions.add(`${track.title} - ${track.artist}`);
+      }
+    }
+
+    // 3. Check albums & playlists
+    for (const album of FALLBACK_ALBUMS) {
+      if (album.title.toLowerCase().includes(q)) {
+        suggestions.add(album.title);
+      }
+    }
+    for (const pl of FALLBACK_PLAYLISTS) {
+      if (pl.title.toLowerCase().includes(q)) {
+        suggestions.add(pl.title);
+      }
+    }
+
+    return Array.from(suggestions).slice(0, 8);
+  }
+
+  async getRadioStation(seedTrackId: string, limit = 30): Promise<RadioStationResponse | null> {
+    return generateRadioStation(seedTrackId, limit);
   }
 
   async getSong(id: string): Promise<SongDetailsResponse | null> {

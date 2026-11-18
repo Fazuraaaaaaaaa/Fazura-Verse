@@ -1,11 +1,25 @@
 import { Track, Artist, Album, Playlist, SearchResults, LyricsData, HomeFeedSection } from '@/types/music';
+import { DailyMix, RadioStationResponse } from '@/lib/recommendation';
 
 export interface HomeShelves {
+  // 17 Discovery & Curated Shelves
+  trendingNow: Track[];
+  popularSongs: Track[];
+  newReleases: Album[];
+  quickPicks: Track[];
+  dailyMixes: DailyMix[];
+  discoverWeekly: Track[];
   indonesianHits: Track[];
   globalTop50: Track[];
   kpopDaebak: Track[];
-  chillLofi: Track[];
   rockClassics: Track[];
+  chillLofi: Track[];
+  hipHopBeats: Track[];
+  rbSoul: Track[];
+  electronicDance: Track[];
+  moodChill: Track[];
+  moodEnergy: Track[];
+  moodFocus: Track[];
 }
 
 export interface TrendingResponse {
@@ -48,4 +62,6 @@ export interface MusicProvider {
   getPlaylist(id: string): Promise<Playlist | null>;
   getRecommendations(seedTrackId?: string, genre?: string, limit?: number): Promise<RecommendationResponse>;
   getLyrics?(trackId: string, title?: string, artist?: string): Promise<LyricsData | null>;
+  getSearchSuggestions?(query: string): Promise<string[]>;
+  getRadioStation?(seedTrackId: string, limit?: number): Promise<RadioStationResponse | null>;
 }

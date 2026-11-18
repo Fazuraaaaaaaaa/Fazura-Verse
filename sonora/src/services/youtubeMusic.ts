@@ -7,6 +7,7 @@ import {
 import { YoutubeProvider } from './providers/youtubeProvider';
 import { FallbackProvider } from './providers/fallbackProvider';
 import { SearchResults, Track, Artist, Album, Playlist, LyricsData } from '@/types/music';
+import { RadioStationResponse } from '@/lib/recommendation';
 
 interface CacheEntry<T> {
   data: T;
@@ -265,6 +266,55 @@ export class YouTubeMusicService implements MusicProvider {
       this.setCache(cacheKey, fallbackLyrics, 3600);
     }
     return fallbackLyrics;
+  }
+
+  async getSearchSuggestions(query: string): Promise<string[]> {
+    const q = (query || '').trim();
+    if (!q) return [];
+
+    const cacheKey = `suggestions:${q.toLowerCase()}`;
+    const cached = this.getCached<string[]>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      if (this.primary.getSearchSuggestions) {
+        const res = await this.withTimeout(this.primary.getSearchSuggestions(q), 2500);
+        if (res && res.length > 0) {
+          this.setCache(cacheKey, res, 600);
+          return res;
+        }
+      }
+    } catch (err) {
+      // ignore suggestion network errors
+    }
+
+    const fallbackSuggestions = await this.fallback.getSearchSuggestions(q);
+    this.setCache(cacheKey, fallbackSuggestions, 300);
+    return fallbackSuggestions;
+  }
+
+  async getRadioStation(seedTrackId: string, limit = 25): Promise<RadioStationResponse | null> {
+    const cacheKey = `radio:${seedTrackId}:${limit}`;
+    const cached = this.getCached<RadioStationResponse>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      if (this.primary.getRadioStation) {
+        const res = await this.withTimeout(this.primary.getRadioStation(seedTrackId, limit), 4000);
+        if (res && res.tracks && res.tracks.length > 0) {
+          this.setCache(cacheKey, res, 1800);
+          return res;
+        }
+      }
+    } catch (err) {
+      console.warn(`[YouTubeMusicService] Primary radio for ${seedTrackId} failed:`, err);
+    }
+
+    const fallbackRadio = await this.fallback.getRadioStation(seedTrackId, limit);
+    if (fallbackRadio) {
+      this.setCache(cacheKey, fallbackRadio, 1800);
+    }
+    return fallbackRadio;
   }
 }
 

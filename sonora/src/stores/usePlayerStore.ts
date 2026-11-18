@@ -13,16 +13,20 @@ export interface PlayerState {
   currentTime: number; // in seconds
   duration: number; // in seconds
   seekRequest: number | null; // pending seek timestamp in seconds
+  playbackSpeed: number; // 0.5, 0.75, 1, 1.25, 1.5, 2
+  autoplay: boolean; // Smart autoplay continuation
 
-  // Queue state
+  // Queue & Smart Shuffle state
   queue: Track[];
   queueIndex: number;
+  unplayedShuffleDeck: number[]; // indices of unplayed tracks in shuffle mode
 
   // View state
   isFullscreen: boolean;
   showQueue: boolean;
   showLyrics: boolean;
   miniPlayer: boolean;
+  showVisualizer: boolean;
 
   // Playback actions
   playTrack: (track: Track, newQueue?: Track[]) => void;
@@ -36,6 +40,9 @@ export interface PlayerState {
   toggleMute: () => void;
   toggleShuffle: () => void;
   toggleRepeat: () => void;
+  setPlaybackSpeed: (speed: number) => void;
+  toggleAutoplay: () => void;
+  triggerAutoplay: () => Promise<void>;
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;
 
@@ -55,7 +62,28 @@ export interface PlayerState {
   setShowLyrics: (show: boolean) => void;
   toggleMiniPlayer: () => void;
   setMiniPlayer: (mini: boolean) => void;
+  toggleVisualizer: () => void;
+  setShowVisualizer: (show: boolean) => void;
+
+  // Persistence (Remember & Restore)
+  restorePlaybackState: () => void;
+  saveResumeState: () => void;
 }
+
+// Fisher-Yates shuffle helper
+function createShuffleDeck(queueLength: number, excludeIndex: number): number[] {
+  const indices: number[] = [];
+  for (let i = 0; i < queueLength; i++) {
+    if (i !== excludeIndex) indices.push(i);
+  }
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  return indices;
+}
+
+const RESUME_STORAGE_KEY = 'sonora_player_resume';
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   currentTrack: null,
@@ -67,14 +95,18 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   currentTime: 0,
   duration: 0,
   seekRequest: null,
+  playbackSpeed: 1,
+  autoplay: true,
 
   queue: [],
   queueIndex: -1,
+  unplayedShuffleDeck: [],
 
   isFullscreen: false,
   showQueue: false,
   showLyrics: false,
   miniPlayer: false,
+  showVisualizer: false,
 
   playTrack: (track: Track, newQueue?: Track[]) => {
     const currentQueue = get().queue;
@@ -99,6 +131,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       }
     }
 
+    // Build new smart shuffle deck if shuffle is enabled
+    const newShuffleDeck = get().isShuffle
+      ? createShuffleDeck(targetQueue.length, targetIndex)
+      : [];
+
     set({
       currentTrack: track,
       isPlaying: true,
@@ -106,6 +143,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       duration: track.duration || 0,
       queue: targetQueue,
       queueIndex: targetIndex,
+      unplayedShuffleDeck: newShuffleDeck,
       seekRequest: 0,
     });
 
@@ -114,6 +152,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     } catch {
       // Safe fallback
     }
+
+    get().saveResumeState();
   },
 
   togglePlay: () => {
@@ -123,6 +163,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       return;
     }
     set({ isPlaying: !isPlaying });
+    get().saveResumeState();
   },
 
   setIsPlaying: (isPlaying: boolean) => {
@@ -130,7 +171,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   nextTrack: () => {
-    const { queue, queueIndex, repeatMode, isShuffle } = get();
+    const { queue, queueIndex, repeatMode, isShuffle, unplayedShuffleDeck, autoplay } = get();
     if (queue.length === 0) return;
 
     if (repeatMode === 'one') {
@@ -138,26 +179,38 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       return;
     }
 
+    // 1. Smart Shuffle logic (non-repeating deck cycle)
     if (isShuffle && queue.length > 1) {
-      let randomIndex = Math.floor(Math.random() * queue.length);
-      if (randomIndex === queueIndex) {
-        randomIndex = (randomIndex + 1) % queue.length;
+      let deck = [...unplayedShuffleDeck];
+      // Filter out invalid indices if queue changed
+      deck = deck.filter((i) => i >= 0 && i < queue.length && i !== queueIndex);
+
+      if (deck.length === 0) {
+        // Reshuffle entire deck
+        deck = createShuffleDeck(queue.length, queueIndex);
       }
-      const nextT = queue[randomIndex];
-      set({
-        currentTrack: nextT,
-        queueIndex: randomIndex,
-        currentTime: 0,
-        duration: nextT.duration || 0,
-        seekRequest: 0,
-        isPlaying: true,
-      });
-      try {
-        useLibraryStore.getState().addToHistory(nextT);
-      } catch {}
-      return;
+
+      if (deck.length > 0) {
+        const nextIdx = deck.pop()!;
+        const nextT = queue[nextIdx];
+        set({
+          currentTrack: nextT,
+          queueIndex: nextIdx,
+          unplayedShuffleDeck: deck,
+          currentTime: 0,
+          duration: nextT.duration || 0,
+          seekRequest: 0,
+          isPlaying: true,
+        });
+        try {
+          useLibraryStore.getState().addToHistory(nextT);
+        } catch {}
+        get().saveResumeState();
+        return;
+      }
     }
 
+    // 2. Normal sequential playback
     const nextIndex = queueIndex + 1;
     if (nextIndex < queue.length) {
       const nextT = queue[nextIndex];
@@ -172,6 +225,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       try {
         useLibraryStore.getState().addToHistory(nextT);
       } catch {}
+      get().saveResumeState();
     } else if (repeatMode === 'all') {
       const nextT = queue[0];
       set({
@@ -185,6 +239,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       try {
         useLibraryStore.getState().addToHistory(nextT);
       } catch {}
+      get().saveResumeState();
+    } else if (autoplay) {
+      // 3. Smart Autoplay: end of queue reached, trigger recommendations!
+      get().triggerAutoplay();
     } else {
       set({ isPlaying: false });
     }
@@ -214,6 +272,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       try {
         useLibraryStore.getState().addToHistory(prevT);
       } catch {}
+      get().saveResumeState();
     } else if (repeatMode === 'all') {
       const lastIndex = queue.length - 1;
       const prevT = queue[lastIndex];
@@ -228,6 +287,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       try {
         useLibraryStore.getState().addToHistory(prevT);
       } catch {}
+      get().saveResumeState();
     } else {
       set({ currentTime: 0, seekRequest: 0 });
     }
@@ -237,6 +297,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const { duration } = get();
     const target = Math.max(0, Math.min(seconds, duration || 999999));
     set({ currentTime: target, seekRequest: target });
+    get().saveResumeState();
   },
 
   clearSeekRequest: () => {
@@ -249,6 +310,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       volume: clamped,
       isMuted: clamped === 0,
     });
+    get().saveResumeState();
   },
 
   toggleMute: () => {
@@ -258,10 +320,18 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     } else {
       set({ isMuted: true });
     }
+    get().saveResumeState();
   },
 
   toggleShuffle: () => {
-    set((state) => ({ isShuffle: !state.isShuffle }));
+    set((state) => {
+      const nextShuffle = !state.isShuffle;
+      const deck = nextShuffle
+        ? createShuffleDeck(state.queue.length, state.queueIndex)
+        : [];
+      return { isShuffle: nextShuffle, unplayedShuffleDeck: deck };
+    });
+    get().saveResumeState();
   },
 
   toggleRepeat: () => {
@@ -271,6 +341,73 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       const nextMode = modes[(currentIndex + 1) % modes.length];
       return { repeatMode: nextMode };
     });
+    get().saveResumeState();
+  },
+
+  setPlaybackSpeed: (speed: number) => {
+    set({ playbackSpeed: speed });
+    get().saveResumeState();
+  },
+
+  toggleAutoplay: () => {
+    set((state) => ({ autoplay: !state.autoplay }));
+    get().saveResumeState();
+  },
+
+  // Smart Autoplay Continuation
+  triggerAutoplay: async () => {
+    const { currentTrack, queue } = get();
+    if (!currentTrack) return;
+
+    try {
+      const seedId = currentTrack.id || currentTrack.youtubeId;
+      const res = await fetch(`/api/ytmusic/recommendations?seedTrack=${encodeURIComponent(seedId)}&limit=10`);
+      if (res.ok) {
+        const data = await res.json();
+        const recTracks: Track[] = (data.tracks || []).filter(
+          (rt: Track) => !queue.some((q) => q.id === rt.id || q.youtubeId === rt.youtubeId)
+        );
+
+        if (recTracks.length > 0) {
+          const updatedQueue = [...queue, ...recTracks];
+          const nextIndex = queue.length;
+          const nextSong = updatedQueue[nextIndex];
+
+          set({
+            queue: updatedQueue,
+            queueIndex: nextIndex,
+            currentTrack: nextSong,
+            currentTime: 0,
+            duration: nextSong.duration || 0,
+            seekRequest: 0,
+            isPlaying: true,
+          });
+
+          try {
+            useLibraryStore.getState().addToHistory(nextSong);
+          } catch {}
+          get().saveResumeState();
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('[Smart Autoplay] Failed to fetch auto-recommendations:', err);
+    }
+
+    // Fallback if recommendations fail: loop queue from beginning
+    if (queue.length > 0) {
+      set({
+        queueIndex: 0,
+        currentTrack: queue[0],
+        currentTime: 0,
+        duration: queue[0].duration || 0,
+        seekRequest: 0,
+        isPlaying: true,
+      });
+      get().saveResumeState();
+    } else {
+      set({ isPlaying: false });
+    }
   },
 
   setCurrentTime: (currentTime: number) => {
@@ -282,9 +419,18 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   addToQueue: (track: Track) => {
-    set((state) => ({
-      queue: [...state.queue, track],
-    }));
+    set((state) => {
+      const newQueue = [...state.queue, track];
+      let newDeck = state.unplayedShuffleDeck;
+      if (state.isShuffle) {
+        newDeck = [...newDeck, newQueue.length - 1];
+      }
+      return {
+        queue: newQueue,
+        unplayedShuffleDeck: newDeck,
+      };
+    });
+    get().saveResumeState();
   },
 
   playNext: (track: Track) => {
@@ -294,6 +440,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       newQueue.splice(insertAt, 0, track);
       return { queue: newQueue };
     });
+    get().saveResumeState();
   },
 
   removeFromQueue: (indexOrId: number | string) => {
@@ -320,8 +467,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       return {
         queue: newQueue,
         queueIndex: newQueueIndex,
+        unplayedShuffleDeck: state.unplayedShuffleDeck.filter((i) => i !== targetIndex),
       };
     });
+    get().saveResumeState();
   },
 
   clearQueue: () => {
@@ -330,13 +479,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         return {
           queue: [state.currentTrack],
           queueIndex: 0,
+          unplayedShuffleDeck: [],
         };
       }
       return {
         queue: [],
         queueIndex: -1,
+        unplayedShuffleDeck: [],
       };
     });
+    get().saveResumeState();
   },
 
   reorderQueue: (startIndex: number, endIndex: number) => {
@@ -360,6 +512,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         queueIndex: newQueueIndex,
       };
     });
+    get().saveResumeState();
   },
 
   toggleFullscreen: () => {
@@ -392,5 +545,63 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   setMiniPlayer: (mini: boolean) => {
     set({ miniPlayer: mini });
+  },
+
+  toggleVisualizer: () => {
+    set((state) => ({ showVisualizer: !state.showVisualizer }));
+  },
+
+  setShowVisualizer: (show: boolean) => {
+    set({ showVisualizer: show });
+  },
+
+  // Remember & Restore State Logic
+  saveResumeState: () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const state = get();
+      const payload = {
+        currentTrack: state.currentTrack,
+        queue: state.queue,
+        queueIndex: state.queueIndex,
+        volume: state.volume,
+        currentTime: Math.floor(state.currentTime),
+        duration: state.duration,
+        repeatMode: state.repeatMode,
+        isShuffle: state.isShuffle,
+        playbackSpeed: state.playbackSpeed,
+        autoplay: state.autoplay,
+      };
+      localStorage.setItem(RESUME_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // Storage quota or private mode fallback
+    }
+  },
+
+  restorePlaybackState: () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = localStorage.getItem(RESUME_STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data && data.currentTrack) {
+        set({
+          currentTrack: data.currentTrack,
+          queue: data.queue || [data.currentTrack],
+          queueIndex: typeof data.queueIndex === 'number' ? data.queueIndex : 0,
+          volume: typeof data.volume === 'number' ? data.volume : 75,
+          currentTime: typeof data.currentTime === 'number' ? data.currentTime : 0,
+          duration: typeof data.duration === 'number' ? data.duration : (data.currentTrack.duration || 0),
+          repeatMode: data.repeatMode || 'off',
+          isShuffle: !!data.isShuffle,
+          playbackSpeed: data.playbackSpeed || 1,
+          autoplay: data.autoplay !== undefined ? data.autoplay : true,
+          isPlaying: false, // restore in paused state to respect browser autoplay policies
+          seekRequest: data.currentTime || 0,
+        });
+      }
+    } catch {
+      // Fail silently
+    }
   },
 }));

@@ -17,6 +17,7 @@ interface LibraryState {
   createPlaylist: (title?: string, description?: string, cover?: string) => UserPlaylist;
   updatePlaylist: (id: string, updates: Partial<UserPlaylist>) => void;
   deletePlaylist: (id: string) => void;
+  duplicatePlaylist: (id: string) => UserPlaylist | null;
   addSongToPlaylist: (playlistId: string, track: Track) => void;
   removeSongFromPlaylist: (playlistId: string, trackId: string) => void;
   reorderPlaylistTracks: (playlistId: string, startIndex: number, endIndex: number) => void;
@@ -122,6 +123,25 @@ export const useLibraryStore = create<LibraryState>()(
         set((state) => ({
           myPlaylists: state.myPlaylists.filter((pl) => pl.id !== id),
         }));
+      },
+
+      duplicatePlaylist: (id: string) => {
+        const { myPlaylists } = get();
+        const original = myPlaylists.find((p) => p.id === id);
+        if (!original) return null;
+
+        const duplicated: UserPlaylist = {
+          ...original,
+          id: `playlist-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          title: `${original.title} (Copy)`,
+          tracks: [...original.tracks],
+          trackIds: [...original.trackIds],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+
+        set({ myPlaylists: [duplicated, ...myPlaylists] });
+        return duplicated;
       },
 
       addSongToPlaylist: (playlistId: string, track: Track) => {

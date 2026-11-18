@@ -171,6 +171,10 @@ export async function fetchHomeFeed(): Promise<HomeFeedSection[]> {
     if (res.ok) {
       const data = await res.json();
       if (data) {
+        if (Array.isArray(data.sections) && data.sections.length > 0) {
+          return data.sections;
+        }
+
         const sections: HomeFeedSection[] = [];
 
         // 1. Indonesian Top Hits & Viral
@@ -528,4 +532,71 @@ export async function fetchLyrics(trackId: string, title?: string, artist?: stri
       { time: 55, text: 'Sonora playing on repeat' },
     ],
   };
+}
+
+export async function fetchSearchSuggestions(query: string): Promise<string[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  try {
+    const res = await fetch(`${BASE_URL}/suggestions?q=${encodeURIComponent(q)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.suggestions)) return data.suggestions;
+    }
+  } catch (e) {
+    // fallback
+  }
+
+  // Local fallback suggestions
+  const lower = q.toLowerCase();
+  const allTracks = [...MOCK_TRACKS, ...INDONESIAN_HITS, ...KPOP_DAEBAK];
+  const list = new Set<string>();
+  for (const t of allTracks) {
+    if (t.title.toLowerCase().includes(lower)) list.add(t.title);
+    if (t.artist.toLowerCase().includes(lower)) list.add(t.artist);
+  }
+  return Array.from(list).slice(0, 8);
+}
+
+export async function fetchRadioStation(seedTrackId: string, limit = 25) {
+  try {
+    const res = await fetch(`${BASE_URL}/radio/${encodeURIComponent(seedTrackId)}?limit=${limit}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.tracks?.length) return data;
+    }
+  } catch (e) {
+    // fallback
+  }
+
+  const seed = MOCK_TRACKS.find(t => t.id === seedTrackId) || MOCK_TRACKS[0];
+  return {
+    seedTrack: seed,
+    stationName: `${seed.title} Radio`,
+    description: `An endless radio station seeded by ${seed.artist}.`,
+    cover: seed.thumbnail,
+    tracks: [seed, ...MOCK_TRACKS.filter(t => t.id !== seed.id).slice(0, limit - 1)],
+  };
+}
+
+export async function fetchRecommendations(seedTrackId?: string, genre?: string, limit = 20): Promise<Track[]> {
+  try {
+    const params = new URLSearchParams();
+    if (seedTrackId) params.append('seedTrack', seedTrackId);
+    if (genre) params.append('genre', genre);
+    params.append('limit', limit.toString());
+
+    const res = await fetch(`${BASE_URL}/recommendations?${params.toString()}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.tracks) && data.tracks.length > 0) {
+        return data.tracks;
+      }
+    }
+  } catch (e) {
+    // fallback
+  }
+
+  return [...MOCK_TRACKS, ...INDONESIAN_HITS].slice(0, limit);
 }

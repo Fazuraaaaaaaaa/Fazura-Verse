@@ -13,12 +13,16 @@ import LyricsPanel from '@/components/lyrics/LyricsPanel';
 import ContextMenu from '@/components/common/ContextMenu';
 import ToastContainer from '@/components/common/ToastContainer';
 import KeyboardShortcuts from '@/components/common/KeyboardShortcuts';
+import KeyboardShortcutsModal from '@/components/modal/KeyboardShortcutsModal';
+import { useShortcutsModalStore } from '@/stores/useShortcutsModalStore';
 
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
+  const { isOpen: isShortcutsOpen, closeModal: closeShortcuts } = useShortcutsModalStore();
+
   return (
     <div className="relative flex h-screen w-full flex-col bg-black text-white overflow-hidden select-none">
       {/* Global Keyboard shortcuts */}
@@ -59,6 +63,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <FullscreenPlayer />
       <ContextMenu />
       <ToastContainer />
+      <KeyboardShortcutsModal isOpen={isShortcutsOpen} onClose={closeShortcuts} />
     </div>
   );
 }

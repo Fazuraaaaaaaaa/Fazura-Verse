@@ -6,6 +6,7 @@ import {
 } from './types';
 import { Track, Artist, Album, Playlist, SearchResults, LyricsData, LyricsLine } from '@/types/music';
 import { formatDuration } from '@/lib/utils';
+import { RadioStationResponse } from '@/lib/recommendation';
 
 export class YoutubeProvider implements MusicProvider {
   name = 'youtube';
@@ -710,6 +711,47 @@ export class YoutubeProvider implements MusicProvider {
         };
       }
 
+      return null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  async getSearchSuggestions(query: string): Promise<string[]> {
+    const q = (query || '').trim();
+    if (!q) return [];
+
+    try {
+      const url = `https://suggestqueries-clients6.youtube.com/complete/search?client=youtube&hl=en&gl=US&q=${encodeURIComponent(q)}`;
+      const res = await fetch(url, { headers: { 'User-Agent': this.userAgent } });
+      if (!res.ok) return [];
+
+      const text = await res.text();
+      const json = JSON.parse(text.replace(/^[^\(]*\(/, '').replace(/\)$/, ''));
+      if (Array.isArray(json) && Array.isArray(json[1])) {
+        const rawSuggestions = json[1].map((item: any) => item[0]).filter((s: any) => typeof s === 'string');
+        const clean = Array.from(new Set(rawSuggestions.map(s => (s as string).trim()))).slice(0, 10);
+        return clean;
+      }
+      return [];
+    } catch (err) {
+      return [];
+    }
+  }
+
+  async getRadioStation(seedTrackId: string, limit = 25): Promise<RadioStationResponse | null> {
+    try {
+      const songData = await this.getSong(seedTrackId);
+      if (songData && songData.track) {
+        const tracks = [songData.track, ...songData.related.slice(0, limit - 1)];
+        return {
+          seedTrack: songData.track,
+          stationName: `${songData.track.title} Radio`,
+          description: `An endless radio station seeded by ${songData.track.artist}.`,
+          cover: songData.track.thumbnail,
+          tracks,
+        };
+      }
       return null;
     } catch (err) {
       return null;
