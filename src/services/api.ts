@@ -113,7 +113,7 @@ function formatChapterTitle(slug: string, rawTitle?: string): string {
  * Endpoint: /latest or /latest/:page
  */
 export async function getLatest(page = 1): Promise<MangaListResult> {
-  const endpoint = page > 1 ? `/latest/${page}` : '/latest';
+  const endpoint = `/latest/${page}`;
   const data = await fetchJson<any>(endpoint);
   return wrapMangaList(
     data?.komikList || data?.data,
@@ -148,7 +148,7 @@ export async function getByType(
   type: MangaType,
   page = 1
 ): Promise<MangaListResult> {
-  const endpoint = page > 1 ? `/only/${type}/${page}` : `/only/${type}`;
+  const endpoint = `/only/${type}/${page}`;
   const data = await fetchJson<any>(endpoint);
   return wrapMangaList(
     data?.komikList || data?.data,
@@ -186,7 +186,7 @@ export async function getByGenre(
   page = 1
 ): Promise<MangaListResult> {
   const cleanGenre = encodeURIComponent(genre.trim());
-  const endpoint = page > 1 ? `/genre/${cleanGenre}/${page}` : `/genre/${cleanGenre}`;
+  const endpoint = `/genre/${cleanGenre}/${page}`;
   const data = await fetchJson<any>(endpoint);
   return wrapMangaList(
     data?.komikList || data?.data,

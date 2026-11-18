@@ -26,7 +26,6 @@ import { MovieHubPage } from './pages/MovieHubPage';
 import { MovieDetailPage } from './pages/MovieDetailPage';
 import { MovieWatchPage } from './pages/MovieWatchPage';
 import { MusicHubPage } from './pages/MusicHubPage';
-import { FloatingMusicWidget } from './components/FloatingMusicWidget';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,7 +58,6 @@ function Layout({ children }: { children: React.ReactNode }) {
       {!isReaderPage && <Navbar />}
       <main className="flex-1 flex flex-col">{children}</main>
       {!isReaderPage && !isMusicPage && <Footer />}
-      <FloatingMusicWidget />
     </div>
   );
 }

@@ -40,6 +40,23 @@ export function DonghuaHubPage() {
   const [selectedDay, setSelectedDay] = useState<string>('Senin');
   const [selectedGenre, setSelectedGenre] = useState<string>(genreParam);
   const [searchInput, setSearchInput] = useState(searchParam);
+  const [jumpPageInput, setJumpPageInput] = useState<string>('');
+
+  const totalPages = React.useMemo(() => {
+    if (activeTab === 'ongoing') return 3; // 72 ongoing donghua
+    if (activeTab === 'completed') return 15; // ~450+ completed donghua
+    if (activeTab === 'genres') return 10; // ~100 per genre
+    return 1;
+  }, [activeTab]);
+
+  const handleJumpPage = (e: React.FormEvent) => {
+    e.preventDefault();
+    const target = parseInt(jumpPageInput.trim(), 10);
+    if (!isNaN(target) && target >= 1 && target <= totalPages) {
+      handlePageChange(target);
+      setJumpPageInput('');
+    }
+  };
 
   // Sync state with url params
   useEffect(() => {
@@ -135,6 +152,13 @@ export function DonghuaHubPage() {
     hasNextPage = Boolean(genreData?.hasNextPage);
     isLoading = genreLoading;
   }
+
+  const totalTitlesEst = React.useMemo(() => {
+    if (activeTab === 'ongoing') return 72;
+    if (activeTab === 'completed') return 450;
+    if (activeTab === 'genres') return 100;
+    return activeDonghuaList.length;
+  }, [activeTab, activeDonghuaList.length]);
 
   const topGenreChips = [
     'action',
@@ -254,7 +278,7 @@ export function DonghuaHubPage() {
             }`}
           >
             <Clock className="w-4 h-4" />
-            Sedang Tayang (Ongoing)
+            Sedang Tayang (Ongoing • 72 Judul)
           </button>
 
           <button
@@ -266,7 +290,7 @@ export function DonghuaHubPage() {
             }`}
           >
             <CheckCircle className="w-4 h-4" />
-            Tamat (Completed)
+            Tamat (Completed • 15 Hal / ~450+ Judul)
           </button>
 
           <button
@@ -290,7 +314,7 @@ export function DonghuaHubPage() {
             }`}
           >
             <Tag className="w-4 h-4" />
-            Katalog 102 Genre
+            Katalog 102 Genre (~1.000+ Judul)
           </button>
         </div>
 
@@ -432,21 +456,26 @@ export function DonghuaHubPage() {
       ) : (
         /* SECTION D: Paginated Donghua Grids (Ongoing, Completed, or Genre Filter) */
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              {activeTab === 'ongoing' && <Clock className="w-4 h-4 text-emerald-400" />}
-              {activeTab === 'completed' && <CheckCircle className="w-4 h-4 text-emerald-400" />}
-              {activeTab === 'genres' && <Tag className="w-4 h-4 text-emerald-400" />}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#111622] p-4 rounded-2xl border border-white/5">
+            <div className="space-y-0.5">
+              <h2 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                {activeTab === 'ongoing' && <Clock className="w-4 h-4 text-emerald-400" />}
+                {activeTab === 'completed' && <CheckCircle className="w-4 h-4 text-emerald-400" />}
+                {activeTab === 'genres' && <Tag className="w-4 h-4 text-emerald-400" />}
 
-              <span>
-                {activeTab === 'ongoing' && 'Donghua Sedang Tayang (Ongoing)'}
-                {activeTab === 'completed' && 'Daftar Donghua Tamat (Completed)'}
-                {activeTab === 'genres' && `Koleksi Genre: ${selectedGenre.toUpperCase()}`}
-              </span>
-            </h2>
+                <span>
+                  {activeTab === 'ongoing' && 'Donghua Sedang Tayang (Ongoing)'}
+                  {activeTab === 'completed' && 'Daftar Donghua Tamat (Completed)'}
+                  {activeTab === 'genres' && `Koleksi Genre: ${selectedGenre.toUpperCase()}`}
+                </span>
+              </h2>
+              <p className="text-xs text-slate-400">
+                Menampilkan <strong className="text-white">{activeDonghuaList.length}</strong> judul di halaman ini • Total katalog: <strong className="text-emerald-400 font-bold">{totalTitlesEst}+ judul</strong> ({totalPages} halaman tersedia)
+              </p>
+            </div>
 
-            <span className="text-xs text-slate-400">
-              Halaman {page}
+            <span className="text-xs font-semibold text-slate-400 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5 self-start sm:self-auto">
+              Halaman <strong className="text-white">{page}</strong> dari <strong className="text-white">{totalPages}</strong>
             </span>
           </div>
 
@@ -468,50 +497,129 @@ export function DonghuaHubPage() {
           )}
 
           {/* Interactive Pagination Toolbar */}
-          <div className="flex items-center justify-center gap-2 pt-8 border-t border-white/5">
-            <button
-              onClick={() => handlePageChange(Math.max(1, page - 1))}
-              disabled={page <= 1 || isLoading}
-              className="flex items-center gap-1 px-4 py-2 rounded-xl bg-[#111622] hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold border border-white/5 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Sebelumnya
-            </button>
-
-            {/* Page number pill */}
-            <div className="flex items-center gap-1">
-              {page > 1 && (
+          {totalPages > 1 && (
+            <div className="space-y-4 pt-8 border-t border-white/5">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
                 <button
-                  onClick={() => handlePageChange(page - 1)}
-                  className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5"
+                  onClick={() => handlePageChange(Math.max(1, page - 1))}
+                  disabled={page <= 1 || isLoading}
+                  className="flex items-center gap-1 px-3 sm:px-4 py-2 rounded-xl bg-[#111622] hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold border border-white/5 transition-colors"
                 >
-                  {page - 1}
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Sebelumnya</span>
                 </button>
-              )}
 
-              <button className="w-9 h-9 rounded-xl bg-emerald-500 text-black text-xs font-black shadow-md shadow-emerald-500/30">
-                {page}
-              </button>
+                {/* Page number pill */}
+                <div className="flex items-center gap-1">
+                  {page > 2 && (
+                    <button
+                      onClick={() => handlePageChange(1)}
+                      className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                    >
+                      1
+                    </button>
+                  )}
 
-              {hasNextPage && (
+                  {page > 3 && <span className="text-slate-600 px-1 text-xs">...</span>}
+
+                  {page > 1 && (
+                    <button
+                      onClick={() => handlePageChange(page - 1)}
+                      className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                    >
+                      {page - 1}
+                    </button>
+                  )}
+
+                  <button className="w-9 h-9 rounded-xl bg-emerald-500 text-black text-xs font-black shadow-md shadow-emerald-500/30">
+                    {page}
+                  </button>
+
+                  {page < totalPages && (
+                    <button
+                      onClick={() => handlePageChange(page + 1)}
+                      className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                    >
+                      {page + 1}
+                    </button>
+                  )}
+
+                  {page === 1 && totalPages > 2 && (
+                    <button
+                      onClick={() => handlePageChange(3)}
+                      className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                    >
+                      3
+                    </button>
+                  )}
+
+                  {page === 1 && totalPages > 3 && (
+                    <button
+                      onClick={() => handlePageChange(4)}
+                      className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors hidden sm:block"
+                    >
+                      4
+                    </button>
+                  )}
+
+                  {page === 1 && totalPages > 4 && (
+                    <button
+                      onClick={() => handlePageChange(5)}
+                      className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors hidden sm:block"
+                    >
+                      5
+                    </button>
+                  )}
+
+                  {page < totalPages - 2 && (
+                    <span className="text-slate-600 px-1 text-xs">...</span>
+                  )}
+
+                  {page < totalPages - 1 && (
+                    <button
+                      onClick={() => handlePageChange(totalPages)}
+                      className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                    >
+                      {totalPages}
+                    </button>
+                  )}
+                </div>
+
                 <button
-                  onClick={() => handlePageChange(page + 1)}
-                  className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5"
+                  onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
+                  disabled={page >= totalPages || isLoading}
+                  className="flex items-center gap-1 px-3 sm:px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 text-black text-xs font-bold transition-colors shadow"
                 >
-                  {page + 1}
+                  <span className="hidden sm:inline">Selanjutnya</span>
+                  <ChevronRight className="w-4 h-4" />
                 </button>
+              </div>
+
+              {totalPages > 3 && (
+                <form
+                  onSubmit={handleJumpPage}
+                  className="flex items-center justify-center gap-2 text-xs text-slate-400"
+                >
+                  <span>Lompat ke halaman:</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={totalPages}
+                    placeholder={String(page)}
+                    value={jumpPageInput}
+                    onChange={(e) => setJumpPageInput(e.target.value)}
+                    className="w-16 px-2.5 py-1.5 rounded-lg bg-[#111622] border border-white/10 text-white text-center focus:border-emerald-500 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-emerald-500 hover:text-black text-white font-semibold transition-colors border border-white/5"
+                  >
+                    Buka
+                  </button>
+                </form>
               )}
             </div>
-
-            <button
-              onClick={() => handlePageChange(page + 1)}
-              disabled={!hasNextPage || isLoading}
-              className="flex items-center gap-1 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 text-black text-xs font-bold transition-colors shadow"
-            >
-              Selanjutnya
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          )}
         </div>
       )}
     </div>

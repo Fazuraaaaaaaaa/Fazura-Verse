@@ -48,6 +48,36 @@ export function BrowsePage() {
   const [selectedGenre, setSelectedGenre] = useState<string>(genreParam);
   const [page, setPage] = useState<number>(pageParam);
   const [searchInput, setSearchInput] = useState<string>('');
+  const [jumpPageInput, setJumpPageInput] = useState<string>('');
+
+  // Catalog depth and total pages estimation for BacaKomik
+  const totalPages = React.useMemo(() => {
+    if (activeTab === 'popular' || activeTab === 'top') return 1;
+    if (selectedGenre) return 35; // ~1,400 judul per genre
+    switch (activeTab) {
+      case 'manga':
+        return 85; // ~3,400 judul manga
+      case 'manhwa':
+        return 95; // ~3,800 judul manhwa
+      case 'manhua':
+        return 65; // ~2,600 judul manhua
+      case 'colored':
+        return 45; // ~1,800 judul komik berwarna
+      case 'latest':
+      case 'all':
+      default:
+        return 120; // ~4,800+ judul komik
+    }
+  }, [activeTab, selectedGenre]);
+
+  const handleJumpPage = (e: React.FormEvent) => {
+    e.preventDefault();
+    const target = parseInt(jumpPageInput.trim(), 10);
+    if (!isNaN(target) && target >= 1 && target <= totalPages) {
+      handlePageChange(target);
+      setJumpPageInput('');
+    }
+  };
 
   // Sync state with URL params
   useEffect(() => {
@@ -285,77 +315,162 @@ export function BrowsePage() {
 
       {/* Grid Results */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-slate-400">
-            {selectedGenre
-              ? `Showing results for genre "${selectedGenre}"`
-              : `Showing ${activeTab.toUpperCase()} listing`}
-            {page > 1 ? ` (Page ${page})` : ''}
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#111622] p-4 rounded-2xl border border-white/5">
+          <div className="space-y-0.5">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              {selectedGenre
+                ? `Koleksi Komik Genre "${selectedGenre.toUpperCase()}"`
+                : activeTab === 'manhwa'
+                ? 'Koleksi Manhwa Korea Lengkap'
+                : activeTab === 'manhua'
+                ? 'Koleksi Manhua China Lengkap'
+                : activeTab === 'manga'
+                ? 'Koleksi Manga Jepang Lengkap'
+                : activeTab === 'colored'
+                ? 'Koleksi Komik Full Color Berwarna'
+                : 'Katalog Komik Lengkap (BacaKomik)'}
+            </h3>
+            <p className="text-xs text-slate-400">
+              Menampilkan <span className="text-white font-bold">{mangaList.length}</span> komik di halaman ini
+              {totalPages > 1 && (
+                <> • Total katalog: <span className="text-indigo-400 font-bold">{(totalPages * 40).toLocaleString()}+ judul</span> ({totalPages} halaman tersedia)</>
+              )}
+            </p>
+          </div>
+
+          <div className="text-xs font-semibold text-slate-400 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5 self-start sm:self-auto">
+            Halaman <strong className="text-white">{page}</strong> dari <strong className="text-white">{totalPages}</strong>
+          </div>
         </div>
 
         <MangaGrid
           items={mangaList}
           isLoading={isLoading || isFetching}
-          skeletonCount={18}
+          skeletonCount={24}
           showRanking={activeTab === 'popular' || activeTab === 'top'}
         />
 
         {/* Pagination Controls */}
-        <div className="flex items-center justify-center gap-2 pt-8 border-t border-white/5">
-          <button
-            onClick={() => handlePageChange(Math.max(1, page - 1))}
-            disabled={page <= 1 || isLoading}
-            className="flex items-center gap-1 px-4 py-2 rounded-xl bg-[#111622] hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold border border-white/5 transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Sebelumnya
-          </button>
-
-          <div className="flex items-center gap-1">
-            {page > 2 && (
+        {totalPages > 1 && (
+          <div className="space-y-4 pt-8 border-t border-white/5">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
               <button
-                onClick={() => handlePageChange(1)}
-                className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5"
+                onClick={() => handlePageChange(Math.max(1, page - 1))}
+                disabled={page <= 1 || isLoading}
+                className="flex items-center gap-1 px-3 sm:px-4 py-2 rounded-xl bg-[#111622] hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold border border-white/5 transition-colors"
               >
-                1
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Sebelumnya</span>
               </button>
-            )}
 
-            {page > 3 && <span className="text-slate-600 px-1">...</span>}
+              <div className="flex items-center gap-1">
+                {/* First page button */}
+                {page > 2 && (
+                  <button
+                    onClick={() => handlePageChange(1)}
+                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                  >
+                    1
+                  </button>
+                )}
 
-            {page > 1 && (
+                {page > 3 && <span className="text-slate-600 px-1 text-xs">...</span>}
+
+                {/* Previous page */}
+                {page > 1 && (
+                  <button
+                    onClick={() => handlePageChange(page - 1)}
+                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                  >
+                    {page - 1}
+                  </button>
+                )}
+
+                {/* Current Active page */}
+                <button className="w-9 h-9 rounded-xl bg-indigo-600 text-white text-xs font-black shadow-md shadow-indigo-600/30">
+                  {page}
+                </button>
+
+                {/* Next page */}
+                {page < totalPages && (
+                  <button
+                    onClick={() => handlePageChange(page + 1)}
+                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                  >
+                    {page + 1}
+                  </button>
+                )}
+
+                {/* Next + 1 when on page 1 */}
+                {page === 1 && totalPages > 2 && (
+                  <button
+                    onClick={() => handlePageChange(3)}
+                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                  >
+                    3
+                  </button>
+                )}
+
+                {/* Next + 2 when on page 1 */}
+                {page === 1 && totalPages > 3 && (
+                  <button
+                    onClick={() => handlePageChange(4)}
+                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors hidden sm:block"
+                  >
+                    4
+                  </button>
+                )}
+
+                {page < totalPages - 2 && (
+                  <span className="text-slate-600 px-1 text-xs">...</span>
+                )}
+
+                {/* Last page button */}
+                {page < totalPages - 1 && (
+                  <button
+                    onClick={() => handlePageChange(totalPages)}
+                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                  >
+                    {totalPages}
+                  </button>
+                )}
+              </div>
+
               <button
-                onClick={() => handlePageChange(page - 1)}
-                className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5"
+                onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
+                disabled={page >= totalPages || isLoading}
+                className="flex items-center gap-1 px-3 sm:px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 text-white text-xs font-bold transition-colors shadow"
               >
-                {page - 1}
+                <span className="hidden sm:inline">Selanjutnya</span>
+                <ChevronRight className="w-4 h-4" />
               </button>
-            )}
+            </div>
 
-            <button className="w-9 h-9 rounded-xl bg-indigo-600 text-white text-xs font-black shadow-md shadow-indigo-600/30">
-              {page}
-            </button>
-
-            {hasNextPage && (
+            {/* Direct Jump Input Form */}
+            <form
+              onSubmit={handleJumpPage}
+              className="flex items-center justify-center gap-2 text-xs text-slate-400"
+            >
+              <span>Lompat ke halaman:</span>
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                placeholder={String(page)}
+                value={jumpPageInput}
+                onChange={(e) => setJumpPageInput(e.target.value)}
+                className="w-16 px-2.5 py-1.5 rounded-lg bg-[#111622] border border-white/10 text-white text-center focus:border-indigo-500 focus:outline-none"
+              />
               <button
-                onClick={() => handlePageChange(page + 1)}
-                className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5"
+                type="submit"
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-white font-semibold transition-colors border border-white/5"
               >
-                {page + 1}
+                Buka
               </button>
-            )}
+            </form>
           </div>
-
-          <button
-            onClick={() => handlePageChange(page + 1)}
-            disabled={!hasNextPage || isLoading}
-            className="flex items-center gap-1 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 text-white text-xs font-bold transition-colors shadow"
-          >
-            Selanjutnya
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );
