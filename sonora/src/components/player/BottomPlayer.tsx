@@ -272,14 +272,14 @@ export const BottomPlayer: React.FC = () => {
 
               {/* Right: Quick Action Controls */}
               <div
-                className="flex items-center gap-1 flex-shrink-0"
+                className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Like Button */}
                 <button
                   type="button"
                   onClick={() => toggleLikeSong(currentTrack)}
-                  className="p-2 text-[#b3b3b3] hover:text-white active:scale-90 transition-transform"
+                  className="p-1.5 text-[#b3b3b3] hover:text-white active:scale-90 transition-transform"
                   title={isLiked ? 'Remove from Your Library' : 'Save to Your Library'}
                   aria-label="Like track"
                 >
@@ -309,11 +309,22 @@ export const BottomPlayer: React.FC = () => {
                 <button
                   type="button"
                   onClick={nextTrack}
-                  className="p-2 text-[#b3b3b3] hover:text-white active:scale-90 transition-transform"
+                  className="p-1.5 text-[#b3b3b3] hover:text-white active:scale-90 transition-transform"
                   title="Next track"
                   aria-label="Next track"
                 >
                   <SkipForward className="w-4 h-4 fill-current" />
+                </button>
+
+                {/* Fullscreen Expand Button */}
+                <button
+                  type="button"
+                  onClick={toggleFullscreen}
+                  className="p-1.5 text-[#b3b3b3] hover:text-white active:scale-90 transition-transform"
+                  title="Expand Fullscreen"
+                  aria-label="Expand player"
+                >
+                  <Maximize2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -566,11 +577,11 @@ export const BottomPlayer: React.FC = () => {
         </div>
 
         {/* 3. RIGHT SECTION: Volume & Extra Controls */}
-        <div className="relative z-10 w-[30%] min-w-[180px] max-w-[360px] flex items-center justify-end gap-2">
+        <div className="relative z-10 w-[30%] min-w-[150px] lg:min-w-[180px] max-w-[360px] flex items-center justify-end gap-1.5 lg:gap-2">
           {/* Dynamic Audio Visualizer Toggle Button */}
           <button
             onClick={toggleVisualizer}
-            className={`p-1.5 transition-colors rounded ${
+            className={`p-1.5 transition-colors rounded hidden xl:block ${
               showVisualizer
                 ? 'text-[#1DB954] bg-white/10'
                 : 'text-[#b3b3b3] hover:text-white'
@@ -582,7 +593,7 @@ export const BottomPlayer: React.FC = () => {
           </button>
 
           {/* Playback Speed Pill Dropdown */}
-          <div className="relative" ref={speedMenuRef}>
+          <div className="relative hidden lg:block" ref={speedMenuRef}>
             <button
               onClick={() => setShowSpeedMenu(!showSpeedMenu)}
               className="px-1.5 py-0.5 rounded text-[11px] font-mono font-bold text-[#b3b3b3] hover:text-white bg-[#282828]/60 hover:bg-[#282828] border border-[#3e3e3e]/40 transition-colors"
@@ -670,7 +681,7 @@ export const BottomPlayer: React.FC = () => {
             </button>
 
             {/* Volume Slider Bar */}
-            <div className="relative w-16 sm:w-20 md:w-24 flex items-center group/vol h-3 cursor-pointer py-1">
+            <div className="relative w-16 lg:w-24 flex items-center group/vol h-3 cursor-pointer py-1">
               <div className="w-full h-1 group-hover/vol:h-1.5 bg-[#4d4d4d] rounded-full overflow-hidden transition-all relative">
                 <div
                   className="h-full bg-white group-hover/vol:bg-[#1db954] rounded-full transition-colors"
@@ -698,7 +709,7 @@ export const BottomPlayer: React.FC = () => {
           {/* Pop-up Mini Player Button */}
           <button
             onClick={handleOpenMiniPlayer}
-            className="p-1.5 text-[#b3b3b3] hover:text-white transition-transform active:scale-95"
+            className="p-1.5 text-[#b3b3b3] hover:text-white transition-transform active:scale-95 hidden lg:block"
             title="Pop-up Mini Player (P)"
             aria-label="Open mini player"
           >

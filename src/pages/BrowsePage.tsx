@@ -354,41 +354,41 @@ export function BrowsePage() {
         {/* Pagination Controls */}
         {totalPages > 1 && (
           <div className="space-y-4 pt-8 border-t border-white/5">
-            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+            <div className="flex items-center justify-center gap-1 sm:gap-2 max-w-full overflow-x-auto scrollbar-none px-1 py-1">
               <button
                 onClick={() => handlePageChange(Math.max(1, page - 1))}
                 disabled={page <= 1 || isLoading}
-                className="flex items-center gap-1 px-3 sm:px-4 py-2 rounded-xl bg-[#111622] hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold border border-white/5 transition-colors"
+                className="flex items-center gap-1 px-2.5 sm:px-4 py-2 rounded-xl bg-[#111622] hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold border border-white/5 transition-colors shrink-0"
               >
                 <ChevronLeft className="w-4 h-4" />
                 <span className="hidden sm:inline">Sebelumnya</span>
               </button>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 shrink-0">
                 {/* First page button */}
                 {page > 2 && (
                   <button
                     onClick={() => handlePageChange(1)}
-                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                    className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
                   >
                     1
                   </button>
                 )}
 
-                {page > 3 && <span className="text-slate-600 px-1 text-xs">...</span>}
+                {page > 3 && <span className="text-slate-600 px-0.5 sm:px-1 text-xs">...</span>}
 
                 {/* Previous page */}
                 {page > 1 && (
                   <button
                     onClick={() => handlePageChange(page - 1)}
-                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                    className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
                   >
                     {page - 1}
                   </button>
                 )}
 
                 {/* Current Active page */}
-                <button className="w-9 h-9 rounded-xl bg-indigo-600 text-white text-xs font-black shadow-md shadow-indigo-600/30">
+                <button className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-indigo-600 text-white text-xs font-black shadow-md shadow-indigo-600/30 shrink-0">
                   {page}
                 </button>
 
@@ -396,7 +396,7 @@ export function BrowsePage() {
                 {page < totalPages && (
                   <button
                     onClick={() => handlePageChange(page + 1)}
-                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                    className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
                   >
                     {page + 1}
                   </button>
@@ -406,7 +406,7 @@ export function BrowsePage() {
                 {page === 1 && totalPages > 2 && (
                   <button
                     onClick={() => handlePageChange(3)}
-                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                    className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
                   >
                     3
                   </button>
@@ -416,21 +416,21 @@ export function BrowsePage() {
                 {page === 1 && totalPages > 3 && (
                   <button
                     onClick={() => handlePageChange(4)}
-                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors hidden sm:block"
+                    className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0 hidden sm:block"
                   >
                     4
                   </button>
                 )}
 
                 {page < totalPages - 2 && (
-                  <span className="text-slate-600 px-1 text-xs">...</span>
+                  <span className="text-slate-600 px-0.5 sm:px-1 text-xs">...</span>
                 )}
 
                 {/* Last page button */}
                 {page < totalPages - 1 && (
                   <button
                     onClick={() => handlePageChange(totalPages)}
-                    className="w-9 h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors"
+                    className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
                   >
                     {totalPages}
                   </button>
@@ -440,7 +440,7 @@ export function BrowsePage() {
               <button
                 onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
                 disabled={page >= totalPages || isLoading}
-                className="flex items-center gap-1 px-3 sm:px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 text-white text-xs font-bold transition-colors shadow"
+                className="flex items-center gap-1 px-2.5 sm:px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 text-white text-xs font-bold transition-colors shadow shrink-0"
               >
                 <span className="hidden sm:inline">Selanjutnya</span>
                 <ChevronRight className="w-4 h-4" />

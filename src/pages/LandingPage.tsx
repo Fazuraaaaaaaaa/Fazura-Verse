@@ -178,12 +178,12 @@ export function LandingPage() {
         </div>
 
         {/* Billboard Foreground Details */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full space-y-6">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full space-y-4 sm:space-y-6">
           {/* Spotlight Channel Switcher Pills */}
-          <div className="flex items-center gap-2 p-1 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 w-fit overflow-x-auto max-w-full">
+          <div className="flex items-center gap-2 p-1 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 w-fit overflow-x-auto max-w-full scrollbar-none pb-1">
             <button
               onClick={() => setSpotlightChannel('movie')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap ${
                 spotlightChannel === 'movie'
                   ? 'bg-rose-600 text-white shadow-md'
                   : 'text-slate-400 hover:text-white'
@@ -194,7 +194,7 @@ export function LandingPage() {
             </button>
             <button
               onClick={() => setSpotlightChannel('anime')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap ${
                 spotlightChannel === 'anime'
                   ? 'bg-amber-500 text-black shadow-md'
                   : 'text-slate-400 hover:text-white'
@@ -205,7 +205,7 @@ export function LandingPage() {
             </button>
             <button
               onClick={() => setSpotlightChannel('manga')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap ${
                 spotlightChannel === 'manga'
                   ? 'bg-indigo-600 text-white shadow-md'
                   : 'text-slate-400 hover:text-white'
@@ -216,7 +216,7 @@ export function LandingPage() {
             </button>
             <button
               onClick={() => setSpotlightChannel('donghua')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap ${
                 spotlightChannel === 'donghua'
                   ? 'bg-emerald-500 text-black shadow-md'
                   : 'text-slate-400 hover:text-white'
@@ -227,7 +227,7 @@ export function LandingPage() {
             </button>
             <button
               onClick={() => setSpotlightChannel('music')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap ${
                 spotlightChannel === 'music'
                   ? 'bg-[#1DB954] text-black shadow-md shadow-[#1DB954]/20'
                   : 'text-slate-400 hover:text-white'
@@ -258,7 +258,7 @@ export function LandingPage() {
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight line-clamp-2">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight line-clamp-2">
               {featuredItem.title}
             </h1>
 
@@ -493,21 +493,21 @@ export function LandingPage() {
 
       {/* 4. Live Updates Feed (Manga, Anime, Donghua) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 space-y-8">
-        <div className="flex items-center justify-between border-b border-white/5 pb-4">
-          <div className="space-y-0.5">
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-              <Clock className="w-5 h-5 text-emerald-400" />
-              UPDATE TERBARU HARI INI
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+          <div className="space-y-0.5 min-w-0">
+            <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+              <Clock className="w-5 h-5 text-emerald-400 shrink-0" />
+              <span>UPDATE TERBARU HARI INI</span>
             </h2>
             <p className="text-xs text-slate-400">
               Episode dan chapter paling segar yang baru saja dirilis
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#111622] border border-white/5 text-xs font-semibold">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#111622] border border-white/5 text-xs font-semibold overflow-x-auto scrollbar-none max-w-full pb-1">
             <button
               onClick={() => setActiveMediaTab('all')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 rounded-lg transition-colors shrink-0 whitespace-nowrap ${
                 activeMediaTab === 'all' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -515,7 +515,7 @@ export function LandingPage() {
             </button>
             <button
               onClick={() => setActiveMediaTab('manga')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 rounded-lg transition-colors shrink-0 whitespace-nowrap ${
                 activeMediaTab === 'manga' ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -523,7 +523,7 @@ export function LandingPage() {
             </button>
             <button
               onClick={() => setActiveMediaTab('anime')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 rounded-lg transition-colors shrink-0 whitespace-nowrap ${
                 activeMediaTab === 'anime' ? 'bg-amber-500 text-black font-bold' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -531,7 +531,7 @@ export function LandingPage() {
             </button>
             <button
               onClick={() => setActiveMediaTab('donghua')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 rounded-lg transition-colors shrink-0 whitespace-nowrap ${
                 activeMediaTab === 'donghua' ? 'bg-emerald-500 text-black font-bold' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -539,7 +539,7 @@ export function LandingPage() {
             </button>
             <button
               onClick={() => setActiveMediaTab('movie')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 rounded-lg transition-colors shrink-0 whitespace-nowrap ${
                 activeMediaTab === 'movie' ? 'bg-rose-600 text-white font-bold' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -547,7 +547,7 @@ export function LandingPage() {
             </button>
             <button
               onClick={() => setActiveMediaTab('music')}
-              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition-colors shrink-0 whitespace-nowrap flex items-center gap-1.5 ${
                 activeMediaTab === 'music' ? 'bg-[#1DB954] text-black font-bold shadow-md shadow-[#1DB954]/20' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -558,7 +558,7 @@ export function LandingPage() {
         </div>
 
         {/* 5-Column Parallel Live Feeds */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
           {/* Column A: Manga Latest */}
           {(activeMediaTab === 'all' || activeMediaTab === 'manga') && (
             <div className="space-y-3">

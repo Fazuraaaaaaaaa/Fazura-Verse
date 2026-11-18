@@ -186,14 +186,14 @@ export function Navbar() {
             <span className="font-black text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-accent-cyan bg-clip-text text-transparent">
               FAZURA<span className="text-accent-indigo">VERSE</span>
             </span>
-            <span className="text-[9px] text-slate-400 -mt-1 font-bold tracking-wider uppercase">
+            <span className="hidden sm:block text-[9px] text-slate-400 -mt-1 font-bold tracking-wider uppercase">
               Manga • Anime • Donghua • Movie • Music
             </span>
           </div>
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 text-xs lg:text-sm font-semibold">
+        <nav className="hidden xl:flex items-center gap-1.5 text-xs lg:text-sm font-semibold">
           <NavLink
             to="/"
             end
@@ -280,8 +280,8 @@ export function Navbar() {
         </nav>
 
         {/* Search Bar & User Actions */}
-        <div className="flex items-center gap-2.5">
-          <div ref={searchRef} className="relative hidden sm:block w-48 md:w-64">
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <div ref={searchRef} className="relative hidden sm:block w-36 md:w-48 lg:w-56 xl:w-64 shrink-0">
             <form onSubmit={handleSearchSubmit}>
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -388,7 +388,7 @@ export function Navbar() {
             to="/history"
             title="Riwayat Baca"
             className={({ isActive }) =>
-              `p-2 rounded-xl border border-white/5 transition-all ${
+              `p-2 rounded-xl border border-white/5 transition-all hidden sm:flex ${
                 isActive
                   ? 'bg-accent-indigo/20 text-accent-indigo border-accent-indigo/30'
                   : 'bg-card/70 hover:bg-card text-slate-300 hover:text-white'
@@ -403,7 +403,7 @@ export function Navbar() {
             to="/music"
             title="Buka Fazura Music Player"
             className={({ isActive }) =>
-              `flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-xs font-bold shrink-0 ${
+              `flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border transition-all text-xs font-bold shrink-0 ${
                 isActive
                   ? 'bg-[#1DB954] text-black border-[#1DB954] shadow-md shadow-[#1DB954]/30'
                   : 'bg-[#1DB954]/15 hover:bg-[#1DB954]/25 text-[#1DB954] border-[#1DB954]/30 hover:border-[#1DB954]/60 shadow-sm shadow-[#1DB954]/10'
@@ -411,14 +411,14 @@ export function Navbar() {
             }
           >
             <Headphones className="w-3.5 h-3.5 text-[#1DB954] animate-pulse" />
-            <span className="font-extrabold tracking-wider">MUSIC</span>
+            <span className="font-extrabold tracking-wider hidden sm:inline">MUSIC</span>
           </NavLink>
 
           {/* Mobile Menu Hamburger Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle navigation menu"
-            className="md:hidden p-2 rounded-xl bg-card/70 text-slate-300 hover:text-white border border-white/5"
+            className="xl:hidden p-2 rounded-xl bg-card/70 text-slate-300 hover:text-white border border-white/5 transition-colors"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -427,7 +427,7 @@ export function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-white/10 bg-surface/95 backdrop-blur-xl px-4 py-4 space-y-2">
+        <div className="xl:hidden border-t border-white/10 bg-surface/95 backdrop-blur-xl px-4 py-4 space-y-2 max-h-[85vh] overflow-y-auto">
           <form onSubmit={handleSearchSubmit} className="mb-4">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />

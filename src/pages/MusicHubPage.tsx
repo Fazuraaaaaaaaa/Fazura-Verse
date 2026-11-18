@@ -18,7 +18,7 @@ export function MusicHubPage() {
   const musicBaseUrl = getMusicPlayerUrl();
 
   return (
-    <div className="flex-1 w-full bg-[#121212] relative overflow-hidden h-[calc(100vh-4rem)]">
+    <div className="flex-1 w-full bg-[#121212] relative overflow-hidden h-[calc(100dvh-3.5rem)] sm:h-[calc(100dvh-4rem)] min-h-[500px]">
       {/* Smooth Loading Indicator while player initializes */}
       {iframeLoading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#121212] z-10 space-y-4">
