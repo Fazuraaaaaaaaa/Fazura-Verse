@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { youtubeMusic } from '@/services/youtubeMusic';
+import { FALLBACK_TRACKS } from '@/services/providers/fallbackData';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,11 +8,19 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const trackId = searchParams.get('trackId') || searchParams.get('id') || '';
-    const title = searchParams.get('title') || undefined;
-    const artist = searchParams.get('artist') || undefined;
+    let title = searchParams.get('title') || undefined;
+    let artist = searchParams.get('artist') || undefined;
 
     if (!trackId && !title) {
       return NextResponse.json({ error: 'trackId or title is required' }, { status: 400 });
+    }
+
+    if (!title && trackId) {
+      const found = FALLBACK_TRACKS.find(t => t.id === trackId || t.youtubeId === trackId);
+      if (found) {
+        title = found.title;
+        artist = found.artist;
+      }
     }
 
     const lyrics = await youtubeMusic.getLyrics(trackId, title, artist);

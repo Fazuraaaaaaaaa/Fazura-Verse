@@ -49,7 +49,7 @@ export default function Sidebar() {
                 <Music size={18} className="stroke-[2.5]" />
               </div>
               {!isCollapsed && (
-                <span className="text-xl font-extrabold tracking-tight">SONORA</span>
+                <span className="text-lg font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-[#1DB954] bg-clip-text text-transparent">FAZURA MUSIC</span>
               )}
             </Link>
 

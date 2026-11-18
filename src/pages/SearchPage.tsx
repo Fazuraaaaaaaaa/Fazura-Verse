@@ -13,18 +13,21 @@ import {
   ArrowRight,
   TrendingUp,
   Clapperboard,
+  Headphones,
+  Play,
 } from 'lucide-react';
 import { search as searchManga } from '../services/api';
 import { searchOtakudesu } from '../services/animeApi';
 import { searchDonghua } from '../services/donghuaApi';
 import { getMovies } from '../services/movieApi';
+import { searchMusic } from '../services/musicApi';
 import { MangaCard } from '../components/MangaCard';
 
 export function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const qParam = searchParams.get('q') || '';
   const [inputVal, setInputVal] = useState(qParam);
-  const [activeTab, setActiveTab] = useState<'all' | 'manga' | 'anime' | 'donghua' | 'movie'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'manga' | 'anime' | 'donghua' | 'movie' | 'music'>('all');
 
   useEffect(() => {
     if (qParam !== inputVal) {
@@ -60,15 +63,24 @@ export function SearchPage() {
     enabled: Boolean(qParam && qParam.trim().length > 0),
   });
 
+  // Query 5: Music (YouTube Music & Catalog)
+  const { data: musicResults, isLoading: musicLoading } = useQuery({
+    queryKey: ['search', 'music', qParam],
+    queryFn: () => searchMusic(qParam),
+    enabled: Boolean(qParam && qParam.trim().length > 0),
+  });
+
   const isGlobalLoading =
-    Boolean(qParam) && (mangaLoading || otakuLoading || donghuaLoading || movieLoading);
+    Boolean(qParam) && (mangaLoading || otakuLoading || donghuaLoading || movieLoading || musicLoading);
 
   const mangaList = mangaResults?.komikList || [];
   const animeList = otakudesuResults || [];
   const donghuaList = donghuaResults || [];
   const movieList = movieResults?.data || [];
+  const musicList = musicResults || [];
 
-  const totalResults = mangaList.length + animeList.length + donghuaList.length + movieList.length;
+  const totalResults =
+    mangaList.length + animeList.length + donghuaList.length + movieList.length + musicList.length;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -229,6 +241,17 @@ export function SearchPage() {
               >
                 <Clapperboard className="w-3.5 h-3.5" />
                 Movies & Series ({movieList.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('music')}
+                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                  activeTab === 'music'
+                    ? 'bg-[#1DB954] text-black font-bold shadow-md shadow-[#1DB954]/20'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Headphones className="w-3.5 h-3.5" />
+                Musik ({musicList.length})
               </button>
             </div>
           </div>
@@ -419,6 +442,75 @@ export function SearchPage() {
                         {m.releaseDate ? new Date(m.releaseDate).getFullYear() : 'Cinema'}
                         {m.duration ? ` • ${m.duration}` : ''}
                       </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Section 5: Music Results */}
+          {(activeTab === 'all' || activeTab === 'music') && musicList.length > 0 && (
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <h3 className="text-sm font-bold text-[#1DB954] flex items-center gap-2">
+                  <Headphones className="w-4 h-4" /> Musik & Lagu (Fazura Music / YouTube)
+                </h3>
+                <span className="text-xs text-slate-500">{musicList.length} lagu</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {musicList.map((track) => (
+                  <Link
+                    key={track.id}
+                    to="/music"
+                    onClick={() => {
+                      try {
+                        localStorage.setItem('sonora_queue_first', JSON.stringify({
+                          id: track.id,
+                          youtubeId: track.youtubeId,
+                          title: track.title,
+                          artist: track.artist,
+                          thumbnail: track.thumbnail,
+                          album: track.album || track.title,
+                        }));
+                      } catch {
+                        // ignore
+                      }
+                    }}
+                    className="group relative flex items-center gap-3 p-2.5 rounded-xl bg-[#111622] border border-white/5 hover:border-[#1DB954]/50 hover:bg-slate-900/90 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                  >
+                    <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-slate-900 border border-white/5">
+                      <img
+                        src={track.thumbnail || `https://i.ytimg.com/vi/${track.youtubeId}/hqdefault.jpg`}
+                        alt={track.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="w-7 h-7 rounded-full bg-[#1DB954] text-black flex items-center justify-center shadow-md">
+                          <Play className="w-3.5 h-3.5 fill-black ml-0.5" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0 pr-1">
+                      <h4 className="text-xs font-bold text-slate-100 group-hover:text-[#1DB954] truncate transition-colors">
+                        {track.title}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                        {track.artist}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {track.tag && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#1DB954]/15 text-[#1DB954] font-medium border border-[#1DB954]/30">
+                            {track.tag}
+                          </span>
+                        )}
+                        {track.durationFormatted && (
+                          <span className="text-[10px] text-slate-500">
+                            {track.durationFormatted}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </Link>
                 ))}

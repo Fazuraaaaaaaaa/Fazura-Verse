@@ -160,7 +160,7 @@ export default function AlbumPage() {
       {/* Footer Info */}
       <div className="px-4 text-xs text-[#B3B3B3] space-y-1 pt-6">
         <p>© {album.releaseYear || '2024'} {album.artist}</p>
-        <p>℗ {album.releaseYear || '2024'} Sonora Music Distribution</p>
+        <p>℗ {album.releaseYear || '2024'} Fazura Music Distribution</p>
       </div>
     </div>
   );

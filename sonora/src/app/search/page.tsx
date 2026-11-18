@@ -332,7 +332,7 @@ function SearchContent() {
       {loading && (
         <div className="py-16 text-center text-[#B3B3B3]">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#1DB954] border-r-transparent" />
-          <p className="mt-3 text-sm">Searching Sonora catalogue...</p>
+          <p className="mt-3 text-sm">Mencari katalog musik Fazura Music...</p>
         </div>
       )}
 

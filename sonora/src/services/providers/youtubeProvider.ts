@@ -578,7 +578,7 @@ export class YoutubeProvider implements MusicProvider {
         monthlyListeners: searchRes.artists[0]?.monthlyListeners || '3,800,000 monthly listeners',
         topTracks,
         albums: searchRes.albums,
-        bio: `${artistName} on Sonora.`,
+        bio: `${artistName} on Fazura Music.`,
       };
     } catch (err) {
       console.warn('[YoutubeProvider] getArtist failed:', err);
@@ -621,9 +621,9 @@ export class YoutubeProvider implements MusicProvider {
       return {
         id,
         title,
-        description: `Sonora playlist collection for ${title}.`,
+        description: `Fazura Music playlist collection for ${title}.`,
         cover,
-        creator: { name: 'Sonora' },
+        creator: { name: 'Fazura Music' },
         trackCount: tracks.length,
         tracks,
       };
@@ -662,15 +662,31 @@ export class YoutubeProvider implements MusicProvider {
 
     try {
       const cleanTitle = encodeURIComponent(title.split('(')[0].split('-')[0].trim());
-      const cleanArtist = encodeURIComponent((artist || '').split(',')[0].trim());
+      const cleanArtist = encodeURIComponent((artist || '').split(',')[0].split('&')[0].trim());
       const url = `https://lrclib.net/api/get?track_name=${cleanTitle}&artist_name=${cleanArtist}`;
 
-      const res = await fetch(url, {
-        headers: { 'User-Agent': 'Sonora-Music-Player/1.0' },
+      let res = await fetch(url, {
+        headers: { 'User-Agent': 'Fazura-Music-Player/1.0' },
       });
 
-      if (!res.ok) return null;
-      const data = await res.json();
+      let data: any = null;
+      if (res.ok) {
+        data = await res.json();
+      } else {
+        // Fallback to lrclib search query
+        const searchUrl = `https://lrclib.net/api/search?q=${cleanTitle}%20${cleanArtist}`;
+        const searchRes = await fetch(searchUrl, {
+          headers: { 'User-Agent': 'Fazura-Music-Player/1.0' },
+        });
+        if (searchRes.ok) {
+          const list = await searchRes.json();
+          if (Array.isArray(list) && list.length > 0) {
+            data = list[0];
+          }
+        }
+      }
+
+      if (!data) return null;
 
       if (data.syncedLyrics) {
         const lines: LyricsLine[] = [];

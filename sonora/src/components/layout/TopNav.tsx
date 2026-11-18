@@ -64,7 +64,7 @@ function TopNavContent() {
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1DB954] text-black shadow-md flex-shrink-0">
               <Music size={15} className="stroke-[2.5]" />
             </div>
-            <span className="text-base font-black tracking-tight text-white">SONORA</span>
+            <span className="text-base font-black tracking-tight text-white">FAZURA MUSIC</span>
           </Link>
 
           {/* Right Mobile Actions */}
@@ -211,7 +211,7 @@ function TopNavContent() {
           />
           <div className="absolute right-3.5 top-12 sm:top-14 z-50 w-48 rounded-lg bg-[#282828] p-1.5 shadow-2xl border border-white/10 text-sm text-white animate-in fade-in zoom-in-95 duration-100">
             <div className="px-3 py-2 border-b border-white/10">
-              <div className="font-semibold text-white">Sonora Premium</div>
+              <div className="font-semibold text-white">Fazura Music VIP</div>
               <div className="text-xs text-[#1DB954] font-medium">Free & Open Source</div>
             </div>
             <button

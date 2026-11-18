@@ -4,8 +4,8 @@ import QueryProvider from '@/providers/QueryProvider';
 import MainLayout from '@/components/layout/MainLayout';
 
 export const metadata: Metadata = {
-  title: 'SONORA - Web Player: Music for everyone',
-  description: 'Spotify-identical web music streaming application powered by Next.js and YouTube Music.',
+  title: 'FAZURA MUSIC - Web Player',
+  description: 'Spotify-style web music streaming player powered by Next.js and YouTube Music.',
   icons: {
     icon: '/favicon.ico',
   },

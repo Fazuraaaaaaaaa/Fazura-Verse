@@ -427,7 +427,7 @@ export async function fetchArtist(id: string): Promise<Artist | null> {
     avatar: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
     banner: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1600&auto=format&fit=crop&q=80',
     monthlyListeners: '45,210,990',
-    bio: 'Verified Artist on Sonora Web Player.',
+    bio: 'Verified Artist on Fazura Music.',
     topTracks: MOCK_TRACKS.slice(0, 5),
     albums: MOCK_ALBUMS.slice(0, 2),
     singles: MOCK_ALBUMS.slice(2, 4),
@@ -479,9 +479,9 @@ export async function fetchPlaylist(id: string): Promise<Playlist | null> {
   return {
     id,
     title: decodeURIComponent(id).replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-    description: 'A curated music journey on Sonora Web Player.',
-    cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&auto=format&fit=crop&q=80',
-    creator: { name: 'Sonora' },
+    description: 'A curated music journey on Fazura Music.',
+    cover: 'https://i.ytimg.com/vi/kPa7bsKwL-c/hqdefault.jpg',
+    creator: { name: 'Fazura Music' },
     trackCount: MOCK_TRACKS.length,
     tracks: MOCK_TRACKS,
   };
@@ -529,7 +529,7 @@ export async function fetchLyrics(trackId: string, title?: string, artist?: stri
       { time: 35, text: 'Listen to the sound of freedom' },
       { time: 42, text: 'Where the music never ends' },
       { time: 48, text: 'Turn the volume up and dive into the beat' },
-      { time: 55, text: 'Sonora playing on repeat' },
+      { time: 55, text: 'Fazura Music playing on repeat' },
     ],
   };
 }

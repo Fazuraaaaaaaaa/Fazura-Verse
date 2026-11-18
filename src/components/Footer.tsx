@@ -54,7 +54,7 @@ export function Footer() {
               </li>
               <li>
                 <Link to="/music" className="hover:text-[#1DB954] transition-colors">
-                  Musik & Lagu (SONORA Player)
+                  Musik & Lagu (Fazura Music)
                 </Link>
               </li>
               <li>

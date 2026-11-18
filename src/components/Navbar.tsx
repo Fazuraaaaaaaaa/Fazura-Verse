@@ -20,6 +20,7 @@ import { search as searchManga } from '../services/api';
 import { searchOtakudesu } from '../services/animeApi';
 import { searchDonghua } from '../services/donghuaApi';
 import { getMovies } from '../services/movieApi';
+import { searchMusic } from '../services/musicApi';
 
 interface SearchDropdownItem {
   id: string;
@@ -63,11 +64,12 @@ export function Navbar() {
       try {
         setSearchLoading(true);
         const q = searchQuery.trim();
-        const [mangaRes, animeRes, donghuaRes, movieRes] = await Promise.allSettled([
+        const [mangaRes, animeRes, donghuaRes, movieRes, musicRes] = await Promise.allSettled([
           searchManga(q),
           searchOtakudesu(q),
           searchDonghua(q),
           getMovies({ q, perPage: 2 }),
+          searchMusic(q),
         ]);
 
         const combined: SearchDropdownItem[] = [];
@@ -132,6 +134,21 @@ export function Navbar() {
           });
         }
 
+        // 5. Music matches (up to 3)
+        if (musicRes.status === 'fulfilled' && Array.isArray(musicRes.value)) {
+          musicRes.value.slice(0, 3).forEach((track) => {
+            combined.push({
+              id: `music-${track.id}`,
+              title: track.title,
+              poster: track.thumbnail,
+              typeLabel: 'Music',
+              badgeStyle: 'bg-[#1DB954]/20 text-[#1DB954] border-[#1DB954]/30',
+              link: `/music?play=${encodeURIComponent(track.id)}`,
+              subtitle: `${track.artist} • ${track.durationFormatted || 'Lagu'}`,
+            });
+          });
+        }
+
         setSearchResults(combined);
       } catch (err) {
         console.error('Navbar search error:', err);
@@ -176,12 +193,12 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-1.5 text-sm font-semibold">
+        <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 text-xs lg:text-sm font-semibold">
           <NavLink
             to="/"
             end
             className={({ isActive }) =>
-              `px-3.5 py-2 rounded-xl transition-all ${
+              `px-2.5 lg:px-3.5 py-2 rounded-xl transition-all ${
                 isActive
                   ? 'bg-white/10 text-white font-bold'
                   : 'text-slate-300 hover:text-white hover:bg-card'
@@ -194,7 +211,7 @@ export function Navbar() {
           <NavLink
             to="/manga"
             className={({ isActive }) =>
-              `px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              `px-2.5 lg:px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
                 isActive
                   ? 'bg-accent-indigo/20 text-accent-indigo font-bold border border-accent-indigo/30'
                   : 'text-slate-300 hover:text-white hover:bg-card'
@@ -208,7 +225,7 @@ export function Navbar() {
           <NavLink
             to="/anime"
             className={({ isActive }) =>
-              `px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              `px-2.5 lg:px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
                 isActive
                   ? 'bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30'
                   : 'text-slate-300 hover:text-white hover:bg-card'
@@ -222,7 +239,7 @@ export function Navbar() {
           <NavLink
             to="/donghua"
             className={({ isActive }) =>
-              `px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              `px-2.5 lg:px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
                 isActive
                   ? 'bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30'
                   : 'text-slate-300 hover:text-white hover:bg-card'
@@ -236,7 +253,7 @@ export function Navbar() {
           <NavLink
             to="/movies"
             className={({ isActive }) =>
-              `px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              `px-2.5 lg:px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
                 isActive
                   ? 'bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30'
                   : 'text-slate-300 hover:text-white hover:bg-card'
@@ -250,7 +267,7 @@ export function Navbar() {
           <NavLink
             to="/music"
             className={({ isActive }) =>
-              `px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              `px-2.5 lg:px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
                 isActive
                   ? 'bg-[#1DB954]/20 text-[#1DB954] font-bold border border-[#1DB954]/30'
                   : 'text-slate-300 hover:text-white hover:bg-card'
@@ -270,7 +287,7 @@ export function Navbar() {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Cari komik / anime..."
+                  placeholder="Cari komik, anime, movie, musik..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -291,7 +308,7 @@ export function Navbar() {
                 {searchLoading && searchResults.length === 0 ? (
                   <div className="p-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-accent-indigo" />
-                    Mencari manga, anime, & donghua...
+                    Mencari komik, anime, movie, & musik...
                   </div>
                 ) : searchResults.length > 0 ? (
                   <div className="p-1.5 space-y-1">
@@ -381,11 +398,27 @@ export function Navbar() {
             <History className="w-4 h-4" />
           </NavLink>
 
+          {/* Prominent Music Action Button in Navbar */}
+          <NavLink
+            to="/music"
+            title="Buka Fazura Music Player"
+            className={({ isActive }) =>
+              `flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-xs font-bold shrink-0 ${
+                isActive
+                  ? 'bg-[#1DB954] text-black border-[#1DB954] shadow-md shadow-[#1DB954]/30'
+                  : 'bg-[#1DB954]/15 hover:bg-[#1DB954]/25 text-[#1DB954] border-[#1DB954]/30 hover:border-[#1DB954]/60 shadow-sm shadow-[#1DB954]/10'
+              }`
+            }
+          >
+            <Headphones className="w-3.5 h-3.5 text-[#1DB954] animate-pulse" />
+            <span className="font-extrabold tracking-wider">MUSIC</span>
+          </NavLink>
+
           {/* Mobile Menu Hamburger Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle navigation menu"
-            className="lg:hidden p-2 rounded-xl bg-card/70 text-slate-300 hover:text-white border border-white/5"
+            className="md:hidden p-2 rounded-xl bg-card/70 text-slate-300 hover:text-white border border-white/5"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -394,13 +427,13 @@ export function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-white/10 bg-surface/95 backdrop-blur-xl px-4 py-4 space-y-2">
+        <div className="md:hidden border-t border-white/10 bg-surface/95 backdrop-blur-xl px-4 py-4 space-y-2">
           <form onSubmit={handleSearchSubmit} className="mb-4">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Cari komik / anime..."
+                placeholder="Cari komik, anime, movie, musik..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 text-sm bg-card border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none"
@@ -460,7 +493,7 @@ export function Navbar() {
             className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-200 hover:bg-card"
           >
             <Headphones className="w-4 h-4 text-[#1DB954]" />
-            Musik (SONORA Spotify Player)
+            Musik (Fazura Music)
           </NavLink>
 
           <NavLink

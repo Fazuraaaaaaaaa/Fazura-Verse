@@ -20,7 +20,11 @@ export default function LyricsPanel() {
 
     let cancelled = false;
     setLoading(true);
-    fetchLyrics(currentTrack.id || currentTrack.youtubeId)
+    fetchLyrics(
+      currentTrack.id || currentTrack.youtubeId,
+      currentTrack.title,
+      currentTrack.artist
+    )
       .then((data) => {
         if (!cancelled) {
           setLyrics(data);

@@ -168,7 +168,7 @@ export const FullscreenPlayer: React.FC = () => {
               Playing from
             </p>
             <p className="text-xs sm:text-sm font-semibold text-white truncate max-w-[200px] sm:max-w-md">
-              {currentTrack?.album || 'SONORA Music Stream'}
+              {currentTrack?.album || 'Fazura Music Stream'}
             </p>
           </div>
         </div>

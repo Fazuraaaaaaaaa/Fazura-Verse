@@ -24,9 +24,9 @@ export function FloatingMusicWidget() {
               <div className="w-6 h-6 rounded-md bg-[#1DB954]/20 border border-[#1DB954]/30 flex items-center justify-center text-[#1DB954]">
                 <Music className="w-3.5 h-3.5" />
               </div>
-              <span className="font-bold text-xs text-white">SONORA Player</span>
+              <span className="font-bold text-xs text-white">Fazura Music</span>
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#1DB954]/20 text-[#1DB954] font-semibold">
-                Spotify-Style
+                Player
               </span>
             </div>
 
@@ -62,7 +62,7 @@ export function FloatingMusicWidget() {
           <div className="flex-1 w-full bg-black relative">
             <iframe
               src={sonoraUrl}
-              title="SONORA Floating Music Player"
+              title="Fazura Music Floating Player"
               className="w-full h-full border-0"
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               loading="lazy"
@@ -75,7 +75,7 @@ export function FloatingMusicWidget() {
       <div className="fixed bottom-5 right-5 z-40">
         <button
           onClick={() => setIsOpen((prev) => !prev)}
-          title={isOpen ? 'Tutup Sonora Music' : 'Dengarkan Musik (SONORA)'}
+          title={isOpen ? 'Tutup Fazura Music' : 'Dengarkan Musik (Fazura Music)'}
           className="group relative flex items-center gap-2.5 px-3.5 py-2.5 rounded-full bg-black/90 hover:bg-black border border-[#1DB954]/40 hover:border-[#1DB954] text-white shadow-2xl backdrop-blur-xl transition-all duration-300 transform hover:scale-105 hover:shadow-[0_0_20px_rgba(29,185,84,0.35)]"
         >
           {/* Animated Glow Pulse */}

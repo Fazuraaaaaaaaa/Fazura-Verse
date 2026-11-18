@@ -181,10 +181,10 @@ export default function MiniPlayerPage() {
       <header className="relative z-10 flex items-center justify-between pb-3 border-b border-[#282828]">
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 rounded-full bg-[#1DB954] flex items-center justify-center text-black font-extrabold text-[10px]">
-            S
+            F
           </div>
           <span className="text-xs font-bold tracking-wider uppercase text-[#b3b3b3]">
-            SONORA Mini
+            Fazura Mini
           </span>
           {isPlaying && (
             <span className="flex h-2 w-2 relative ml-1">

@@ -20,6 +20,7 @@ import { getLatest, getPopular } from '../services/api';
 import { getOtakudesuHome } from '../services/animeApi';
 import { getDonghuaHome } from '../services/donghuaApi';
 import { getMovies } from '../services/movieApi';
+import { FAZURA_MUSIC_CATALOG } from '../services/musicApi';
 
 export function LandingPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,6 +64,9 @@ export function LandingPage() {
   const latestAnime = animeData?.ongoing?.slice(0, 10) || [];
   const latestDonghua = donghuaData?.latestRelease?.slice(0, 10) || [];
   const latestMovies = moviesData?.data?.slice(0, 10) || [];
+
+  // Curated Popular & Trending Music with authentic YouTube artwork
+  const trendingMusicList = FAZURA_MUSIC_CATALOG.slice(0, 10);
 
   // Dynamic Live Spotlight based on active channel
   const topAnime = animeData?.ongoing?.[0];
@@ -124,13 +128,13 @@ export function LandingPage() {
         type: 'MUSIK • SPOTIFY-STYLE STREAMING',
         tag: 'Spotlight Release',
         description:
-          'Streaming musik modern YouTube Music API di SONORA: jutaan lagu hits internasional & Indonesia, playlist viral, audio background playback, lirik interaktif, dan kontrol pemutar Spotify Web Player.',
+          'Streaming musik modern YouTube Music API di Fazura Music: jutaan lagu hits internasional & Indonesia, playlist viral, audio background playback, lirik interaktif real-time, dan kontrol pemutar modern.',
         backdrop:
-          'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1600&q=80',
+          'https://i.ytimg.com/vi/kPa7bsKwL-c/maxresdefault.jpg',
         actionLink: '/music',
         actionText: 'Putar Musik Sekarang',
         channelLink: '/music',
-        channelText: 'Buka SONORA Player',
+        channelText: 'Buka Fazura Music',
         color: 'emerald',
       };
     }
@@ -454,7 +458,7 @@ export function LandingPage() {
             </div>
           </Link>
 
-          {/* Channel 5: Music (SONORA) */}
+          {/* Channel 5: Music (Fazura Music) */}
           <Link
             to="/music"
             className="group relative rounded-2xl overflow-hidden bg-[#111622] border border-white/5 hover:border-[#1DB954]/50 transition-all duration-300 p-6 flex flex-col justify-between"
@@ -471,10 +475,10 @@ export function LandingPage() {
 
               <div>
                 <h3 className="text-xl font-bold text-white group-hover:text-[#1DB954] transition-colors">
-                  SONORA Music
+                  Fazura Music
                 </h3>
                 <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                  Streaming musik YouTube Music API: jutaan lagu, playlist trending, background playback, smart autoplay, lirik interaktif & mini player.
+                  Streaming musik YouTube Music API: ribuan lagu hits, lirik sinkronisasi real-time, background playback, smart autoplay & mini player.
                 </p>
               </div>
             </div>
@@ -541,11 +545,20 @@ export function LandingPage() {
             >
               Movie
             </button>
+            <button
+              onClick={() => setActiveMediaTab('music')}
+              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                activeMediaTab === 'music' ? 'bg-[#1DB954] text-black font-bold shadow-md shadow-[#1DB954]/20' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Headphones className="w-3.5 h-3.5" />
+              Musik
+            </button>
           </div>
         </div>
 
-        {/* 4-Column Parallel Live Feeds */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* 5-Column Parallel Live Feeds */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6">
           {/* Column A: Manga Latest */}
           {(activeMediaTab === 'all' || activeMediaTab === 'manga') && (
             <div className="space-y-3">
@@ -702,6 +715,69 @@ export function LandingPage() {
                       </p>
                       <p className="text-[10px] text-slate-500 mt-0.5">
                         {movie.ratingValue ? `★ ${movie.ratingValue.toFixed(1)} TMDB` : 'HD Cinema'}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Column E: Music Populer & Trending */}
+          {(activeMediaTab === 'all' || activeMediaTab === 'music') && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#1DB954] border-b border-[#1DB954]/20 pb-2">
+                <span className="flex items-center gap-1.5">
+                  <Headphones className="w-4 h-4" /> Musik Trending
+                </span>
+                <Link to="/music" className="text-[11px] text-slate-400 hover:text-white">
+                  Lihat Semua →
+                </Link>
+              </div>
+
+              <div className="space-y-2">
+                {trendingMusicList.map((track) => (
+                  <Link
+                    key={track.id}
+                    to="/music"
+                    onClick={() => {
+                      try {
+                        localStorage.setItem('sonora_queue_first', JSON.stringify({
+                          id: track.id,
+                          youtubeId: track.youtubeId,
+                          title: track.title,
+                          artist: track.artist,
+                          thumbnail: track.thumbnail,
+                          album: track.album || track.title,
+                        }));
+                      } catch {
+                        // ignore
+                      }
+                    }}
+                    className="flex items-center gap-3 p-2.5 rounded-xl bg-[#111622] hover:bg-[#182030] border border-white/5 hover:border-[#1DB954]/40 transition-all group"
+                  >
+                    <div className="relative w-12 h-16 rounded-lg overflow-hidden bg-slate-900 shrink-0 border border-white/5">
+                      <img
+                        src={track.thumbnail}
+                        alt={track.title}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="w-6 h-6 rounded-full bg-[#1DB954] text-black flex items-center justify-center shadow-md">
+                          <Play className="w-3 h-3 fill-black ml-0.5" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-slate-200 group-hover:text-[#1DB954] truncate">
+                        {track.title}
+                      </p>
+                      <p className="text-[11px] text-[#1DB954] font-semibold mt-0.5 truncate">
+                        {track.artist}
+                      </p>
+                      <p className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1.5">
+                        <span className="text-slate-400">{track.tag || 'Lagu Hits'}</span>
+                        {track.durationFormatted && <span>• {track.durationFormatted}</span>}
                       </p>
                     </div>
                   </Link>

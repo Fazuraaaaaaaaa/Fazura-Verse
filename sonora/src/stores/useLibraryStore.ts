@@ -94,7 +94,7 @@ export const useLibraryStore = create<LibraryState>()(
         const newPlaylist: UserPlaylist = {
           id: `playlist-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
           title: title?.trim() || `My Playlist #${playlistNumber}`,
-          description: description?.trim() || 'A custom playlist created on SONORA.',
+          description: description?.trim() || 'A custom playlist created on Fazura Music.',
           cover:
             cover ||
             'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=60',

@@ -148,7 +148,7 @@ export const YouTubePlayer: React.FC = () => {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: currentTrack.title,
         artist: currentTrack.artist,
-        album: currentTrack.album || 'SONORA Music',
+        album: currentTrack.album || 'Fazura Music',
         artwork: [
           { src: artworkUrl, sizes: '96x96', type: 'image/jpeg' },
           { src: artworkUrl, sizes: '128x128', type: 'image/jpeg' },

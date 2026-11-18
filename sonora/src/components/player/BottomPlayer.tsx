@@ -137,7 +137,7 @@ export const BottomPlayer: React.FC = () => {
           height: 520,
         });
         const doc = pipWindow.document;
-        doc.title = `${currentTrack?.title || 'SONORA'} - Mini Player`;
+        doc.title = `${currentTrack?.title || 'Fazura Music'} - Mini Player`;
 
         const style = doc.createElement('style');
         style.textContent = `
@@ -165,7 +165,7 @@ export const BottomPlayer: React.FC = () => {
 
         const title = doc.createElement('div');
         title.className = 'title';
-        title.textContent = currentTrack?.title || 'SONORA Music';
+        title.textContent = currentTrack?.title || 'Fazura Music';
 
         const artist = doc.createElement('div');
         artist.className = 'artist';
@@ -212,7 +212,7 @@ export const BottomPlayer: React.FC = () => {
 
     const popup = window.open(
       '/miniplayer',
-      'SonoraMiniPlayer',
+      'FazuraMiniPlayer',
       'width=380,height=520,resizable=yes,scrollbars=no,status=no,location=no,toolbar=no,menubar=no'
     );
     if (popup) popup.focus();
@@ -405,7 +405,7 @@ export const BottomPlayer: React.FC = () => {
                 <Music className="w-6 h-6 text-[#b3b3b3]" />
               </div>
               <div className="flex flex-col">
-                <span className="text-white text-sm font-semibold">SONORA Player</span>
+                <span className="text-white text-sm font-semibold">FAZURA MUSIC</span>
                 <span className="text-[#b3b3b3] text-xs">Ready to play music</span>
               </div>
             </div>

@@ -97,7 +97,7 @@ export default function App() {
             <Route path="/movies/watch/:id" element={<MovieWatchPage />} />
             <Route path="/movies/:id/watch" element={<MovieWatchPage />} />
 
-            {/* Music Portal (SONORA Spotify-Style Music Streaming) */}
+            {/* Music Portal (Fazura Music Streaming) */}
             <Route path="/music" element={<MusicHubPage />} />
 
             {/* Personal Library */}

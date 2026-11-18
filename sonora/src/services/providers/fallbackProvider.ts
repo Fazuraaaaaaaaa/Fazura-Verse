@@ -17,7 +17,7 @@ import {
   CHILL_LOFI,
   ROCK_CLASSICS,
 } from './fallbackData';
-import { Track, Artist, Album, Playlist, SearchResults, LyricsData, HomeFeedSection } from '@/types/music';
+import { Track, Artist, Album, Playlist, SearchResults, LyricsData, LyricsLine, HomeFeedSection } from '@/types/music';
 import {
   generateDailyMixes,
   generateDiscoverWeekly,
@@ -292,7 +292,7 @@ export class FallbackProvider implements MusicProvider {
       {
         id: 'sec_featured_playlists',
         title: 'Featured Playlists',
-        subtitle: 'Hand-picked by Sonora editors',
+        subtitle: 'Hand-picked by Fazura Music editors',
         type: 'playlists',
         items: FALLBACK_PLAYLISTS,
       },
@@ -374,7 +374,7 @@ export class FallbackProvider implements MusicProvider {
         album: 'Single',
         duration: 210,
         durationFormatted: '3:30',
-        thumbnail: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
+        thumbnail: `https://i.ytimg.com/vi/${targetId}/hqdefault.jpg`,
         views: '1,200,000',
         releaseDate: '2024',
       };
@@ -382,12 +382,12 @@ export class FallbackProvider implements MusicProvider {
 
     // Related songs: same artist or other popular songs excluding current
     const related = FALLBACK_TRACKS.filter(t => t.id !== track!.id).slice(0, 10);
-    const lyrics = FALLBACK_LYRICS[track.id] || this.generateFallbackLyrics(track);
+    const lyrics = await this.getLyrics(track.id, track.title, track.artist);
 
     return {
       track,
       related,
-      lyrics,
+      lyrics: lyrics || undefined,
     };
   }
 
@@ -408,7 +408,7 @@ export class FallbackProvider implements MusicProvider {
         name: id.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
         avatar: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
         monthlyListeners: '2,500,000',
-        bio: 'Artist profile on Sonora.',
+        bio: 'Artist profile on Fazura Music.',
         topTracks: topTracks.length > 0 ? topTracks : FALLBACK_TRACKS.slice(0, 5),
         albums: FALLBACK_ALBUMS.slice(0, 2),
         isFollowed: false,
@@ -453,9 +453,9 @@ export class FallbackProvider implements MusicProvider {
       playlist = {
         id: targetId,
         title: id.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-        description: 'Curated mix on Sonora.',
-        cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
-        creator: { name: 'Sonora' },
+        description: 'Curated mix on Fazura Music.',
+        cover: 'https://i.ytimg.com/vi/kPa7bsKwL-c/hqdefault.jpg',
+        creator: { name: 'Fazura Music' },
         trackCount: 8,
         tracks: FALLBACK_TRACKS.slice(0, 8),
       };
@@ -515,31 +515,53 @@ export class FallbackProvider implements MusicProvider {
     if (FALLBACK_LYRICS[trackId]) {
       return FALLBACK_LYRICS[trackId];
     }
-    const track = FALLBACK_TRACKS.find(t => t.id === trackId);
-    return this.generateFallbackLyrics(track || {
-      id: trackId,
-      youtubeId: trackId,
-      title: title || 'Song',
-      artist: artist || 'Artist',
-      duration: 180,
-      thumbnail: '',
-    });
-  }
+    const track = FALLBACK_TRACKS.find(t => t.id === trackId || t.youtubeId === trackId);
+    const resolvedTitle = title || track?.title;
+    const resolvedArtist = artist || track?.artist;
 
-  private generateFallbackLyrics(track: Track): LyricsData {
-    return {
-      trackId: track.id,
-      synced: true,
-      lines: [
-        { time: 5, text: `♪ ${track.title} by ${track.artist} ♪` },
-        { time: 12, text: "Listen to the melody flowing through the sound" },
-        { time: 18, text: "Lost in the rhythm as the world turns around" },
-        { time: 25, text: "Feel every beat, every heartbeat so loud" },
-        { time: 32, text: "We're singing along right now with the crowd" },
-        { time: 40, text: "Oh, let the music take you all the way" },
-        { time: 48, text: "From the night into the light of day" },
-        { time: 56, text: `Playing ${track.title} on Sonora` },
-      ],
-    };
+    if (resolvedTitle) {
+      try {
+        const cleanTitle = encodeURIComponent(resolvedTitle.split('(')[0].split('-')[0].trim());
+        const cleanArtist = encodeURIComponent((resolvedArtist || '').split(',')[0].split('&')[0].trim());
+        const searchRes = await fetch(`https://lrclib.net/api/search?q=${cleanTitle}%20${cleanArtist}`, {
+          headers: { 'User-Agent': 'Fazura-Music-Player/1.0' },
+        });
+        if (searchRes.ok) {
+          const list = await searchRes.json();
+          if (Array.isArray(list) && list.length > 0) {
+            const data = list[0];
+            if (data.syncedLyrics) {
+              const lines: LyricsLine[] = [];
+              const rawLines = data.syncedLyrics.split('\n');
+              for (const line of rawLines) {
+                const match = line.match(/\[(\d+):(\d+\.\d+)\](.*)/);
+                if (match) {
+                  const minutes = parseInt(match[1], 10);
+                  const seconds = parseFloat(match[2]);
+                  lines.push({
+                    time: Math.round((minutes * 60 + seconds) * 10) / 10,
+                    text: match[3].trim(),
+                  });
+                }
+              }
+              if (lines.length > 0) {
+                return { trackId, synced: true, lines };
+              }
+            }
+            if (data.plainLyrics) {
+              const lines: LyricsLine[] = data.plainLyrics
+                .split('\n')
+                .filter((l: string) => l.trim().length > 0)
+                .map((text: string, idx: number) => ({ time: idx * 4, text: text.trim() }));
+              return { trackId, synced: false, lines };
+            }
+          }
+        }
+      } catch (err) {
+        // fallback
+      }
+    }
+
+    return null;
   }
 }
