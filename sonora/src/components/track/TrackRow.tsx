@@ -9,7 +9,7 @@ import { useLibraryStore } from '@/stores/useLibraryStore';
 import { useContextMenuStore } from '@/stores/useContextMenuStore';
 import { useToastStore } from '@/stores/useToastStore';
 import LikeButton from '@/components/common/LikeButton';
-import { formatDuration, cn } from '@/lib/utils';
+import { formatDuration, formatPlays, cn } from '@/lib/utils';
 
 interface TrackRowProps {
   track: Track;
@@ -183,7 +183,7 @@ export default function TrackRow({
 
       {/* Date Added or Views */}
       <div className="hidden md:block min-w-0 text-sm text-[#B3B3B3] truncate">
-        {showDateAdded || track.views ? `${track.views || '1.2M'} plays` : '—'}
+        {showDateAdded || (track.views ? `${formatPlays(track.views)} plays` : '—')}
       </div>
 
       {/* Duration, Like, & Context Menu */}

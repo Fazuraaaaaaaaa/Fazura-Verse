@@ -213,8 +213,18 @@ function SearchContent() {
               )}
 
               {/* Songs List on the Right */}
-              <div className="lg:col-span-7">
-                <h2 className="text-xl sm:text-2xl font-bold text-white mb-3">Songs</h2>
+              <div className={results.topResult ? "lg:col-span-7" : "lg:col-span-12"}>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white">Songs</h2>
+                  {results.tracks.length > 4 && (
+                    <button
+                      onClick={() => setFilter('songs')}
+                      className="text-xs sm:text-sm font-bold text-[#b3b3b3] hover:text-white hover:underline transition-colors cursor-pointer"
+                    >
+                      See all ({results.tracks.length})
+                    </button>
+                  )}
+                </div>
                 <TrackTable
                   tracks={results.tracks.slice(0, 4)}
                   showAlbum={false}
@@ -224,14 +234,15 @@ function SearchContent() {
             </div>
           )}
 
-          {/* Songs List (when filter is 'songs' or full list) */}
-          {(filter === 'songs' || (filter === 'all' && results.tracks.length > 4)) && (
+          {/* Songs List (when filter is 'songs') */}
+          {filter === 'songs' && results.tracks.length > 0 && (
             <div className="space-y-3">
-              {filter === 'songs' && (
+              <div className="flex items-center justify-between">
                 <h2 className="text-xl sm:text-2xl font-bold text-white">Songs</h2>
-              )}
+                <span className="text-xs text-[#b3b3b3] font-medium">{results.tracks.length} tracks found</span>
+              </div>
               <TrackTable
-                tracks={filter === 'songs' ? results.tracks : results.tracks.slice(4)}
+                tracks={results.tracks}
                 showAlbum={true}
               />
             </div>

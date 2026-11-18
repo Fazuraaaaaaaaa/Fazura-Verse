@@ -18,3 +18,15 @@ export function formatNumber(num: number | string | undefined): string {
   if (isNaN(n)) return '0';
   return new Intl.NumberFormat().format(n);
 }
+
+export function formatPlays(views: string | number | undefined): string {
+  if (!views) return '—';
+  if (typeof views === 'number') {
+    return new Intl.NumberFormat().format(views);
+  }
+  const clean = views
+    .replace(/\s*views?/gi, '')
+    .replace(/\s*plays?/gi, '')
+    .trim();
+  return clean || '—';
+}

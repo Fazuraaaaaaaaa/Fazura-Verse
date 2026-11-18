@@ -63,7 +63,7 @@ export class YouTubeMusicService implements MusicProvider {
 
     // Try YouTube provider first
     try {
-      const res = await this.withTimeout(this.primary.search(query, filter, safeLimit), 4000);
+      const res = await this.withTimeout(this.primary.search(query, filter, safeLimit), 6500);
       if (res.tracks.length > 0 || res.artists.length > 0 || res.albums.length > 0) {
         // If we want more tracks up to limit, enrich with matching fallback tracks
         if (res.tracks.length < safeLimit) {
