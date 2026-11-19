@@ -59,6 +59,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   const queueRef = useRef<MusicTrackItem[]>(queue);
   const repeatModeRef = useRef(repeatMode);
   const isShuffleRef = useRef(isShuffle);
+  const handleTrackEndRef = useRef<() => void>(() => {});
 
   currentTrackRef.current = currentTrack;
   queueRef.current = queue;
@@ -74,7 +75,11 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
 
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
-    const onEnded = () => handleTrackEnd();
+    const onEnded = () => handleTrackEndRef.current();
+    const onError = (e: Event) => {
+      console.warn('[AudioPreview] HTML5 audio error on track:', currentTrackRef.current?.title, e);
+      handleTrackEndRef.current();
+    };
     const onTimeUpdate = () => {
       if (audioRef.current && currentTrackRef.current?.previewUrl && !currentTrackRef.current?.youtubeId) {
         setCurrentTime(audioRef.current.currentTime);
@@ -87,6 +92,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
     audio.addEventListener('ended', onEnded);
+    audio.addEventListener('error', onError);
     audio.addEventListener('timeupdate', onTimeUpdate);
 
     return () => {
@@ -94,6 +100,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
       audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('error', onError);
       audio.removeEventListener('timeupdate', onTimeUpdate);
     };
   }, []);
@@ -131,8 +138,17 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
               } else if (event.data === 2) {
                 setIsPlaying(false);
               } else if (event.data === 0) {
-                handleTrackEnd();
+                handleTrackEndRef.current();
               }
+            },
+            onError: (event: any) => {
+              // YouTube Iframe error codes:
+              // 2: Invalid video ID parameter
+              // 5: HTML5 player error
+              // 100: Video not found, removed, or private
+              // 101, 150: Video owner prohibits embedded playback
+              console.warn(`[YouTubePlayer] Error code ${event.data} on track:`, currentTrackRef.current?.title);
+              handleTrackEndRef.current();
             },
           },
         });
@@ -210,6 +226,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       setIsPlaying(false);
     }
   }, []);
+  handleTrackEndRef.current = handleTrackEnd;
 
   const playTrackInternal = (track: MusicTrackItem) => {
     setCurrentTrack(track);
@@ -284,7 +301,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play().catch(() => {});
+        audioRef.current.play().catch((err) => console.warn('Audio play error:', err));
       }
       return;
     }
@@ -316,7 +333,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   const resume = useCallback(() => {
     const track = currentTrackRef.current;
     if (track?.previewUrl && !track?.youtubeId && audioRef.current) {
-      audioRef.current.play().catch(() => {});
+      audioRef.current.play().catch((err) => console.warn('Audio play error:', err));
     } else if (playerRef.current?.playVideo) {
       playerRef.current.playVideo();
     }
@@ -383,11 +400,11 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setVolume = useCallback((vol: number) => {
-    const clamped = Math.max(0, Math.min(100, vol));
+    const clamped = Math.max(0, Math.min(100, Math.round(vol)));
     setVolumeState(clamped);
 
     if (audioRef.current) {
-      audioRef.current.volume = clamped / 100;
+      audioRef.current.volume = Math.max(0, Math.min(1, clamped / 100));
       if (clamped > 0 && isMuted) {
         audioRef.current.muted = false;
       }

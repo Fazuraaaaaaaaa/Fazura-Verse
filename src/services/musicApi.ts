@@ -1134,8 +1134,11 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
 ];
 
 // Runtime dynamic registry for searched tracks (so dynamic songs can be replayed or retrieved)
-const REGISTERED_TRACKS = new Map<string, MusicTrackItem>();
+export const REGISTERED_TRACKS = new Map<string, MusicTrackItem>();
 FAZURA_MUSIC_CATALOG.forEach((t) => REGISTERED_TRACKS.set(t.id, t));
+
+// In-memory query cache for instant 0ms responses on repeat searches
+export const SEARCH_CACHE = new Map<string, MusicTrackItem[]>();
 
 export function getTrackById(id: string): MusicTrackItem | undefined {
   if (!id) return undefined;
@@ -1143,25 +1146,62 @@ export function getTrackById(id: string): MusicTrackItem | undefined {
 }
 
 // -------------------------------------------------------------
-// Live Dynamic Search with iTunes Search API Integration
+// Live Dynamic Search with iTunes Search API Integration & 0ms Query Cache
 // -------------------------------------------------------------
 export async function searchMusic(query: string): Promise<MusicTrackItem[]> {
-  const q = (query || '').trim().toLowerCase();
+  const q = (query || '').trim().toLowerCase().replace(/\s+/g, ' ');
   if (!q) return FAZURA_MUSIC_CATALOG;
 
-  // 1. Search local catalog first (instant & reliable)
-  const localMatches = FAZURA_MUSIC_CATALOG.filter((track) => {
-    return (
+  // 0. Check in-memory query cache for instant 0ms response
+  if (SEARCH_CACHE.has(q)) {
+    return SEARCH_CACHE.get(q)!;
+  }
+
+  // 1. Search local catalog & registry first (instant & reliable)
+  const localMatches: MusicTrackItem[] = [];
+  const localSeen = new Set<string>();
+
+  // Check built-in catalog
+  for (const track of FAZURA_MUSIC_CATALOG) {
+    if (
       track.title.toLowerCase().includes(q) ||
       track.artist.toLowerCase().includes(q) ||
       (track.album && track.album.toLowerCase().includes(q)) ||
       (track.tag && track.tag.toLowerCase().includes(q)) ||
       (track.genre && track.genre.toLowerCase().includes(q))
-    );
-  });
+    ) {
+      const key = `${track.title.toLowerCase()}|||${track.artist.toLowerCase()}`;
+      if (!localSeen.has(key)) {
+        localSeen.add(key);
+        localMatches.push(track);
+        REGISTERED_TRACKS.set(track.id, track);
+      }
+    }
+  }
 
-  // 2. If short query, return local matches
+  // Also check already registered dynamic tracks
+  for (const track of REGISTERED_TRACKS.values()) {
+    const key = `${track.title.toLowerCase()}|||${track.artist.toLowerCase()}`;
+    if (!localSeen.has(key)) {
+      if (
+        track.title.toLowerCase().includes(q) ||
+        track.artist.toLowerCase().includes(q) ||
+        (track.album && track.album.toLowerCase().includes(q)) ||
+        (track.tag && track.tag.toLowerCase().includes(q))
+      ) {
+        localSeen.add(key);
+        localMatches.push(track);
+      }
+    }
+  }
+
+  // 2. If short query, cache & return local matches immediately
   if (q.length < 2) {
+    if (SEARCH_CACHE.size > 200) {
+      const oldestKey = SEARCH_CACHE.keys().next().value;
+      if (oldestKey) SEARCH_CACHE.delete(oldestKey);
+    }
+    SEARCH_CACHE.set(q, localMatches);
     return localMatches;
   }
 
@@ -1169,7 +1209,7 @@ export async function searchMusic(query: string): Promise<MusicTrackItem[]> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 2800);
-    const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=25`;
+    const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=25`;
     const res = await fetch(itunesUrl, { signal: controller.signal });
     clearTimeout(timeout);
 
@@ -1199,6 +1239,7 @@ export async function searchMusic(query: string): Promise<MusicTrackItem[]> {
             previewUrl: item.previewUrl,
           };
 
+          // Register in global registry
           REGISTERED_TRACKS.set(trackId, trackItem);
           return trackItem;
         });
@@ -1212,9 +1253,16 @@ export async function searchMusic(query: string): Promise<MusicTrackItem[]> {
           if (!seen.has(key)) {
             seen.add(key);
             combined.push(t);
+            REGISTERED_TRACKS.set(t.id, t);
           }
         }
 
+        // Cache results (max 200 items in cache)
+        if (SEARCH_CACHE.size > 200) {
+          const oldestKey = SEARCH_CACHE.keys().next().value;
+          if (oldestKey) SEARCH_CACHE.delete(oldestKey);
+        }
+        SEARCH_CACHE.set(q, combined);
         return combined;
       }
     }
@@ -1222,5 +1270,11 @@ export async function searchMusic(query: string): Promise<MusicTrackItem[]> {
     // If online search fails or timeouts, safely return local matches
   }
 
+  // Fallback cache local matches
+  if (SEARCH_CACHE.size > 200) {
+    const oldestKey = SEARCH_CACHE.keys().next().value;
+    if (oldestKey) SEARCH_CACHE.delete(oldestKey);
+  }
+  SEARCH_CACHE.set(q, localMatches);
   return localMatches;
 }
