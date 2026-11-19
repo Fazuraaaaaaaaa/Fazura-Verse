@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { ReaderSettings } from '../types/manga';
 
-const STORAGE_KEY = 'fazuraverse_reader_settings';
+const STORAGE_KEY = 'fazurastream_reader_settings';
+const LEGACY_FAZURAVERSE_KEY = 'fazuraverse_reader_settings';
 const LEGACY_STORAGE_KEY = 'mangaverse_reader_settings';
-const EVENT_NAME = 'fazuraverse_reader_settings_updated';
+const EVENT_NAME = 'fazurastream_reader_settings_updated';
 
 export const DEFAULT_READER_SETTINGS: ReaderSettings = {
   mode: 'vertical',
@@ -16,7 +17,10 @@ export const DEFAULT_READER_SETTINGS: ReaderSettings = {
 function getStoredSettings(): ReaderSettings {
   if (typeof window === 'undefined') return DEFAULT_READER_SETTINGS;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+    const raw =
+      localStorage.getItem(STORAGE_KEY) ||
+      localStorage.getItem(LEGACY_FAZURAVERSE_KEY) ||
+      localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) return DEFAULT_READER_SETTINGS;
     const parsed = JSON.parse(raw);
     return {

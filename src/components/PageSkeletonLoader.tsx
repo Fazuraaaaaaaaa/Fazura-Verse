@@ -7,7 +7,7 @@ const SHIMMER_EFFECT =
 export function PageSkeletonLoader() {
   return (
     <div className="w-full min-h-[calc(100vh-4rem)] bg-[#090912] flex flex-col items-center justify-start pt-6 pb-16 px-4 sm:px-6 lg:px-8 space-y-8 animate-fadeIn">
-      {/* Animated FAZURAVERSE Logo Pulse Header */}
+      {/* Animated FazuraStream Logo Pulse Header */}
       <div className="flex flex-col items-center justify-center space-y-2.5 py-4">
         <div className="relative flex items-center justify-center">
           <div className="absolute inset-0 rounded-2xl bg-[#8B5CF6]/25 blur-xl animate-pulse" />
@@ -19,7 +19,7 @@ export function PageSkeletonLoader() {
         </div>
         <div className="flex items-center gap-2">
           <span className="font-heading font-black text-xl tracking-tight text-white">
-            FAZURA<span className="text-[#8B5CF6] drop-shadow-[0_0_12px_rgba(139,92,246,0.5)]">VERSE</span>
+            FAZURA<span className="text-[#8B5CF6] drop-shadow-[0_0_12px_rgba(139,92,246,0.5)]">STREAM</span>
           </span>
           <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#8B5CF6]/15 text-[#A78BFA] border border-[#8B5CF6]/30">
             次元

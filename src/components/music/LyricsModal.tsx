@@ -230,7 +230,7 @@ export function LyricsModal() {
                   Real-Time Karaoke
                 </span>
               </div>
-              <p className="text-xs text-slate-400 truncate">{currentTrack?.artist || 'FAZURAVERSE'}</p>
+              <p className="text-xs text-slate-400 truncate">{currentTrack?.artist || 'FazuraStream'}</p>
             </div>
           </div>
 
@@ -415,7 +415,7 @@ export function LyricsModal() {
               <div className="space-y-1">
                 <h4 className="text-base font-bold text-white">Lirik Belum Tersedia Sinkronisasi</h4>
                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  Lagu ini tetap dapat dinikmati bersama fitur Mic Karaoke real-time FAZURAVERSE.
+                  Lagu ini tetap dapat dinikmati bersama fitur Mic Karaoke real-time FazuraStream.
                 </p>
               </div>
               <div className="pt-4">

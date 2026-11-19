@@ -619,9 +619,9 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     try {
       const artworkSrc = currentTrack.thumbnail || '/favicon.svg';
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentTrack.title || 'FAZURAVERSE Music',
-        artist: currentTrack.artist || 'FAZURAVERSE',
-        album: currentTrack.album || 'FAZURAVERSE Super-Hub',
+        title: currentTrack.title || 'FazuraStream Music',
+        artist: currentTrack.artist || 'FazuraStream',
+        album: currentTrack.album || 'FazuraStream Super-Hub',
         artwork: [
           { src: artworkSrc, sizes: '96x96', type: 'image/png' },
           { src: artworkSrc, sizes: '128x128', type: 'image/png' },

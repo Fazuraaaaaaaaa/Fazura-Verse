@@ -203,7 +203,7 @@ export function AnimeHubPage() {
               Katalog Lengkap Ribuan Judul Anime
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-              FAZURAVERSE <span className="text-amber-400">ANIME</span>
+              FAZURASTREAM <span className="text-amber-400">ANIME</span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
               Koleksi lengkap ribuan anime Ongoing, Tamat (67 halaman), dan 36 kategori genre dari Otakudesu. Streaming multi-server dengan kualitas 1080p Full HD (Mega 1080p), 720p HD, 480p SD, dan 360p Blogspot.

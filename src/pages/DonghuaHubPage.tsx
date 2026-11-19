@@ -193,7 +193,7 @@ export function DonghuaHubPage() {
               Katalog Lengkap Animasi 3D & 2D Tiongkok
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-              FAZURAVERSE <span className="text-emerald-400">DONGHUA</span>
+              FAZURASTREAM <span className="text-emerald-400">DONGHUA</span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
               Koleksi serial animasi kultivasi Tiongkok terlengkap (Xianxia, Xuanhuan): Swallowed Star, Soul Land, BTTH, Perfect World, Renegade Immortal, dan ratusan episode lainnya dengan subtitle Indonesia.

@@ -188,7 +188,7 @@ export function HistoryPage() {
   };
 
   const getExploreTitle = () => {
-    if (activeTab === 'all') return 'Eksplorasi Katalog FAZURAVERSE';
+    if (activeTab === 'all') return 'Eksplorasi Katalog FazuraStream';
     return CATEGORY_COLORS[activeTab]?.exploreTitle || 'Eksplorasi Sekarang';
   };
 

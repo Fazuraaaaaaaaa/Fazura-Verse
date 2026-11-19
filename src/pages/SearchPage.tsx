@@ -258,7 +258,7 @@ export function SearchPage() {
       <div className="max-w-3xl mx-auto text-center space-y-4">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8B5CF6]/15 border border-[#8B5CF6]/30 text-[#C4B5FD] text-xs font-bold uppercase tracking-wider">
           <Sparkles className="w-3.5 h-3.5 text-[#8B5CF6]" />
-          Pencarian Terpadu FAZURAVERSE
+          Pencarian Terpadu FazuraStream
         </div>
         <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight font-heading">
           Cari Manga, Anime, Donghua, Movie & Musik

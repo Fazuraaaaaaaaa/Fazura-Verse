@@ -17,7 +17,7 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="font-heading font-black text-xl tracking-tight text-white">
-                  FAZURA<span className="text-[#8B5CF6]">VERSE</span>
+                  FAZURA<span className="text-[#8B5CF6]">STREAM</span>
                 </span>
                 <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#8B5CF6]/15 text-[#A78BFA] border border-[#8B5CF6]/30">
                   次元
@@ -25,7 +25,7 @@ export function Footer() {
               </div>
             </Link>
             <p className="text-sm text-[#A1A1B5] max-w-sm leading-relaxed">
-              FAZURAVERSE adalah platform all-in-one hiburan digital terlengkap di Indonesia. Baca puluhan ribu komik manga, streaming anime sub Indo, tonton donghua resolusi tinggi, dan nikmati film box office & serial TV gratis.
+              FazuraStream adalah platform all-in-one hiburan digital terlengkap di Indonesia. Baca puluhan ribu komik manga, streaming anime sub Indo, tonton donghua resolusi tinggi, dan nikmati film box office & serial TV gratis.
             </p>
             <div className="flex items-center gap-2 text-xs text-[#717187]">
               <Shield className="w-3.5 h-3.5 text-[#8B5CF6]" />
@@ -89,7 +89,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-white/5 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#717187]">
-          <p>© {new Date().getFullYear()} FAZURAVERSE. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} FazuraStream. All rights reserved.</p>
           <p className="flex items-center gap-1 font-mono text-[11px]">
             Manga • Anime • Donghua • Movie • Music Digital Hub
           </p>

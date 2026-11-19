@@ -694,7 +694,7 @@ export function MusicHubPage() {
                       id: b.id,
                       youtubeId: b.extra?.youtubeId || b.id,
                       title: b.title,
-                      artist: b.extra?.artist || b.subtitle || 'FAZURAVERSE',
+                      artist: b.extra?.artist || b.subtitle || 'FazuraStream',
                       thumbnail: b.cover,
                       previewUrl: b.extra?.previewUrl,
                     }));
@@ -731,7 +731,7 @@ export function MusicHubPage() {
                     id: b.id,
                     youtubeId: b.extra?.youtubeId || b.id,
                     title: b.title,
-                    artist: b.extra?.artist || b.subtitle || 'FAZURAVERSE',
+                    artist: b.extra?.artist || b.subtitle || 'FazuraStream',
                     thumbnail: b.cover,
                     previewUrl: b.extra?.previewUrl,
                   };
@@ -769,7 +769,7 @@ export function MusicHubPage() {
                         {b.title}
                       </h4>
                       <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                        {b.subtitle || 'FAZURAVERSE'}
+                        {b.subtitle || 'FazuraStream'}
                       </p>
                     </div>
 
@@ -949,7 +949,7 @@ export function MusicHubPage() {
                   Koleksi Lagu Favorit Saya
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Daftar lagu favorit khusus kategori Musik FAZURAVERSE ({bookmarks.length} lagu tersimpan).
+                  Daftar lagu favorit khusus kategori Musik FazuraStream ({bookmarks.length} lagu tersimpan).
                 </p>
               </div>
 
@@ -961,7 +961,7 @@ export function MusicHubPage() {
                         id: b.id,
                         youtubeId: b.extra?.youtubeId || b.id,
                         title: b.title,
-                        artist: b.extra?.artist || b.subtitle || 'FAZURAVERSE',
+                        artist: b.extra?.artist || b.subtitle || 'FazuraStream',
                         thumbnail: b.cover,
                         previewUrl: b.extra?.previewUrl,
                       }));
@@ -1012,7 +1012,7 @@ export function MusicHubPage() {
                                 id: b.id,
                                 youtubeId: b.extra?.youtubeId || b.id,
                                 title: b.title,
-                                artist: b.extra?.artist || b.subtitle || 'FAZURAVERSE',
+                                artist: b.extra?.artist || b.subtitle || 'FazuraStream',
                                 thumbnail: b.cover,
                                 previewUrl: b.extra?.previewUrl,
                               };
@@ -1039,7 +1039,7 @@ export function MusicHubPage() {
                                 id: b.id,
                                 youtubeId: b.extra?.youtubeId || b.id,
                                 title: b.title,
-                                artist: b.extra?.artist || b.subtitle || 'FAZURAVERSE',
+                                artist: b.extra?.artist || b.subtitle || 'FazuraStream',
                                 thumbnail: b.cover,
                                 previewUrl: b.extra?.previewUrl,
                               };
@@ -1052,7 +1052,7 @@ export function MusicHubPage() {
                             {b.title}
                           </h4>
                           <p className="text-xs text-slate-400 truncate">
-                            {b.subtitle || 'FAZURAVERSE Music'}
+                            {b.subtitle || 'FazuraStream Music'}
                           </p>
                         </div>
                       </div>
@@ -1100,7 +1100,7 @@ export function MusicHubPage() {
                   Riwayat Pemutaran Musik
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Lagu-lagu yang baru saja Anda dengarkan di FAZURAVERSE ({history.length} lagu).
+                  Lagu-lagu yang baru saja Anda dengarkan di FazuraStream ({history.length} lagu).
                 </p>
               </div>
 
@@ -1152,7 +1152,7 @@ export function MusicHubPage() {
                                 id: h.id,
                                 youtubeId: h.extra?.youtubeId || h.id,
                                 title: h.title,
-                                artist: h.extra?.artist || 'FAZURAVERSE',
+                                artist: h.extra?.artist || 'FazuraStream',
                                 thumbnail: h.cover,
                                 previewUrl: h.extra?.previewUrl,
                               };
@@ -1179,7 +1179,7 @@ export function MusicHubPage() {
                                 id: h.id,
                                 youtubeId: h.extra?.youtubeId || h.id,
                                 title: h.title,
-                                artist: h.extra?.artist || 'FAZURAVERSE',
+                                artist: h.extra?.artist || 'FazuraStream',
                                 thumbnail: h.cover,
                                 previewUrl: h.extra?.previewUrl,
                               };

@@ -474,7 +474,7 @@ export function MovieHubPage() {
                   Film & Serial Favorit Saya ({bookmarks.length})
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Daftar film dan serial yang Anda simpan di koleksi bioskop FAZURAVERSE.
+                  Daftar film dan serial yang Anda simpan di koleksi bioskop FazuraStream.
                 </p>
               </div>
             </div>
@@ -548,7 +548,7 @@ export function MovieHubPage() {
                   Riwayat Nonton Film & Serial ({history.length})
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Daftar film dan serial yang terakhir Anda tonton di FAZURAVERSE.
+                  Daftar film dan serial yang terakhir Anda tonton di FazuraStream.
                 </p>
               </div>
 

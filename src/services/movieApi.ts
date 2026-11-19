@@ -640,7 +640,7 @@ export async function postMovieComment(
 ): Promise<MovieComment> {
   const newComment: MovieComment = {
     id: `comm_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-    author: payload.author.trim() || 'Pengunjung FAZURAVERSE',
+    author: payload.author.trim() || 'Pengunjung FazuraStream',
     text: payload.text.trim(),
     rating: payload.rating,
     isSpoiler: Boolean(payload.isSpoiler),

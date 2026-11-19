@@ -126,7 +126,7 @@ export function HubHistoryShelf({
         id: item.id,
         youtubeId: item.extra?.youtubeId || item.id,
         title: item.title,
-        artist: item.extra?.artist || 'FAZURAVERSE Music',
+        artist: item.extra?.artist || 'FazuraStream Music',
         album: item.extra?.album,
         thumbnail: item.cover,
         durationFormatted: item.extra?.durationFormatted,

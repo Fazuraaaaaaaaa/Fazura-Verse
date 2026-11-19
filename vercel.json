@@ -1,5 +1,5 @@
 {
-  "name": "fazuraverse",
+  "name": "fazurastream",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [

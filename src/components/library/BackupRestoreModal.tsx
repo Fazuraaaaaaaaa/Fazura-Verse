@@ -265,7 +265,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
-                Backup & Restore FAZURAVERSE
+                Backup & Restore FazuraStream
               </h2>
               <p className="text-xs text-text-muted">
                 Simpan atau pulihkan data bookmark dan riwayat tontonan/bacaan antar perangkat
@@ -384,12 +384,12 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
               <div className="p-4 rounded-2xl bg-accent-primary/5 border border-accent-primary/20 text-xs text-text-secondary space-y-2">
                 <p className="font-semibold text-accent-secondary flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-accent-primary" />
-                  Format Standar FAZURAVERSE
+                  Format Standar FazuraStream
                 </p>
                 <p>
                   File backup akan diunduh dengan nama{' '}
                   <code className="text-white bg-black/40 px-1.5 py-0.5 rounded font-mono">
-                    fazuraverse-backup-{new Date().toISOString().split('T')[0]}.json
+                    fazurastream-backup-{new Date().toISOString().split('T')[0]}.json
                   </code>
                   . Anda dapat menyimpannya di Google Drive, flashdisk, atau membukanya di browser lain.
                 </p>
@@ -436,7 +436,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                     {fileName ? fileName : 'Pilih atau Tarik File Backup JSON'}
                   </div>
                   <p className="text-xs text-text-muted mt-1">
-                    Mendukung file backup resmi FAZURAVERSE (.json)
+                    Mendukung file backup resmi FazuraStream (.json)
                   </p>
                 </div>
               </div>
@@ -670,7 +670,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
 
         {/* Footer */}
         <div className="p-4 px-6 border-t border-white/5 bg-bg-primary/50 flex items-center justify-between text-xs text-text-muted">
-          <span>FAZURAVERSE Storage Engine v2.0</span>
+          <span>FazuraStream Storage Engine v2.0</span>
           <button
             onClick={onClose}
             className="px-4 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold transition-colors"

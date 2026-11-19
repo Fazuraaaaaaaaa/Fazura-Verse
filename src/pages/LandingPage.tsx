@@ -176,7 +176,7 @@ export function LandingPage() {
         rating: '9.9',
         qualityBadge: 'LOSSLESS AUDIO',
         description:
-          'Streaming musik modern di FAZURAVERSE: jutaan lagu hits internasional & Indonesia, playlist viral, smart shuffle, audio background playback, lirik interaktif real-time, dan kontrol pop-up mini player.',
+          'Streaming musik modern di FazuraStream: jutaan lagu hits internasional & Indonesia, playlist viral, smart shuffle, audio background playback, lirik interaktif real-time, dan kontrol pop-up mini player.',
         backdrop: 'https://i.ytimg.com/vi/kPa7bsKwL-c/maxresdefault.jpg',
         poster: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=80',
         actionLink: '/music',

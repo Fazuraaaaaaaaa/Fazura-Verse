@@ -443,7 +443,7 @@ export function createBackupData(): BackupData {
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
-    source: 'fazuraverse',
+    source: 'fazurastream',
     bookmarks: getAllCategoryBookmarks(),
     history: getAllCategoryHistory(),
   };
@@ -561,7 +561,7 @@ export function validateBackupData(jsonString: string): BackupValidationResult {
     const backupData: BackupData = {
       version: parsed.version || 1,
       exportedAt: parsed.exportedAt || new Date().toISOString(),
-      source: 'fazuraverse',
+      source: 'fazurastream',
       bookmarks: sanitizedBookmarks,
       history: sanitizedHistory,
     };
@@ -621,7 +621,7 @@ export function applyBackupData(
 export function downloadBackupFile() {
   const data = createBackupData();
   const dateStr = new Date().toISOString().split('T')[0];
-  const filename = `fazuraverse-backup-${dateStr}.json`;
+  const filename = `fazurastream-backup-${dateStr}.json`;
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

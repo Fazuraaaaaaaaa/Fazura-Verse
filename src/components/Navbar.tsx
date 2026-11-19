@@ -205,7 +205,7 @@ export function Navbar() {
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
               <span className="font-heading font-black text-xl tracking-tight text-white group-hover:opacity-95 transition-opacity">
-                FAZURA<span className="text-[#8B5CF6] drop-shadow-[0_0_12px_rgba(139,92,246,0.5)]">VERSE</span>
+                FAZURA<span className="text-[#8B5CF6] drop-shadow-[0_0_12px_rgba(139,92,246,0.5)]">STREAM</span>
               </span>
               <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#8B5CF6]/15 text-[#A78BFA] border border-[#8B5CF6]/30 hidden sm:inline-block">
                 次元

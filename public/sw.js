@@ -1,7 +1,7 @@
-// FAZURAVERSE High-Performance Service Worker
-// Version 1.1.0 - Offline Reader & PWA App Shell Caching
+// FazuraStream High-Performance Service Worker
+// Version 1.2.0 - Offline Reader & PWA App Shell Caching
 
-const CACHE_NAME = 'fazuraverse-cache-v1.1.0';
+const CACHE_NAME = 'fazurastream-cache-v1.2.0';
 const OFFLINE_READER_CACHE = 'fazura-offline-chapters-v1';
 
 const STATIC_PRECACHE = [
