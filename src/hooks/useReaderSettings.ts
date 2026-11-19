@@ -10,6 +10,7 @@ export const DEFAULT_READER_SETTINGS: ReaderSettings = {
   fit: 'width',
   gap: 12,
   background: 'black',
+  invertColors: false,
 };
 
 function getStoredSettings(): ReaderSettings {
@@ -23,6 +24,7 @@ function getStoredSettings(): ReaderSettings {
       fit: parsed.fit || DEFAULT_READER_SETTINGS.fit,
       gap: typeof parsed.gap === 'number' ? parsed.gap : DEFAULT_READER_SETTINGS.gap,
       background: parsed.background || DEFAULT_READER_SETTINGS.background,
+      invertColors: Boolean(parsed.invertColors),
     };
   } catch (e) {
     console.error('Failed to parse reader settings from localStorage:', e);

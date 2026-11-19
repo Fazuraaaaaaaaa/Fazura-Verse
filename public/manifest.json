@@ -1,0 +1,75 @@
+{
+  "name": "FAZURAVERSE - Digital Entertainment Super-Hub",
+  "short_name": "FAZURAVERSE",
+  "description": "Portal streaming anime sub Indo, baca komik manga/manhwa/manhua, donghua, movie & musik streaming terlengkap di Indonesia.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#090912",
+  "background_color": "#090912",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "48x48 72x72 96x96 128x128 192x192 256x256 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "entertainment",
+    "music",
+    "books",
+    "video"
+  ],
+  "shortcuts": [
+    {
+      "name": "Nonton Anime",
+      "short_name": "Anime",
+      "description": "Streaming anime sub Indo episode terbaru",
+      "url": "/anime",
+      "icons": [
+        {
+          "src": "/favicon.svg",
+          "sizes": "any"
+        }
+      ]
+    },
+    {
+      "name": "Baca Manga",
+      "short_name": "Manga",
+      "description": "Baca komik manga, manhwa & manhua bahasa Indonesia",
+      "url": "/manga",
+      "icons": [
+        {
+          "src": "/favicon.svg",
+          "sizes": "any"
+        }
+      ]
+    },
+    {
+      "name": "Streaming Musik",
+      "short_name": "Musik",
+      "description": "Dengarkan jutaan lagu hits & anime OST",
+      "url": "/music",
+      "icons": [
+        {
+          "src": "/favicon.svg",
+          "sizes": "any"
+        }
+      ]
+    },
+    {
+      "name": "Nonton Donghua",
+      "short_name": "Donghua",
+      "description": "Streaming donghua sub Indo HD tanpa iklan",
+      "url": "/donghua",
+      "icons": [
+        {
+          "src": "/favicon.svg",
+          "sizes": "any"
+        }
+      ]
+    }
+  ]
+}

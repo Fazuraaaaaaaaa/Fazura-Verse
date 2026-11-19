@@ -80,6 +80,7 @@ export interface ReaderSettings {
   gap: number;
   background: 'black' | 'dark' | 'gray';
   direction?: 'ltr' | 'rtl';
+  invertColors?: boolean;
 }
 
 export type MangaType = 'manga' | 'manhwa' | 'manhua';

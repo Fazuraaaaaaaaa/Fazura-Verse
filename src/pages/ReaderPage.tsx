@@ -238,7 +238,9 @@ export function ReaderPage() {
         ) : settings.mode === 'vertical' ? (
           /* Mode 1: Vertical Continuous Scroll (Webtoon) */
           <div
-            className="flex flex-col items-center"
+            className={`flex flex-col items-center transition-all ${
+              settings.invertColors ? 'filter invert hue-rotate-180 contrast-105' : ''
+            }`}
             style={{ rowGap: `${settings.gap}px` }}
           >
             {images.map((imgUrl, idx) => (
@@ -255,7 +257,9 @@ export function ReaderPage() {
           /* Mode 2: Single Page View */
           <div className="flex flex-col items-center space-y-4">
             <div
-              className="relative w-full flex items-center justify-center cursor-pointer select-none"
+              className={`relative w-full flex items-center justify-center cursor-pointer select-none transition-all ${
+                settings.invertColors ? 'filter invert hue-rotate-180 contrast-105' : ''
+              }`}
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const clickX = e.clientX - rect.left;
@@ -305,7 +309,9 @@ export function ReaderPage() {
         ) : (
           /* Mode 3: Double Page View */
           <div className="flex flex-col items-center space-y-4">
-            <div className="flex flex-row justify-center items-center gap-2 max-w-full overflow-hidden">
+            <div className={`flex flex-row justify-center items-center gap-2 max-w-full overflow-hidden transition-all ${
+              settings.invertColors ? 'filter invert hue-rotate-180 contrast-105' : ''
+            }`}>
               {singlePageIndex < totalPages && (
                 <div className="flex-1 max-w-[50%]">
                   <ReaderImage

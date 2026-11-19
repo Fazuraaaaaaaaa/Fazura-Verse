@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 export type CategoryType = 'anime' | 'manga' | 'donghua' | 'movies' | 'music';
 
@@ -293,4 +293,342 @@ export function useCategoryHistory(category: CategoryType) {
     removeHistoryItem,
     clearHistory,
   };
+}
+
+// -------------------------------------------------------------
+// Unified Multi-Category Helpers & Backup/Restore
+// -------------------------------------------------------------
+
+export const ALL_CATEGORIES: CategoryType[] = ['manga', 'anime', 'donghua', 'movies', 'music'];
+
+export interface BackupData {
+  version: number;
+  exportedAt: string;
+  source: string;
+  bookmarks: Record<CategoryType, CategoryBookmarkItem[]>;
+  history: Record<CategoryType, CategoryHistoryItem[]>;
+}
+
+export function getAllCategoryBookmarks(): Record<CategoryType, CategoryBookmarkItem[]> {
+  return {
+    manga: getCategoryBookmarks('manga'),
+    anime: getCategoryBookmarks('anime'),
+    donghua: getCategoryBookmarks('donghua'),
+    movies: getCategoryBookmarks('movies'),
+    music: getCategoryBookmarks('music'),
+  };
+}
+
+export function getAllCategoryHistory(): Record<CategoryType, CategoryHistoryItem[]> {
+  return {
+    manga: getCategoryHistory('manga'),
+    anime: getCategoryHistory('anime'),
+    donghua: getCategoryHistory('donghua'),
+    movies: getCategoryHistory('movies'),
+    music: getCategoryHistory('music'),
+  };
+}
+
+export function useAllCategoryBookmarks() {
+  const [data, setData] = useState<Record<CategoryType, CategoryBookmarkItem[]>>(() =>
+    getAllCategoryBookmarks()
+  );
+
+  const refresh = useCallback(() => {
+    setData(getAllCategoryBookmarks());
+  }, []);
+
+  useEffect(() => {
+    const handler = () => refresh();
+    window.addEventListener(BOOKMARK_EVENT, handler);
+    window.addEventListener('storage', handler);
+    return () => {
+      window.removeEventListener(BOOKMARK_EVENT, handler);
+      window.removeEventListener('storage', handler);
+    };
+  }, [refresh]);
+
+  const removeBookmark = useCallback((category: CategoryType, id: string) => {
+    const current = getCategoryBookmarks(category);
+    const next = current.filter((b) => String(b.id) !== String(id));
+    saveCategoryBookmarks(category, next);
+  }, []);
+
+  const clearBookmarks = useCallback((category?: CategoryType) => {
+    if (category) {
+      saveCategoryBookmarks(category, []);
+    } else {
+      for (const cat of ALL_CATEGORIES) {
+        saveCategoryBookmarks(cat, []);
+      }
+    }
+  }, []);
+
+  const allItems = useMemo(() => {
+    return [
+      ...data.manga,
+      ...data.anime,
+      ...data.donghua,
+      ...data.movies,
+      ...data.music,
+    ].sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+  }, [data]);
+
+  return {
+    byCategory: data,
+    allItems,
+    totalCount: allItems.length,
+    removeBookmark,
+    clearBookmarks,
+    refresh,
+  };
+}
+
+export function useAllCategoryHistory() {
+  const [data, setData] = useState<Record<CategoryType, CategoryHistoryItem[]>>(() =>
+    getAllCategoryHistory()
+  );
+
+  const refresh = useCallback(() => {
+    setData(getAllCategoryHistory());
+  }, []);
+
+  useEffect(() => {
+    const handler = () => refresh();
+    window.addEventListener(HISTORY_EVENT, handler);
+    window.addEventListener('storage', handler);
+    return () => {
+      window.removeEventListener(HISTORY_EVENT, handler);
+      window.removeEventListener('storage', handler);
+    };
+  }, [refresh]);
+
+  const removeHistoryItem = useCallback((category: CategoryType, id: string) => {
+    const current = getCategoryHistory(category);
+    const next = current.filter((h) => String(h.id) !== String(id));
+    saveCategoryHistory(category, next);
+  }, []);
+
+  const clearHistory = useCallback((category?: CategoryType) => {
+    if (category) {
+      saveCategoryHistory(category, []);
+    } else {
+      for (const cat of ALL_CATEGORIES) {
+        saveCategoryHistory(cat, []);
+      }
+    }
+  }, []);
+
+  const allItems = useMemo(() => {
+    return [
+      ...data.manga,
+      ...data.anime,
+      ...data.donghua,
+      ...data.movies,
+      ...data.music,
+    ].sort((a, b) => (b.watchedAt || 0) - (a.watchedAt || 0));
+  }, [data]);
+
+  return {
+    byCategory: data,
+    allItems,
+    totalCount: allItems.length,
+    removeHistoryItem,
+    clearHistory,
+    refresh,
+  };
+}
+
+export function createBackupData(): BackupData {
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    source: 'fazuraverse',
+    bookmarks: getAllCategoryBookmarks(),
+    history: getAllCategoryHistory(),
+  };
+}
+
+export interface BackupValidationResult {
+  valid: boolean;
+  error?: string;
+  data?: BackupData;
+  summary?: {
+    totalBookmarks: number;
+    totalHistory: number;
+    byCategory: Record<CategoryType, { bookmarks: number; history: number }>;
+  };
+}
+
+export function validateBackupData(jsonString: string): BackupValidationResult {
+  try {
+    const parsed = JSON.parse(jsonString);
+    if (!parsed || typeof parsed !== 'object') {
+      return { valid: false, error: 'File JSON tidak valid atau kosong.' };
+    }
+
+    const hasBookmarks = parsed.bookmarks && typeof parsed.bookmarks === 'object';
+    const hasHistory = parsed.history && typeof parsed.history === 'object';
+
+    if (!hasBookmarks && !hasHistory) {
+      return { valid: false, error: 'Format backup tidak dikenali. Objek bookmarks atau history tidak ditemukan.' };
+    }
+
+    const summary = {
+      totalBookmarks: 0,
+      totalHistory: 0,
+      byCategory: {
+        manga: { bookmarks: 0, history: 0 },
+        anime: { bookmarks: 0, history: 0 },
+        donghua: { bookmarks: 0, history: 0 },
+        movies: { bookmarks: 0, history: 0 },
+        music: { bookmarks: 0, history: 0 },
+      },
+    };
+
+    const sanitizedBookmarks: Record<CategoryType, CategoryBookmarkItem[]> = {
+      manga: [],
+      anime: [],
+      donghua: [],
+      movies: [],
+      music: [],
+    };
+
+    const sanitizedHistory: Record<CategoryType, CategoryHistoryItem[]> = {
+      manga: [],
+      anime: [],
+      donghua: [],
+      movies: [],
+      music: [],
+    };
+
+    if (hasBookmarks) {
+      for (const cat of ALL_CATEGORIES) {
+        const items = parsed.bookmarks[cat];
+        if (Array.isArray(items)) {
+          const validItems = items.filter((item: any) => item && (item.id || item.slug) && item.title);
+          sanitizedBookmarks[cat] = validItems.map((item: any) => ({
+            id: String(item.id || item.slug),
+            category: cat,
+            title: String(item.title),
+            cover: String(item.cover || ''),
+            link: String(item.link || `/manga/${item.slug || item.id}`),
+            subtitle: item.subtitle ? String(item.subtitle) : undefined,
+            type: item.type ? String(item.type) : undefined,
+            addedAt: Number(item.addedAt) || Date.now(),
+            extra: item.extra || undefined,
+          }));
+          summary.byCategory[cat].bookmarks = sanitizedBookmarks[cat].length;
+          summary.totalBookmarks += sanitizedBookmarks[cat].length;
+        }
+      }
+    }
+
+    if (hasHistory) {
+      for (const cat of ALL_CATEGORIES) {
+        const items = parsed.history[cat];
+        if (Array.isArray(items)) {
+          const validItems = items.filter(
+            (item: any) => item && (item.id || item.slug) && (item.title || item.mangaTitle)
+          );
+          sanitizedHistory[cat] = validItems.map((item: any) => ({
+            id: String(item.id || item.slug),
+            category: cat,
+            title: String(item.title || item.mangaTitle),
+            cover: String(item.cover || item.mangaCover || ''),
+            lastItemTitle: item.lastItemTitle
+              ? String(item.lastItemTitle)
+              : item.chapterTitle
+              ? String(item.chapterTitle)
+              : undefined,
+            lastItemLink: String(
+              item.lastItemLink || (item.chapterSlug ? `/chapter/${item.chapterSlug}` : '')
+            ),
+            watchedAt: Number(item.watchedAt || item.lastReadAt) || Date.now(),
+            progress: typeof item.progress === 'number' ? item.progress : undefined,
+            extra: item.extra || undefined,
+          }));
+          summary.byCategory[cat].history = sanitizedHistory[cat].length;
+          summary.totalHistory += sanitizedHistory[cat].length;
+        }
+      }
+    }
+
+    if (summary.totalBookmarks === 0 && summary.totalHistory === 0) {
+      return { valid: false, error: 'File backup tidak memiliki bookmark atau riwayat yang dapat dipulihkan.' };
+    }
+
+    const backupData: BackupData = {
+      version: parsed.version || 1,
+      exportedAt: parsed.exportedAt || new Date().toISOString(),
+      source: 'fazuraverse',
+      bookmarks: sanitizedBookmarks,
+      history: sanitizedHistory,
+    };
+
+    return {
+      valid: true,
+      data: backupData,
+      summary,
+    };
+  } catch (err: any) {
+    return { valid: false, error: `Gagal memproses file JSON: ${err?.message || 'Error tidak diketahui'}` };
+  }
+}
+
+export function applyBackupData(
+  backup: BackupData,
+  mode: 'merge' | 'overwrite' = 'merge'
+): { bookmarksImported: number; historyImported: number } {
+  let bookmarksImported = 0;
+  let historyImported = 0;
+
+  for (const cat of ALL_CATEGORIES) {
+    const newBookmarks = backup.bookmarks[cat] || [];
+    if (mode === 'overwrite') {
+      saveCategoryBookmarks(cat, newBookmarks);
+      bookmarksImported += newBookmarks.length;
+    } else {
+      const current = getCategoryBookmarks(cat);
+      const currentIds = new Set(current.map((b) => String(b.id)));
+      const itemsToAdd = newBookmarks.filter((b) => !currentIds.has(String(b.id)));
+      const merged = [...itemsToAdd, ...current];
+      saveCategoryBookmarks(cat, merged);
+      bookmarksImported += itemsToAdd.length;
+    }
+
+    const newHistory = backup.history[cat] || [];
+    if (mode === 'overwrite') {
+      saveCategoryHistory(cat, newHistory);
+      historyImported += newHistory.length;
+    } else {
+      const current = getCategoryHistory(cat);
+      const currentIds = new Set(current.map((h) => String(h.id)));
+      const itemsToAdd = newHistory.filter((h) => !currentIds.has(String(h.id)));
+      const merged = [...itemsToAdd, ...current].slice(0, 100);
+      saveCategoryHistory(cat, merged);
+      historyImported += itemsToAdd.length;
+    }
+  }
+
+  // Notify listeners across the application
+  window.dispatchEvent(new CustomEvent(BOOKMARK_EVENT, { detail: { category: undefined } }));
+  window.dispatchEvent(new CustomEvent(HISTORY_EVENT, { detail: { category: undefined } }));
+
+  return { bookmarksImported, historyImported };
+}
+
+export function downloadBackupFile() {
+  const data = createBackupData();
+  const dateStr = new Date().toISOString().split('T')[0];
+  const filename = `fazuraverse-backup-${dateStr}.json`;
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
