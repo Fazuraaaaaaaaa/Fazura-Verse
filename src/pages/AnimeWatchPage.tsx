@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -63,8 +63,10 @@ export function AnimeWatchPage() {
   const [customStreamUrl, setCustomStreamUrl] = useState<string>('');
   const [activeServerId, setActiveServerId] = useState<string>('');
   const [switchingServer, setSwitchingServer] = useState<boolean>(false);
+  const [switchingServerName, setSwitchingServerName] = useState<string>('');
   const [switchError, setSwitchError] = useState<string>('');
   const [playerKey, setPlayerKey] = useState<number>(0);
+  const autoSelectedEpisodeRef = useRef<string>('');
 
   const { recordHistory, history } = useCategoryHistory('anime');
   const animeId = episode?.animeId || (episodeId ? episodeId.split('-episode-')[0] : '');
@@ -99,13 +101,15 @@ export function AnimeWatchPage() {
     setCustomStreamUrl('');
     setActiveServerId('');
     setSwitchError('');
+    setSwitchingServerName('');
   }, [episodeId]);
 
-  const activeStream = customStreamUrl || episode?.streamUrl || '';
+  const activeStream = customStreamUrl || (!activeServerId ? episode?.streamUrl : '') || '';
 
   const handleSelectServer = async (serverId: string, serverTitle: string) => {
     try {
       setSwitchingServer(true);
+      setSwitchingServerName(serverTitle);
       setSwitchError('');
       setActiveServerId(serverId);
 
@@ -121,9 +125,13 @@ export function AnimeWatchPage() {
       }
     } catch (err: any) {
       console.error('Server switch error:', err);
-      setSwitchError(`Gagal memuat server ${serverTitle}. Silakan coba server lain.`);
+      setSwitchError(`Gagal memuat server ${serverTitle}. Mengalihkan ke stream cadangan.`);
+      if (episode?.streamUrl) {
+        setCustomStreamUrl(episode.streamUrl);
+      }
     } finally {
       setSwitchingServer(false);
+      setSwitchingServerName('');
     }
   };
 
@@ -160,6 +168,65 @@ export function AnimeWatchPage() {
       }))
       .filter((q) => q.serverList.length > 0);
   }, [episode?.servers]);
+
+  // Auto-direct to VidHide 720p server as soon as user opens an episode
+  useEffect(() => {
+    if (!episode || !filteredServers || filteredServers.length === 0 || !episodeId) return;
+
+    // Check if we already auto-selected a server for this episode
+    if (autoSelectedEpisodeRef.current === episodeId) return;
+    autoSelectedEpisodeRef.current = episodeId;
+
+    // Search for VidHide 720p server
+    let targetServer: { serverId: string; title: string; quality: string } | null = null;
+
+    // Priority 1: 720p quality with server title containing 'vidhide'
+    const q720 = filteredServers.find((q) => q.quality.toLowerCase().includes('720'));
+    if (q720) {
+      const vidhide720 = q720.serverList.find((s) => {
+        const clean = (s.title || '').toLowerCase().replace(/[\s\-_]/g, '');
+        return clean.includes('vidhide') || s.serverId.toLowerCase().includes('vidhide');
+      });
+      if (vidhide720) {
+        targetServer = {
+          serverId: vidhide720.serverId,
+          title: vidhide720.title,
+          quality: q720.quality,
+        };
+      }
+    }
+
+    // Priority 2: Any other quality (1080p, 480p, 360p) with VidHide server
+    if (!targetServer) {
+      for (const q of filteredServers) {
+        const vidhide = q.serverList.find((s) => {
+          const clean = (s.title || '').toLowerCase().replace(/[\s\-_]/g, '');
+          return clean.includes('vidhide') || s.serverId.toLowerCase().includes('vidhide');
+        });
+        if (vidhide) {
+          targetServer = {
+            serverId: vidhide.serverId,
+            title: vidhide.title,
+            quality: q.quality,
+          };
+          break;
+        }
+      }
+    }
+
+    // Priority 3: Fallback to any 720p server if VidHide not available
+    if (!targetServer && q720 && q720.serverList.length > 0) {
+      targetServer = {
+        serverId: q720.serverList[0].serverId,
+        title: q720.serverList[0].title,
+        quality: q720.quality,
+      };
+    }
+
+    if (targetServer) {
+      handleSelectServer(targetServer.serverId, `${targetServer.quality} - ${targetServer.title}`);
+    }
+  }, [episodeId, episode, filteredServers]);
 
   if (isLoading) {
     return (
@@ -298,7 +365,9 @@ export function AnimeWatchPage() {
         {switchingServer && (
           <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center space-y-2">
             <Loader2 className="w-8 h-8 text-accent-primary animate-spin" />
-            <p className="text-xs text-text-primary font-medium">Beralih server video...</p>
+            <p className="text-xs text-text-primary font-medium">
+              {switchingServerName ? `Menghubungkan ke ${switchingServerName}...` : 'Beralih server video...'}
+            </p>
           </div>
         )}
 

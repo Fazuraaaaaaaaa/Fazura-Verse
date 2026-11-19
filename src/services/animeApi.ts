@@ -241,6 +241,17 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
       serverList = [blogspotServer, ...serverList];
     }
 
+    // Prioritize VidHide as the first server in 720p quality
+    if (qTitle.includes('720')) {
+      serverList.sort((a: any, b: any) => {
+        const aVid = (a.title || '').toLowerCase().includes('vidhide');
+        const bVid = (b.title || '').toLowerCase().includes('vidhide');
+        if (aVid && !bVid) return -1;
+        if (!aVid && bVid) return 1;
+        return 0;
+      });
+    }
+
     if (serverList.length > 0) {
       servers.push({
         quality: displayQuality,
