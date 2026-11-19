@@ -17,6 +17,8 @@ import {
   Disc3,
   TrendingUp,
   Volume2,
+  Loader2,
+  X,
 } from 'lucide-react';
 import { FAZURA_MUSIC_CATALOG, searchMusic, getTrackById, type MusicTrackItem } from '../services/musicApi';
 import { useMusic } from '../context/MusicContext';
@@ -27,12 +29,14 @@ type MusicTabType = 'all' | 'viral' | 'pop_indo' | 'anime' | 'donghua' | 'kpop' 
 export function MusicHubPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const playParam = searchParams.get('play');
+  const searchParam = searchParams.get('search') || searchParams.get('q') || '';
   const tabParam = (searchParams.get('tab') as MusicTabType) || 'all';
 
   const [activeTab, setActiveTab] = useState<MusicTabType>(
     tabParam === 'bookmarks' || tabParam === 'history' ? tabParam : 'all'
   );
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchInput, setSearchInput] = useState<string>(searchParam);
+  const [searchQuery, setSearchQuery] = useState<string>(searchParam);
   const [searchedList, setSearchedList] = useState<MusicTrackItem[]>(FAZURA_MUSIC_CATALOG);
   const [searchLoading, setSearchLoading] = useState(false);
 
@@ -70,12 +74,12 @@ export function MusicHubPage() {
       try {
         const results = await searchMusic(searchQuery.trim());
         setSearchedList(results);
-      } catch {
-        // ignore
+      } catch (err) {
+        console.warn('Music search error:', err);
       } finally {
         setSearchLoading(false);
       }
-    }, 280);
+    }, 250);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
@@ -92,12 +96,59 @@ export function MusicHubPage() {
     }
   }, [playParam]);
 
-  // Sync tab with search params
+  // Sync state with search and tab params
   useEffect(() => {
-    if (tabParam && tabParam !== activeTab) {
+    if (tabParam && tabParam !== activeTab && !searchParam) {
       setActiveTab(tabParam);
     }
-  }, [tabParam]);
+    if (searchParam !== searchQuery) {
+      setSearchInput(searchParam);
+      setSearchQuery(searchParam);
+      if (searchParam) {
+        setActiveTab('all');
+      }
+    }
+  }, [tabParam, searchParam]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchInput.trim()) return;
+    setSearchQuery(searchInput.trim());
+    setActiveTab('all');
+    const next = new URLSearchParams(searchParams);
+    next.set('search', searchInput.trim());
+    next.delete('q');
+    setSearchParams(next);
+  };
+
+  const handleQuickSearch = (term: string) => {
+    setSearchInput(term);
+    setSearchQuery(term);
+    setActiveTab('all');
+    const next = new URLSearchParams(searchParams);
+    next.set('search', term);
+    next.delete('q');
+    setSearchParams(next);
+  };
+
+  const handleResetSearch = () => {
+    setSearchInput('');
+    setSearchQuery('');
+    const next = new URLSearchParams(searchParams);
+    next.delete('search');
+    next.delete('q');
+    setSearchParams(next);
+  };
+
+  const handleSearchInputChange = (val: string) => {
+    setSearchInput(val);
+    setSearchQuery(val);
+    if (val.trim()) {
+      if (activeTab === 'bookmarks' || activeTab === 'history') {
+        setActiveTab('all');
+      }
+    }
+  };
 
   // Filtered tracks based on query and active tab
   const filteredTracks = useMemo(() => {
@@ -241,6 +292,54 @@ export function MusicHubPage() {
                 <Mic2 className="w-4 h-4 text-[#1DB954]" /> Lirik Real-Time
               </button>
             </div>
+
+            {/* Search Bar inside Hero Spotlight */}
+            <div className="pt-3 max-w-xl w-full">
+              <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Cari lagu, artis, atau album (e.g. Die With A Smile, Galdive, Yoasobi, Bernadya, Coldplay)..."
+                  value={searchInput}
+                  onChange={(e) => handleSearchInputChange(e.target.value)}
+                  className="w-full pl-10 pr-28 py-3 text-xs sm:text-sm bg-black/50 backdrop-blur-md border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-[#1DB954] focus:ring-1 focus:ring-[#1DB954] transition-all shadow-inner"
+                />
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={handleResetSearch}
+                    title="Hapus pencarian"
+                    className="absolute right-20 text-slate-400 hover:text-white p-1 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="absolute right-1.5 px-4 py-1.5 bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-md shadow-[#1DB954]/25"
+                >
+                  <Search className="w-3.5 h-3.5" />
+                  Cari
+                </button>
+              </form>
+
+              {/* Quick Search Chips */}
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 pt-2.5 text-[11px] text-slate-400">
+                <span className="text-slate-500 font-semibold flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3 text-[#1DB954]" /> Populer:
+                </span>
+                {['Die With A Smile', 'Galdive', 'Yoasobi', 'Bernadya', 'Sabrina Carpenter', 'Coldplay', 'Aimer', 'NewJeans', 'Queen'].map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => handleQuickSearch(term)}
+                    className="px-2 py-0.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-[#1DB954] border border-white/5 hover:border-[#1DB954]/30 transition-colors"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -365,17 +464,33 @@ export function MusicHubPage() {
             </button>
           </div>
 
-          {/* Live Search Input */}
-          <div className="relative w-full md:w-72 shrink-0">
+          {/* Live Search Input in Tab Bar */}
+          <form onSubmit={handleSearchSubmit} className="relative w-full md:w-80 shrink-0">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Cari lagu, artis, album..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs bg-[#111622] border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-[#1DB954] transition-all"
+              value={searchInput}
+              onChange={(e) => handleSearchInputChange(e.target.value)}
+              className="w-full pl-9 pr-20 py-2 text-xs bg-[#111622] border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-[#1DB954] transition-all"
             />
-          </div>
+            {searchInput && (
+              <button
+                type="button"
+                onClick={handleResetSearch}
+                title="Hapus pencarian"
+                className="absolute right-14 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-0.5 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <button
+              type="submit"
+              className="absolute right-1 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold text-[11px] rounded-lg transition-colors"
+            >
+              Cari
+            </button>
+          </form>
         </div>
 
         {/* ======================================================== */}
@@ -632,50 +747,155 @@ export function MusicHubPage() {
           </div>
         ) : (
           /* ======================================================== */
-          /* VIEW 3: TRACK LIST / TABLE                               */
+          /* VIEW 3: TRACK LIST / SEARCH RESULTS                      */
           /* ======================================================== */
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <Music className="w-5 h-5 text-[#1DB954]" />
-                  Daftar Lagu ({filteredTracks.length} Lagu Tersedia)
+                  {searchQuery ? (
+                    <>
+                      Hasil Pencarian: "<span className="text-[#1DB954]">{searchQuery}</span>"
+                      <span className="text-xs font-normal text-slate-400">
+                        ({filteredTracks.length} Lagu {searchLoading ? '' : 'Ditemukan'})
+                      </span>
+                    </>
+                  ) : (
+                    <>Daftar Lagu ({filteredTracks.length} Lagu Tersedia)</>
+                  )}
+                  {searchLoading && <Loader2 className="w-4 h-4 text-[#1DB954] animate-spin" />}
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Klik lagu untuk memutar langsung audio YouTube kualitas tinggi dengan kontrol Spotify.
+                  {searchQuery
+                    ? `Hasil pencarian di katalog FAZURA Music dan streaming musik global.`
+                    : `Klik lagu untuk memutar langsung audio YouTube kualitas tinggi dengan kontrol Spotify.`}
                 </p>
               </div>
+
+              {searchQuery && (
+                <button
+                  onClick={handleResetSearch}
+                  className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-white/5"
+                >
+                  <X className="w-3.5 h-3.5" /> Hapus Pencarian
+                </button>
+              )}
             </div>
 
-            <div className="bg-[#111622] border border-white/5 rounded-2xl overflow-hidden divide-y divide-white/5">
-              {filteredTracks.map((track, idx) => {
-                const isTrackActive = currentTrack?.id === track.id;
-                const isTrackPlaying = isTrackActive && isPlaying;
-                const trackBookmarked = isBookmarked(track.id);
+            {searchLoading ? (
+              <div className="py-20 text-center bg-[#111622] rounded-2xl border border-white/5 space-y-3">
+                <Loader2 className="w-10 h-10 text-[#1DB954] animate-spin mx-auto" />
+                <h4 className="text-sm font-bold text-white">Mencari Lagu...</h4>
+                <p className="text-xs text-slate-400">
+                  Sedang mencari lagu "{searchQuery}" di katalog FAZURA Music & database musik global...
+                </p>
+              </div>
+            ) : filteredTracks.length > 0 ? (
+              <div className="bg-[#111622] border border-white/5 rounded-2xl overflow-hidden divide-y divide-white/5">
+                {filteredTracks.map((track, idx) => {
+                  const isTrackActive = currentTrack?.id === track.id;
+                  const isTrackPlaying = isTrackActive && isPlaying;
+                  const trackBookmarked = isBookmarked(track.id);
 
-                return (
-                  <div
-                    key={track.id}
-                    className={`flex items-center justify-between p-3 sm:p-4 hover:bg-white/5 transition-colors group ${
-                      isTrackActive ? 'bg-[#1DB954]/5' : ''
-                    }`}
-                  >
-                    {/* Left: Number, Poster, Title & Artist */}
-                    <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                      <span className="text-xs font-mono text-slate-500 w-5 text-center shrink-0">
-                        {idx + 1}
-                      </span>
+                  return (
+                    <div
+                      key={track.id}
+                      className={`flex items-center justify-between p-3 sm:p-4 hover:bg-white/5 transition-colors group ${
+                        isTrackActive ? 'bg-[#1DB954]/5' : ''
+                      }`}
+                    >
+                      {/* Left: Number, Poster, Title & Artist */}
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                        <span className="text-xs font-mono text-slate-500 w-5 text-center shrink-0">
+                          {idx + 1}
+                        </span>
 
-                      <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-slate-800 shrink-0 shadow-md">
-                        <img
-                          src={track.thumbnail}
-                          alt={track.title}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src =
-                              "https://i.ytimg.com/vi/kPa7bsKwL-c/hqdefault.jpg";
-                          }}
-                          className="w-full h-full object-cover"
-                        />
+                        <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-slate-800 shrink-0 shadow-md">
+                          <img
+                            src={track.thumbnail}
+                            alt={track.title}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src =
+                                "https://i.ytimg.com/vi/kPa7bsKwL-c/hqdefault.jpg";
+                            }}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            onClick={() => {
+                              if (isTrackActive) {
+                                togglePlay();
+                              } else {
+                                playTrack(track, filteredTracks);
+                              }
+                            }}
+                            className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
+                          >
+                            {isTrackPlaying ? (
+                              <Pause className="w-5 h-5 fill-current" />
+                            ) : (
+                              <Play className="w-5 h-5 fill-current ml-0.5" />
+                            )}
+                          </button>
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4
+                              onClick={() => playTrack(track, filteredTracks)}
+                              className={`text-xs sm:text-sm font-bold truncate cursor-pointer hover:underline ${
+                                isTrackActive ? 'text-[#1DB954]' : 'text-white'
+                              }`}
+                            >
+                              {track.title}
+                            </h4>
+                            {track.tag && (
+                              <span className="hidden sm:inline-block text-[9px] px-1.5 py-0.2 rounded font-semibold bg-white/10 text-slate-300">
+                                {track.tag}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] sm:text-xs text-slate-400 truncate mt-0.5">
+                            {track.artist} {track.album ? `• ${track.album}` : ''}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right: Actions, Duration & Bookmark */}
+                      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                        <span className="text-xs font-mono text-slate-400">
+                          {track.durationFormatted || '3:30'}
+                        </span>
+
+                        <button
+                          onClick={() =>
+                            toggleBookmark({
+                              id: track.id,
+                              category: 'music',
+                              title: track.title,
+                              cover: track.thumbnail,
+                              link: `/music?play=${encodeURIComponent(track.id)}`,
+                              subtitle: `${track.artist} • ${track.durationFormatted || 'Audio'}`,
+                              type: 'Lagu',
+                              addedAt: Date.now(),
+                              extra: {
+                                youtubeId: track.youtubeId,
+                                album: track.album,
+                                artist: track.artist,
+                                previewUrl: track.previewUrl,
+                              },
+                            })
+                          }
+                          title={trackBookmarked ? 'Hapus dari Favorit' : 'Tambah ke Favorit'}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 transition-colors"
+                        >
+                          <Heart
+                            className={`w-4 h-4 transition-colors ${
+                              trackBookmarked ? 'fill-rose-500 text-rose-500' : 'text-slate-400'
+                            }`}
+                          />
+                        </button>
+
                         <button
                           onClick={() => {
                             if (isTrackActive) {
@@ -684,98 +904,38 @@ export function MusicHubPage() {
                               playTrack(track, filteredTracks);
                             }
                           }}
-                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                            isTrackActive
+                              ? 'bg-[#1DB954] text-black shadow-md shadow-[#1DB954]/30'
+                              : 'bg-white/10 hover:bg-[#1DB954] hover:text-black text-white'
+                          }`}
                         >
                           {isTrackPlaying ? (
-                            <Pause className="w-5 h-5 fill-current" />
+                            <Pause className="w-4 h-4 fill-current" />
                           ) : (
-                            <Play className="w-5 h-5 fill-current ml-0.5" />
+                            <Play className="w-4 h-4 fill-current ml-0.5" />
                           )}
                         </button>
                       </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4
-                            onClick={() => playTrack(track, filteredTracks)}
-                            className={`text-xs sm:text-sm font-bold truncate cursor-pointer hover:underline ${
-                              isTrackActive ? 'text-[#1DB954]' : 'text-white'
-                            }`}
-                          >
-                            {track.title}
-                          </h4>
-                          {track.tag && (
-                            <span className="hidden sm:inline-block text-[9px] px-1.5 py-0.2 rounded font-semibold bg-white/10 text-slate-300">
-                              {track.tag}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] sm:text-xs text-slate-400 truncate mt-0.5">
-                          {track.artist} {track.album ? `• ${track.album}` : ''}
-                        </p>
-                      </div>
                     </div>
-
-                    {/* Right: Actions, Duration & Bookmark */}
-                    <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                      <span className="text-xs font-mono text-slate-400">
-                        {track.durationFormatted || '3:30'}
-                      </span>
-
-                      <button
-                        onClick={() =>
-                          toggleBookmark({
-                            id: track.id,
-                            category: 'music',
-                            title: track.title,
-                            cover: track.thumbnail,
-                            link: `/music?play=${encodeURIComponent(track.id)}`,
-                            subtitle: `${track.artist} • ${track.durationFormatted || 'Audio'}`,
-                            type: 'Lagu',
-                            addedAt: Date.now(),
-                            extra: {
-                              youtubeId: track.youtubeId,
-                              album: track.album,
-                              artist: track.artist,
-                              previewUrl: track.previewUrl,
-                            },
-                          })
-                        }
-                        title={trackBookmarked ? 'Hapus dari Favorit' : 'Tambah ke Favorit'}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 transition-colors"
-                      >
-                        <Heart
-                          className={`w-4 h-4 transition-colors ${
-                            trackBookmarked ? 'fill-rose-500 text-rose-500' : 'text-slate-400'
-                          }`}
-                        />
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          if (isTrackActive) {
-                            togglePlay();
-                          } else {
-                            playTrack(track, filteredTracks);
-                          }
-                        }}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                          isTrackActive
-                            ? 'bg-[#1DB954] text-black shadow-md shadow-[#1DB954]/30'
-                            : 'bg-white/10 hover:bg-[#1DB954] hover:text-black text-white'
-                        }`}
-                      >
-                        {isTrackPlaying ? (
-                          <Pause className="w-4 h-4 fill-current" />
-                        ) : (
-                          <Play className="w-4 h-4 fill-current ml-0.5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-16 text-center bg-[#111622] rounded-2xl border border-white/5 space-y-3 p-6">
+                <Search className="w-12 h-12 text-slate-600 mx-auto" />
+                <h4 className="text-base font-bold text-white">Lagu Tidak Ditemukan</h4>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  Tidak ditemukan lagu atau artis dengan kata kunci "{searchQuery}". Coba gunakan kata kunci lain seperti nama artis atau judul lagu.
+                </p>
+                <button
+                  onClick={handleResetSearch}
+                  className="mt-2 px-4 py-2 bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold text-xs rounded-xl transition-all shadow-md shadow-[#1DB954]/25"
+                >
+                  Lihat Semua Koleksi Lagu
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
