@@ -35,6 +35,7 @@ import {
 } from '../services/movieApi';
 import type { Movie, MovieQueryParams } from '../types/movie';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
+import { HubHistoryShelf } from '../components/library/HubHistoryShelf';
 
 const COLLECTION_TABS = [
   { id: 'trending', label: 'Trending', icon: Flame },
@@ -298,6 +299,9 @@ export function MovieHubPage() {
             </button>
           </form>
         </div>
+
+        {/* Hub History Shelf */}
+        <HubHistoryShelf category="movies" />
 
         {/* Collection Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">

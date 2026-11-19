@@ -13,6 +13,7 @@ import {
   History,
   Trash2,
   Mic2,
+  Mic,
   Music,
   Disc3,
   TrendingUp,
@@ -24,6 +25,7 @@ import {
 import { FAZURA_MUSIC_CATALOG, searchMusic, getTrackById, type MusicTrackItem } from '../services/musicApi';
 import { useMusic } from '../context/MusicContext';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
+import { HubHistoryShelf } from '../components/library/HubHistoryShelf';
 
 type MusicTabType = 'all' | 'viral' | 'pop_indo' | 'anime' | 'donghua' | 'kpop' | 'rock' | 'bookmarks' | 'history';
 
@@ -221,6 +223,52 @@ export function MusicHubPage() {
   const [searchQuery, setSearchQuery] = useState<string>(searchParam);
   const [searchedList, setSearchedList] = useState<MusicTrackItem[]>(FAZURA_MUSIC_CATALOG);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
+
+  // Voice Search via Web Speech API
+  const handleVoiceSearch = () => {
+    const SpeechRecognition =
+      (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).SpeechRecognition ||
+      (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Pencarian suara (Voice Search) tidak didukung pada browser ini.');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'id-ID';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        setIsVoiceListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results?.[0]?.[0]?.transcript;
+        if (transcript) {
+          setSearchInput(transcript);
+          setSearchQuery(transcript);
+          setSearchParams({ q: transcript });
+        }
+        setIsVoiceListening(false);
+      };
+
+      recognition.onerror = () => {
+        setIsVoiceListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsVoiceListening(false);
+      };
+
+      recognition.start();
+    } catch {
+      setIsVoiceListening(false);
+    }
+  };
 
   const {
     currentTrack,
@@ -525,7 +573,7 @@ export function MusicHubPage() {
                 onClick={() => setShowLyrics(true)}
                 className="px-4 py-3 rounded-full bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 text-sm font-semibold flex items-center gap-2 transition-colors"
               >
-                <Mic2 className="w-4 h-4 text-[#1DB954]" /> Lirik Real-Time
+                <Mic2 className="w-4 h-4 text-[#1DB954]" /> Lirik & Karaoke Mic
               </button>
             </div>
 
@@ -538,25 +586,43 @@ export function MusicHubPage() {
                   placeholder="Cari lagu, artis, atau album (e.g. Die With A Smile, Galdive, Yoasobi, Bernadya, Coldplay)..."
                   value={searchInput}
                   onChange={(e) => handleSearchInputChange(e.target.value)}
-                  className="w-full pl-10 pr-28 py-3 text-xs sm:text-sm bg-black/50 backdrop-blur-md border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-[#1DB954] focus:ring-1 focus:ring-[#1DB954] transition-all shadow-inner"
+                  className="w-full pl-10 pr-36 py-3 text-xs sm:text-sm bg-black/50 backdrop-blur-md border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-[#1DB954] focus:ring-1 focus:ring-[#1DB954] transition-all shadow-inner"
                 />
-                {searchInput && (
+
+                <div className="absolute right-1.5 flex items-center gap-1">
+                  {/* Voice Search Mic Button */}
                   <button
                     type="button"
-                    onClick={handleResetSearch}
-                    title="Hapus pencarian"
-                    className="absolute right-20 text-slate-400 hover:text-white p-1 transition-colors"
+                    onClick={handleVoiceSearch}
+                    title={isVoiceListening ? 'Mendengarkan...' : 'Cari dengan suara (Voice Search)'}
+                    className={`p-2 rounded-lg text-xs transition-all ${
+                      isVoiceListening
+                        ? 'bg-rose-500 text-white animate-pulse shadow-md shadow-rose-500/30'
+                        : 'text-slate-400 hover:text-[#1DB954] hover:bg-white/10'
+                    }`}
                   >
-                    <X className="w-4 h-4" />
+                    <Mic className="w-3.5 h-3.5" />
                   </button>
-                )}
-                <button
-                  type="submit"
-                  className="absolute right-1.5 px-4 py-1.5 bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-md shadow-[#1DB954]/25"
-                >
-                  <Search className="w-3.5 h-3.5" />
-                  Cari
-                </button>
+
+                  {searchInput && (
+                    <button
+                      type="button"
+                      onClick={handleResetSearch}
+                      title="Hapus pencarian"
+                      className="text-slate-400 hover:text-white p-1 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="px-3.5 py-1.5 bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-md shadow-[#1DB954]/25"
+                  >
+                    <Search className="w-3.5 h-3.5" />
+                    Cari
+                  </button>
+                </div>
               </form>
 
               {/* Quick Search Chips */}
@@ -582,6 +648,9 @@ export function MusicHubPage() {
 
       {/* Main Content Area */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
+        {/* Hub History Shelf */}
+        <HubHistoryShelf category="music" />
+
         {/* Navigation Tabs & Search Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Category Tabs */}

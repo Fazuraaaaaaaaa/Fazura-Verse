@@ -79,6 +79,7 @@ export function MusicPlayerBar() {
     toggleMute,
     toggleShuffle,
     toggleRepeat,
+    showLyrics,
     setShowLyrics,
     dismissPlayer,
   } = useMusic();
@@ -363,9 +364,13 @@ export function MusicPlayerBar() {
 
               <button
                 onClick={() => setShowLyrics((prev) => !prev)}
-                aria-label="Buka Lirik Sinkronisasi Real-Time"
-                title="Buka Lirik Sinkronisasi Real-Time"
-                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-[#1DB954] active:scale-95 transition-all"
+                aria-label="Buka Lirik & Mode Mic Karaoke"
+                title="Buka Lirik & Mode Mic Karaoke"
+                className={`w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-all ${
+                  showLyrics
+                    ? 'bg-[#1DB954] text-black shadow-lg shadow-[#1DB954]/30 scale-105'
+                    : 'text-slate-400 hover:text-[#1DB954] active:scale-95'
+                }`}
               >
                 <Mic2 className="w-4 h-4" />
               </button>
@@ -519,12 +524,16 @@ export function MusicPlayerBar() {
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             onClick={() => setShowLyrics((prev) => !prev)}
-            title="Buka Lirik Sinkronisasi Real-Time"
-            aria-label="Buka Lirik Sinkronisasi Real-Time"
-            className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-[#1DB954] hover:bg-white/5 transition-colors flex items-center gap-1.5"
+            title="Buka Lirik Sinkronisasi Real-Time & Mode Mic Karaoke"
+            aria-label="Buka Lirik Sinkronisasi Real-Time & Mode Mic Karaoke"
+            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+              showLyrics
+                ? 'bg-[#1DB954] text-black font-bold shadow-md shadow-[#1DB954]/30 scale-105'
+                : 'text-slate-400 hover:text-[#1DB954] hover:bg-white/5'
+            }`}
           >
             <Mic2 className="w-4 h-4" />
-            <span className="hidden md:inline text-xs font-semibold">Lirik</span>
+            <span className="hidden md:inline text-xs font-semibold">Lirik & Mic</span>
           </button>
 
           <div className="flex items-center gap-2" title={`Volume: ${isMuted ? 0 : volume}%`}>

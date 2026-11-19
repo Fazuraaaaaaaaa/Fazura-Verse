@@ -17,6 +17,7 @@ import {
   Sparkles,
   Compass,
   Flame,
+  Mic,
 } from 'lucide-react';
 import { search as searchManga } from '../services/api';
 import { searchOtakudesu } from '../services/animeApi';
@@ -56,7 +57,53 @@ export function SearchPage() {
   });
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isListening, setIsListening] = useState(false);
   const { currentTrack, isPlaying, playTrack, togglePlay } = useMusic();
+
+  // Voice Search via Web Speech API
+  const handleVoiceSearch = () => {
+    const SpeechRecognition =
+      (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).SpeechRecognition ||
+      (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Pencarian suara (Voice Search) tidak didukung pada browser ini.');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'id-ID';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results?.[0]?.[0]?.transcript;
+        if (transcript) {
+          setInputVal(transcript);
+          setSearchParams({ q: transcript.trim() });
+          addRecentSearch(transcript.trim());
+        }
+        setIsListening(false);
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.start();
+    } catch {
+      setIsListening(false);
+    }
+  };
 
   // Keep inputVal in sync if qParam in URL changes externally (React official pattern)
   const [prevQParam, setPrevQParam] = useState(qParam);
@@ -230,18 +277,33 @@ export function SearchPage() {
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full pl-12 pr-28 py-3.5 text-sm sm:text-base bg-[#181827]/90 border border-white/10 focus:border-[#8B5CF6] rounded-2xl text-white placeholder-slate-400 focus:outline-none shadow-2xl transition-all"
+            className="w-full pl-12 pr-40 py-3.5 text-sm sm:text-base bg-[#181827]/90 border border-white/10 focus:border-[#8B5CF6] rounded-2xl text-white placeholder-slate-400 focus:outline-none shadow-2xl transition-all"
             aria-label="Pencarian Multi-Kategori"
           />
 
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+            {/* Voice Search Mic Button */}
+            <button
+              type="button"
+              onClick={handleVoiceSearch}
+              title={isListening ? 'Mendengarkan suara Anda...' : 'Cari lewat suara (Voice Search)'}
+              aria-label={isListening ? 'Mendengarkan suara Anda...' : 'Cari lewat suara'}
+              className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center transition-all ${
+                isListening
+                  ? 'bg-rose-500 text-white animate-pulse shadow-lg shadow-rose-500/30'
+                  : 'text-slate-400 hover:text-[#8B5CF6] hover:bg-white/5 active:scale-95'
+              }`}
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+
             {inputVal && (
               <button
                 type="button"
                 onClick={handleClear}
                 title="Hapus pencarian (Esc)"
                 aria-label="Hapus pencarian (Esc)"
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl text-slate-400 hover:text-white hover:bg-white/5 flex items-center justify-center transition-colors active:scale-95"
+                className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl text-slate-400 hover:text-white hover:bg-white/5 flex items-center justify-center transition-colors active:scale-95"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -249,7 +311,7 @@ export function SearchPage() {
             <button
               type="submit"
               aria-label="Cari sekarang"
-              className="px-4 py-2 min-h-[44px] rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-extrabold text-xs sm:text-sm shadow-md shadow-[#8B5CF6]/30 transition-all active:scale-95 flex items-center justify-center"
+              className="px-4 py-2 min-h-[40px] rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-extrabold text-xs sm:text-sm shadow-md shadow-[#8B5CF6]/30 transition-all active:scale-95 flex items-center justify-center"
             >
               Cari
             </button>

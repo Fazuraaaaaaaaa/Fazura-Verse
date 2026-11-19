@@ -209,6 +209,7 @@ export function ReaderPage() {
         onNavigateChapter={handleNavigateChapter}
         allChapters={parentDetail?.chapters || []}
         currentChapterSlug={slug}
+        chapterImages={chapter.images || []}
       />
 
       {/* Progress Bar at the Top */}

@@ -15,6 +15,9 @@ import {
   Compass,
   Contrast,
   SunMoon,
+  Download,
+  CheckCircle,
+  Loader2,
 } from 'lucide-react';
 import type { ReaderSettings } from '../../types/manga';
 
@@ -33,6 +36,7 @@ interface ReaderControlsProps {
   onNavigateChapter: (chapterSlug: string) => void;
   allChapters?: { title: string; slug: string }[];
   currentChapterSlug?: string;
+  chapterImages?: string[];
 }
 
 export function ReaderControls({
@@ -47,9 +51,62 @@ export function ReaderControls({
   onNavigateChapter,
   allChapters = [],
   currentChapterSlug,
+  chapterImages = [],
 }: ReaderControlsProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
+  const [isSavedOffline, setIsSavedOffline] = useState(false);
+
+  // Check if current chapter images are cached
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && 'caches' in window && chapterImages.length > 0) {
+      caches.open('fazura-offline-chapters-v1').then(async (cache) => {
+        const firstMatch = await cache.match(chapterImages[0]);
+        if (firstMatch) {
+          setIsSavedOffline(true);
+        }
+      }).catch(() => {});
+    }
+  }, [chapterImages]);
+
+  const handleSaveOffline = async () => {
+    if (isDownloading || chapterImages.length === 0) return;
+    if (typeof window === 'undefined' || !('caches' in window)) {
+      alert('Penyimpanan offline belum didukung oleh browser Anda.');
+      return;
+    }
+
+    setIsDownloading(true);
+    setDownloadProgress(`0/${chapterImages.length}`);
+
+    try {
+      const cache = await caches.open('fazura-offline-chapters-v1');
+      let successCount = 0;
+
+      for (let i = 0; i < chapterImages.length; i++) {
+        const imgUrl = chapterImages[i];
+        try {
+          const resp = await fetch(imgUrl, { mode: 'no-cors' });
+          if (resp) {
+            await cache.put(imgUrl, resp);
+            successCount++;
+          }
+        } catch {
+          // continue downloading others
+        }
+        setDownloadProgress(`${i + 1}/${chapterImages.length}`);
+      }
+
+      setIsSavedOffline(true);
+    } catch (err) {
+      console.warn('Offline cache error:', err);
+    } finally {
+      setIsDownloading(false);
+      setDownloadProgress(null);
+    }
+  };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -147,6 +204,40 @@ export function ReaderControls({
             >
               <Contrast className="w-4 h-4" />
             </button>
+
+            {/* Offline Chapter Saver Button */}
+            {chapterImages.length > 0 && (
+              <button
+                onClick={handleSaveOffline}
+                disabled={isDownloading}
+                title={
+                  isSavedOffline
+                    ? 'Chapter Ini Sudah Tersimpan Offline'
+                    : isDownloading
+                    ? `Mengunduh... ${downloadProgress}`
+                    : 'Simpan Chapter Offline untuk Dibaca Tanpa Kuota'
+                }
+                aria-label="Simpan Chapter Offline"
+                className={`min-h-[44px] px-2.5 rounded-xl border flex items-center gap-1.5 text-xs font-semibold transition-all active:scale-95 ${
+                  isSavedOffline
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                    : isDownloading
+                    ? 'bg-[#8B5CF6]/20 text-[#A78BFA] border-[#8B5CF6]/40 animate-pulse'
+                    : 'bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white border-white/10'
+                }`}
+              >
+                {isDownloading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-[#8B5CF6]" />
+                ) : isSavedOffline ? (
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                <span className="hidden md:inline">
+                  {isDownloading ? downloadProgress : isSavedOffline ? 'Tersimpan' : 'Offline'}
+                </span>
+              </button>
+            )}
 
             {/* Quick Webtoon / Single Toggle */}
             <button

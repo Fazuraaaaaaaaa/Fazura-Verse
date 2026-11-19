@@ -11,6 +11,8 @@ import {
   RefreshCw,
   FolderSync,
   Layers,
+  Copy,
+  Check,
   BookOpen,
   Film,
   Tv,
@@ -40,12 +42,19 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
   onClose,
   onDataChanged,
 }) => {
-  const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
+  const [activeTab, setActiveTab] = useState<'export' | 'import' | 'sync'>('export');
   const [exportStats, setExportStats] = useState<{
     totalBookmarks: number;
     totalHistory: number;
     byCategory: Record<CategoryType, { bookmarks: number; history: number }>;
   } | null>(null);
+
+  // Sync Code State
+  const [syncCode, setSyncCode] = useState<string>('');
+  const [inputSyncCode, setInputSyncCode] = useState<string>('');
+  const [copiedSync, setCopiedSync] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncSuccess, setSyncSuccess] = useState<string | null>(null);
 
   // Import State
   const [dragOver, setDragOver] = useState(false);
@@ -188,6 +197,43 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
     }
   };
 
+  const handleGenerateSyncCode = () => {
+    try {
+      const data = createBackupData();
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+      setSyncCode(encoded);
+      navigator.clipboard.writeText(encoded);
+      setCopiedSync(true);
+      setTimeout(() => setCopiedSync(false), 2500);
+    } catch {
+      setSyncError('Gagal membuat kode sinkronisasi.');
+    }
+  };
+
+  const handleApplySyncCode = () => {
+    if (!inputSyncCode.trim()) return;
+    setSyncError(null);
+    setSyncSuccess(null);
+
+    try {
+      const decodedJson = decodeURIComponent(escape(atob(inputSyncCode.trim())));
+      const validation = validateBackupData(decodedJson);
+      if (!validation.valid || !validation.data) {
+        setSyncError(validation.error || 'Format kode sinkronisasi tidak valid.');
+        return;
+      }
+
+      const result = applyBackupData(validation.data, restoreMode);
+      setSyncSuccess(
+        `Sinkronisasi berhasil! ${result.bookmarksImported} bookmark dan ${result.historyImported} riwayat berhasil diterapkan.`
+      );
+      setInputSyncCode('');
+      onDataChanged?.();
+    } catch {
+      setSyncError('Kode sinkronisasi rusak atau tidak dikenali.');
+    }
+  };
+
   const categoryIcons: Record<CategoryType, React.ReactNode> = {
     manga: <BookOpen className="w-3.5 h-3.5 text-emerald-400" />,
     anime: <Tv className="w-3.5 h-3.5 text-purple-400" />,
@@ -257,6 +303,17 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
           >
             <Upload className="w-4 h-4" />
             Impor Data (Restore)
+          </button>
+          <button
+            onClick={() => setActiveTab('sync')}
+            className={`flex items-center gap-2 px-4 py-2.5 font-bold text-xs rounded-t-xl transition-all border-b-2 ${
+              activeTab === 'sync'
+                ? 'text-[#8B5CF6] border-[#8B5CF6] bg-surface'
+                : 'text-text-muted border-transparent hover:text-white'
+            }`}
+          >
+            <FolderSync className="w-4 h-4" />
+            Kode Sinkronisasi Cepat
           </button>
         </div>
 
@@ -346,7 +403,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                 Unduh File Backup Sekarang
               </button>
             </div>
-          ) : (
+          ) : activeTab === 'import' ? (
             /* IMPORT TAB */
             <div className="space-y-6">
               {/* Dropzone */}
@@ -506,6 +563,105 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                     </div>
                     <p className="mt-0.5">{importStatus.message}</p>
                   </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* TAB 3: Instant Cross-Device Sync Code */
+            <div className="space-y-6">
+              {/* Generate & Copy Sync Code Section */}
+              <div className="p-5 rounded-2xl bg-[#141824] border border-white/5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Copy className="w-4 h-4 text-[#8B5CF6]" /> 1. Buat Kode Sinkronisasi
+                    </h3>
+                    <p className="text-xs text-text-muted mt-0.5">
+                      Salin kode ini untuk memindahkan koleksi dan riwayat ke HP atau perangkat lain secara instan.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleGenerateSyncCode}
+                    className="px-4 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-[#8B5CF6]/20 shrink-0"
+                  >
+                    {copiedSync ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    <span>{copiedSync ? 'Tersalin!' : 'Salin Kode'}</span>
+                  </button>
+                </div>
+
+                {syncCode && (
+                  <div className="p-3 rounded-xl bg-black/40 border border-white/10 font-mono text-[11px] text-[#A78BFA] break-all max-h-24 overflow-y-auto">
+                    {syncCode}
+                  </div>
+                )}
+              </div>
+
+              {/* Paste & Apply Sync Code Section */}
+              <div className="p-5 rounded-2xl bg-[#141824] border border-white/5 space-y-3">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <FolderSync className="w-4 h-4 text-emerald-400" /> 2. Tempel Kode Sinkronisasi
+                </h3>
+                <p className="text-xs text-text-muted">
+                  Masukkan kode sinkronisasi yang Anda salin dari perangkat lain untuk memulihkan koleksi Anda.
+                </p>
+
+                <textarea
+                  value={inputSyncCode}
+                  onChange={(e) => setInputSyncCode(e.target.value)}
+                  placeholder="Tempel kode sinkronisasi di sini..."
+                  rows={3}
+                  className="w-full p-3 bg-black/50 border border-white/10 rounded-xl text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-[#8B5CF6] transition-all resize-none"
+                />
+
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-text-muted">Metode:</span>
+                    <button
+                      type="button"
+                      onClick={() => setRestoreMode('merge')}
+                      className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
+                        restoreMode === 'merge'
+                          ? 'bg-[#8B5CF6]/20 text-[#A78BFA] border border-[#8B5CF6]/40'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Gabungkan (Merge)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRestoreMode('overwrite')}
+                      className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
+                        restoreMode === 'overwrite'
+                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Timpa (Overwrite)
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={handleApplySyncCode}
+                    disabled={!inputSyncCode.trim()}
+                    className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-black transition-all disabled:opacity-40 shadow-md shadow-emerald-500/20"
+                  >
+                    Terapkan Sinkronisasi
+                  </button>
+                </div>
+              </div>
+
+              {/* Status Feedback */}
+              {syncError && (
+                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>{syncError}</span>
+                </div>
+              )}
+
+              {syncSuccess && (
+                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{syncSuccess}</span>
                 </div>
               )}
             </div>

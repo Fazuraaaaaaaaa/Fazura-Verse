@@ -30,6 +30,7 @@ import {
 } from '../services/donghuaApi';
 import type { DonghuaItem, DonghuaScheduleDay, DonghuaGenre } from '../types/media';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
+import { HubHistoryShelf } from '../components/library/HubHistoryShelf';
 
 type TabType = 'ongoing' | 'completed' | 'schedule' | 'genres' | 'bookmarks' | 'history';
 
@@ -273,6 +274,9 @@ export function DonghuaHubPage() {
           })}
         </div>
       </div>
+
+      {/* 2.5 Hub History Shelf */}
+      <HubHistoryShelf category="donghua" />
 
       {/* 3. Navigation Tabs Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">

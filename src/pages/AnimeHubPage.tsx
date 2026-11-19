@@ -28,6 +28,7 @@ import {
   searchOtakudesu,
 } from '../services/animeApi';
 import type { AnimeItem, AnimeScheduleDay } from '../types/media';
+import { HubHistoryShelf } from '../components/library/HubHistoryShelf';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 
 type TabType = 'ongoing' | 'completed' | 'genres' | 'schedule' | 'bookmarks' | 'history';
@@ -283,6 +284,9 @@ export function AnimeHubPage() {
           })}
         </div>
       </div>
+
+      {/* 2.5 Hub History Shelf */}
+      <HubHistoryShelf category="anime" />
 
       {/* 3. Navigation Tabs Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">

@@ -29,6 +29,7 @@ import { MangaGrid } from '../components/MangaGrid';
 import { GenreChips } from '../components/GenreChips';
 import type { MangaType } from '../types/manga';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
+import { HubHistoryShelf } from '../components/library/HubHistoryShelf';
 
 type TabType =
   | 'all'
@@ -210,6 +211,9 @@ export function BrowsePage() {
           </div>
         </form>
       </div>
+
+      {/* Hub History Shelf */}
+      <HubHistoryShelf category="manga" />
 
       {/* Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-white/5">

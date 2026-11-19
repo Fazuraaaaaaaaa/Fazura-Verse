@@ -264,7 +264,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Sync current time & duration timer for YouTube Player
+  // Sync current time & duration timer for YouTube Player with ultra-low latency (100ms)
   useEffect(() => {
     const timer = setInterval(() => {
       if (playerRef.current && isPlaying && currentTrackRef.current?.youtubeId) {
@@ -279,7 +279,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
           // ignore transient errors
         }
       }
-    }, 350);
+    }, 100);
 
     return () => clearInterval(timer);
   }, [isPlaying]);
