@@ -140,6 +140,27 @@ export function AnimeWatchPage() {
     return set;
   }, [history]);
 
+  // Filter out unwanted servers (ODStream HD, ondesuhd/OnDesu, and OCDCN/ODCDN)
+  const filteredServers = useMemo(() => {
+    if (!episode?.servers) return [];
+    const isExcluded = (title: string) => {
+      const clean = (title || '').toLowerCase().replace(/[\s\-_]/g, '');
+      return (
+        clean.includes('odstream') ||
+        clean.includes('ondesu') ||
+        clean.includes('odcdn') ||
+        clean.includes('ocdcn')
+      );
+    };
+
+    return episode.servers
+      .map((q) => ({
+        ...q,
+        serverList: (q.serverList || []).filter((srv) => !isExcluded(srv.title)),
+      }))
+      .filter((q) => q.serverList.length > 0);
+  }, [episode?.servers]);
+
   if (isLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-20 text-center space-y-4">
@@ -339,7 +360,7 @@ export function AnimeWatchPage() {
       </div>
 
       {/* Server & Quality Selection Bar */}
-      {episode.servers && episode.servers.length > 0 && (
+      {filteredServers && filteredServers.length > 0 && (
         <div className="p-5 rounded-2xl bg-surface border border-white/10 shadow-xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-white/5 pb-3">
             <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 font-heading">
@@ -352,7 +373,7 @@ export function AnimeWatchPage() {
           </div>
 
           <div className="space-y-3">
-            {episode.servers.map((q) => (
+            {filteredServers.map((q) => (
               <div
                 key={q.quality}
                 className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-2.5 rounded-xl bg-surface-elevated/70 border border-white/5"

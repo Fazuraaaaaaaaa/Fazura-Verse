@@ -139,6 +139,16 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
   const json: any = await fetchJson(`${ANIME_BASE_URL}/episode/${encodeURIComponent(episodeId)}`);
   const data = json?.data || {};
 
+  const isExcludedServer = (title: string): boolean => {
+    const clean = (title || '').toLowerCase().replace(/[\s\-_]/g, '');
+    return (
+      clean.includes('odstream') ||
+      clean.includes('ondesu') ||
+      clean.includes('odcdn') ||
+      clean.includes('ocdcn')
+    );
+  };
+
   const formatServerTitle = (title: string) => {
     const clean = (title || '').trim().toLowerCase();
     if (clean === 'blogs') return 'Blogspot (Google Video)';
@@ -206,27 +216,37 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
     else if (qTitle.includes('480')) displayQuality = '480p (SD)';
     else if (qTitle.includes('360')) displayQuality = '360p (Hemat Data)';
 
-    // Filter out 'blogs' from 480p or other qualities because Blogspot is 360p
+    // Filter out 'blogs' from 480p or other qualities because Blogspot is 360p,
+    // and filter out ODStream, ondesuhd/OnDesu, and OCDCN/ODCDN as requested.
     let serverList = (q.serverList || [])
       .filter((s: any) => {
         const t = (s.title || '').toLowerCase().trim();
-        return t !== 'blogs' && !t.includes('blogspot') && !t.includes('blogger');
+        if (t === 'blogs' || t.includes('blogspot') || t.includes('blogger')) {
+          return false;
+        }
+        if (isExcludedServer(s.title)) {
+          return false;
+        }
+        return true;
       })
       .map((s: any) => ({
         title: formatServerTitle(s.title),
         serverId: s.serverId,
         href: s.href,
-      }));
+      }))
+      .filter((s: any) => !isExcludedServer(s.title));
 
     // If this quality is 360p, place Blogspot 360p first!
     if (qTitle.includes('360') && blogspotServer) {
       serverList = [blogspotServer, ...serverList];
     }
 
-    servers.push({
-      quality: displayQuality,
-      serverList,
-    });
+    if (serverList.length > 0) {
+      servers.push({
+        quality: displayQuality,
+        serverList,
+      });
+    }
   }
 
   // If 360p was not present in raw qualities but blogspotServer exists, append 360p
