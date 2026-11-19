@@ -12,6 +12,7 @@ import {
   Columns,
   Palette,
   X,
+  Compass,
 } from 'lucide-react';
 import type { ReaderSettings } from '../../types/manga';
 
@@ -56,45 +57,57 @@ export function ReaderControls({
     }
   };
 
+  const toggleModeQuick = () => {
+    if (settings.mode === 'vertical') {
+      onUpdateSettings({ mode: 'single' });
+    } else {
+      onUpdateSettings({ mode: 'vertical' });
+    }
+  };
+
   return (
     <>
       {/* Top Floating Control Bar */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-md border-b border-white/10 transition-transform duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 bg-[#090912]/90 backdrop-blur-md border-b border-white/10 transition-transform duration-300 ${
           visible ? 'translate-y-0' : '-translate-y-full'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-3">
           {/* Back Button & Title */}
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Link
-              to={mangaSlug ? `/manga/${mangaSlug}` : '/'}
-              className="p-2 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white border border-white/5 transition-colors shrink-0"
-              title="Return to Manga Detail"
+              to={mangaSlug ? `/manga/${mangaSlug}` : '/manga'}
+              className="p-2 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white border border-white/10 transition-colors shrink-0"
+              title="Kembali ke Detail Komik"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div className="min-w-0">
-              <h1 className="text-xs sm:text-sm font-bold text-white truncate max-w-[180px] sm:max-w-md">
+              <h1 className="text-xs sm:text-sm font-bold text-white truncate max-w-[130px] sm:max-w-xs md:max-w-md font-heading">
                 {title}
               </h1>
               {totalPages && totalPages > 0 ? (
-                <p className="text-[10px] text-slate-400">
-                  {settings.mode === 'vertical'
-                    ? `${totalPages} pages`
-                    : `Page ${(currentPage || 0) + 1} of ${totalPages}`}
+                <p className="text-[10px] text-text-muted flex items-center gap-1.5">
+                  <span className="capitalize font-semibold text-accent-soft">{settings.mode}</span>
+                  <span>•</span>
+                  <span>
+                    {settings.mode === 'vertical'
+                      ? `${totalPages} Gambar`
+                      : `Hal. ${(currentPage || 0) + 1} / ${totalPages}`}
+                  </span>
                 </p>
               ) : null}
             </div>
           </div>
 
-          {/* Quick Chapter Selector Dropdown (if chapters list passed) */}
+          {/* Quick Chapter Selector Dropdown (visible on tablet & mobile) */}
           {allChapters.length > 0 && currentChapterSlug && (
-            <div className="hidden sm:block">
+            <div className="relative shrink min-w-0">
               <select
                 value={currentChapterSlug}
                 onChange={(e) => onNavigateChapter(e.target.value)}
-                className="bg-card text-xs text-slate-200 border border-white/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-accent-indigo"
+                className="bg-surface text-xs text-slate-200 border border-white/10 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-accent-primary cursor-pointer max-w-[120px] sm:max-w-[180px] md:max-w-[220px] truncate"
               >
                 {allChapters.map((ch) => (
                   <option key={ch.slug} value={ch.slug}>
@@ -106,13 +119,36 @@ export function ReaderControls({
           )}
 
           {/* Action Icons */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            {/* Quick Webtoon / Single Toggle */}
+            <button
+              onClick={toggleModeQuick}
+              title={
+                settings.mode === 'vertical'
+                  ? 'Beralih ke Mode Single Page'
+                  : 'Beralih ke Mode Webtoon Scroll'
+              }
+              className="p-2 rounded-xl bg-surface hover:bg-surface-elevated text-accent-soft hover:text-white border border-white/10 transition-colors hidden xs:flex items-center gap-1 text-xs font-semibold"
+            >
+              {settings.mode === 'vertical' ? (
+                <>
+                  <Layers className="w-4 h-4 text-accent-primary" />
+                  <span className="hidden md:inline">Webtoon</span>
+                </>
+              ) : (
+                <>
+                  <FileText className="w-4 h-4 text-accent-primary" />
+                  <span className="hidden md:inline">Single</span>
+                </>
+              )}
+            </button>
+
             {/* Prev Chapter */}
             <button
               onClick={() => navigation.prev && onNavigateChapter(navigation.prev)}
               disabled={!navigation.prev}
-              title="Previous Chapter"
-              className="p-2 rounded-xl bg-card hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-card text-slate-300 hover:text-white border border-white/5 transition-colors"
+              title="Chapter Sebelumnya"
+              className="p-2 rounded-xl bg-surface hover:bg-surface-elevated disabled:opacity-30 disabled:hover:bg-surface text-slate-300 hover:text-white border border-white/10 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -121,8 +157,8 @@ export function ReaderControls({
             <button
               onClick={() => navigation.next && onNavigateChapter(navigation.next)}
               disabled={!navigation.next}
-              title="Next Chapter"
-              className="p-2 rounded-xl bg-card hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-card text-slate-300 hover:text-white border border-white/5 transition-colors"
+              title="Chapter Selanjutnya"
+              className="p-2 rounded-xl bg-accent-primary hover:bg-accent-primary/90 disabled:opacity-30 text-white border border-accent-soft transition-colors shadow-sm shadow-accent-primary/20"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -130,8 +166,8 @@ export function ReaderControls({
             {/* Fullscreen */}
             <button
               onClick={toggleFullscreen}
-              title="Toggle Fullscreen"
-              className="p-2 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white border border-white/5 transition-colors"
+              title="Layar Penuh"
+              className="p-2 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white border border-white/10 transition-colors hidden sm:block"
             >
               {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
             </button>
@@ -139,11 +175,11 @@ export function ReaderControls({
             {/* Settings Toggle */}
             <button
               onClick={() => setSettingsOpen(!settingsOpen)}
-              title="Reader Settings"
-              className={`p-2 rounded-xl border border-white/5 transition-colors ${
+              title="Pengaturan Pembaca"
+              className={`p-2 rounded-xl border border-white/10 transition-colors ${
                 settingsOpen
-                  ? 'bg-accent-indigo text-white'
-                  : 'bg-card hover:bg-slate-800 text-slate-300 hover:text-white'
+                  ? 'bg-accent-primary text-white border-accent-soft'
+                  : 'bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white'
               }`}
             >
               <Settings className="w-4 h-4" />
@@ -154,16 +190,16 @@ export function ReaderControls({
 
       {/* Settings Modal / Bottom Sheet */}
       {settingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-surface border border-white/10 p-5 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm rounded-3xl bg-surface border border-white/10 p-5 shadow-2xl space-y-5">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Settings className="w-4 h-4 text-accent-indigo" />
-                Reader Preferences
+              <h3 className="text-sm font-bold text-white flex items-center gap-2 font-heading">
+                <Settings className="w-4 h-4 text-accent-primary" />
+                Pengaturan Pembaca
               </h3>
               <button
                 onClick={() => setSettingsOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-card"
+                className="p-1 rounded-lg text-text-muted hover:text-white hover:bg-surface-elevated transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -172,61 +208,61 @@ export function ReaderControls({
             {/* Reading Mode */}
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-accent-cyan" />
-                Reading Mode
+                <Layers className="w-3.5 h-3.5 text-accent-primary" />
+                Mode Membaca
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => onUpdateSettings({ mode: 'vertical' })}
-                  className={`py-2 px-2 rounded-xl text-xs font-medium border flex flex-col items-center gap-1 transition-all ${
+                  className={`py-2 px-2 rounded-xl text-xs font-semibold border flex flex-col items-center gap-1 transition-all ${
                     settings.mode === 'vertical'
-                      ? 'bg-accent-indigo/20 border-accent-indigo text-accent-indigo'
-                      : 'bg-card border-white/5 text-slate-400 hover:text-slate-200'
+                      ? 'bg-accent-primary/20 border-accent-primary text-accent-soft shadow-sm'
+                      : 'bg-surface-elevated border-white/5 text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  <Layers className="w-4 h-4" />
-                  Vertical
+                  <Layers className="w-4 h-4 text-accent-primary" />
+                  Webtoon
                 </button>
                 <button
                   onClick={() => onUpdateSettings({ mode: 'single' })}
-                  className={`py-2 px-2 rounded-xl text-xs font-medium border flex flex-col items-center gap-1 transition-all ${
+                  className={`py-2 px-2 rounded-xl text-xs font-semibold border flex flex-col items-center gap-1 transition-all ${
                     settings.mode === 'single'
-                      ? 'bg-accent-indigo/20 border-accent-indigo text-accent-indigo'
-                      : 'bg-card border-white/5 text-slate-400 hover:text-slate-200'
+                      ? 'bg-accent-primary/20 border-accent-primary text-accent-soft shadow-sm'
+                      : 'bg-surface-elevated border-white/5 text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  <FileText className="w-4 h-4" />
-                  Single Page
+                  <FileText className="w-4 h-4 text-accent-primary" />
+                  Single
                 </button>
                 <button
                   onClick={() => onUpdateSettings({ mode: 'double' })}
-                  className={`py-2 px-2 rounded-xl text-xs font-medium border flex flex-col items-center gap-1 transition-all ${
+                  className={`py-2 px-2 rounded-xl text-xs font-semibold border flex flex-col items-center gap-1 transition-all ${
                     settings.mode === 'double'
-                      ? 'bg-accent-indigo/20 border-accent-indigo text-accent-indigo'
-                      : 'bg-card border-white/5 text-slate-400 hover:text-slate-200'
+                      ? 'bg-accent-primary/20 border-accent-primary text-accent-soft shadow-sm'
+                      : 'bg-surface-elevated border-white/5 text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  <Columns className="w-4 h-4" />
-                  Double Page
+                  <Columns className="w-4 h-4 text-accent-primary" />
+                  Double
                 </button>
               </div>
             </div>
 
             {/* Image Fit */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-300">Image Fit</label>
+              <label className="text-xs font-semibold text-slate-300">Ukuran Gambar (Fit)</label>
               <div className="grid grid-cols-3 gap-2">
                 {(['width', 'height', 'original'] as const).map((fit) => (
                   <button
                     key={fit}
                     onClick={() => onUpdateSettings({ fit })}
-                    className={`py-1.5 px-2 rounded-lg text-xs capitalize font-medium border transition-all ${
+                    className={`py-1.5 px-2 rounded-xl text-xs font-medium border capitalize transition-all ${
                       settings.fit === fit
-                        ? 'bg-accent-indigo/20 border-accent-indigo text-accent-indigo'
-                        : 'bg-card border-white/5 text-slate-400 hover:text-slate-200'
+                        ? 'bg-accent-primary/20 border-accent-primary text-accent-soft shadow-sm'
+                        : 'bg-surface-elevated border-white/5 text-slate-400 hover:text-slate-200'
                     }`}
                   >
-                    Fit {fit}
+                    {fit === 'width' ? 'Fit Lebar' : fit === 'height' ? 'Fit Tinggi' : 'Asli'}
                   </button>
                 ))}
               </div>
@@ -235,76 +271,63 @@ export function ReaderControls({
             {/* Background Color */}
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                <Palette className="w-3.5 h-3.5 text-accent-purple" />
-                Background Color
+                <Palette className="w-3.5 h-3.5 text-accent-soft" />
+                Latar Belakang
               </label>
               <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={() => onUpdateSettings({ background: 'black' })}
-                  className={`py-2 px-2 rounded-xl text-xs font-medium border flex items-center justify-center gap-1.5 transition-all ${
-                    settings.background === 'black'
-                      ? 'border-accent-indigo text-white bg-black'
-                      : 'border-white/5 text-slate-400 bg-black'
-                  }`}
-                >
-                  <span className="w-2.5 h-2.5 rounded-full bg-black border border-white/20" />
-                  Black
-                </button>
-                <button
-                  onClick={() => onUpdateSettings({ background: 'dark' })}
-                  className={`py-2 px-2 rounded-xl text-xs font-medium border flex items-center justify-center gap-1.5 transition-all ${
-                    settings.background === 'dark'
-                      ? 'border-accent-indigo text-white bg-[#0a0d18]'
-                      : 'border-white/5 text-slate-400 bg-[#0a0d18]'
-                  }`}
-                >
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#0a0d18] border border-white/20" />
-                  Navy Dark
-                </button>
-                <button
-                  onClick={() => onUpdateSettings({ background: 'gray' })}
-                  className={`py-2 px-2 rounded-xl text-xs font-medium border flex items-center justify-center gap-1.5 transition-all ${
-                    settings.background === 'gray'
-                      ? 'border-accent-indigo text-white bg-[#1e293b]'
-                      : 'border-white/5 text-slate-400 bg-[#1e293b]'
-                  }`}
-                >
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#1e293b] border border-white/20" />
-                  Slate
-                </button>
+                {[
+                  { key: 'dark', label: 'Dark Navy', color: '#090912' },
+                  { key: 'black', label: 'Hitam Pekat', color: '#000000' },
+                  { key: 'gray', label: 'Abu Lembut', color: '#181827' },
+                ].map((bg) => (
+                  <button
+                    key={bg.key}
+                    onClick={() => onUpdateSettings({ background: bg.key as any })}
+                    className={`py-2 px-2 rounded-xl text-xs font-medium border flex items-center justify-center gap-1.5 transition-all ${
+                      settings.background === bg.key
+                        ? 'border-accent-primary text-white bg-accent-primary/10'
+                        : 'border-white/5 text-slate-400 hover:text-white bg-surface-elevated'
+                    }`}
+                  >
+                    <span
+                      className="w-3 h-3 rounded-full border border-white/20"
+                      style={{ backgroundColor: bg.color }}
+                    />
+                    {bg.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Gap Between Pages (Vertical Mode only) */}
-            {settings.mode === 'vertical' && (
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300">
-                  Page Gap: {settings.gap}px
-                </label>
-                <div className="flex gap-2">
-                  {[0, 8, 16, 24].map((gap) => (
-                    <button
-                      key={gap}
-                      onClick={() => onUpdateSettings({ gap })}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                        settings.gap === gap
-                          ? 'bg-accent-indigo/20 border-accent-indigo text-accent-indigo'
-                          : 'bg-card border-white/5 text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      {gap}px
-                    </button>
-                  ))}
-                </div>
+            {/* Direction */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-accent-soft" />
+                Arah Baca (Single / Double)
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => onUpdateSettings({ direction: 'ltr' })}
+                  className={`py-1.5 px-3 rounded-xl text-xs font-medium border transition-all ${
+                    settings.direction === 'ltr'
+                      ? 'bg-accent-primary/20 border-accent-primary text-accent-soft'
+                      : 'bg-surface-elevated border-white/5 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Kiri ke Kanan (LTR)
+                </button>
+                <button
+                  onClick={() => onUpdateSettings({ direction: 'rtl' })}
+                  className={`py-1.5 px-3 rounded-xl text-xs font-medium border transition-all ${
+                    settings.direction === 'rtl'
+                      ? 'bg-accent-primary/20 border-accent-primary text-accent-soft'
+                      : 'bg-surface-elevated border-white/5 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Kanan ke Kiri (Manga)
+                </button>
               </div>
-            )}
-
-            <button
-              onClick={() => setSettingsOpen(false)}
-              className="w-full py-2.5 rounded-xl bg-accent-indigo text-white font-bold text-xs hover:bg-accent-indigo/90 transition-colors shadow-lg shadow-accent-indigo/20"
-            >
-              Apply Settings
-            </button>
+            </div>
           </div>
         </div>
       )}

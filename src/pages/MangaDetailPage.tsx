@@ -17,6 +17,9 @@ import {
   Tag,
   AlertCircle,
   RefreshCw,
+  Sparkles,
+  Share2,
+  ArrowLeft,
 } from 'lucide-react';
 import { getDetail } from '../services/api';
 import { useBookmarks } from '../hooks/useBookmarks';
@@ -28,6 +31,7 @@ export function MangaDetailPage() {
   const [searchChapter, setSearchChapter] = useState('');
   const [sortDescending, setSortDescending] = useState(true);
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const { isBookmarked, toggleBookmark } = useBookmarks();
   const { history, getLastRead } = useReadingHistory();
@@ -50,9 +54,10 @@ export function MangaDetailPage() {
   const filteredChapters = useMemo(() => {
     if (!manga?.chapters) return [];
 
-    let list = manga.chapters.filter((ch) =>
-      ch.title.toLowerCase().includes(searchChapter.toLowerCase()) ||
-      ch.slug.toLowerCase().includes(searchChapter.toLowerCase())
+    let list = manga.chapters.filter(
+      (ch) =>
+        ch.title.toLowerCase().includes(searchChapter.toLowerCase()) ||
+        ch.slug.toLowerCase().includes(searchChapter.toLowerCase())
     );
 
     if (!sortDescending) {
@@ -79,34 +84,44 @@ export function MangaDetailPage() {
     return set;
   }, [history, slug]);
 
+  const handleShare = () => {
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(window.location.href);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
+
   if (isLoading) {
     return <DetailSkeleton />;
   }
 
   if (error || !manga) {
     return (
-      <div className="max-w-xl mx-auto py-24 px-4 text-center space-y-4">
-        <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto">
-          <AlertCircle className="w-7 h-7" />
+      <div className="max-w-xl mx-auto py-24 px-4 text-center space-y-5">
+        <div className="w-16 h-16 rounded-3xl bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto border border-rose-500/20 shadow-lg shadow-rose-500/10">
+          <AlertCircle className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-bold text-white">Manga Not Found</h2>
-        <p className="text-sm text-slate-400">
-          {(error as any)?.message ||
-            'We could not load this title. It might be unavailable or removed from the provider.'}
-        </p>
+        <div className="space-y-1">
+          <h2 className="text-2xl font-black text-white font-heading">Komik Tidak Ditemukan</h2>
+          <p className="text-xs text-text-secondary">
+            {(error as any)?.message ||
+              'Tidak dapat memuat judul ini. Judul mungkin sedang tidak tersedia di provider.'}
+          </p>
+        </div>
         <div className="flex justify-center gap-3 pt-2">
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-indigo text-white font-semibold text-sm hover:bg-accent-indigo/90"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-primary text-white font-bold text-xs shadow-lg shadow-accent-primary/20 hover:bg-accent-primary/90 transition-all"
           >
             <RefreshCw className="w-4 h-4" />
-            Try Again
+            Coba Lagi
           </button>
           <Link
-            to="/"
-            className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold text-sm hover:text-white"
+            to="/manga"
+            className="px-5 py-2.5 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white font-semibold text-xs border border-white/10 transition-colors"
           >
-            Back to Home
+            Kembali ke Manga Hub
           </Link>
         </div>
       </div>
@@ -116,77 +131,89 @@ export function MangaDetailPage() {
   const rawType = (manga.type || 'manga').toLowerCase().trim();
   const typeBadgeColors =
     rawType === 'manhwa'
-      ? 'bg-purple-500/90 text-white border-purple-400/40'
+      ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
       : rawType === 'manhua'
-      ? 'bg-emerald-500/90 text-white border-emerald-400/40'
-      : 'bg-indigo-500/90 text-white border-indigo-400/40';
+      ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+      : 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30';
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 min-w-0">
-      {/* Backdrop Header */}
-      <div className="relative rounded-3xl overflow-hidden bg-card border border-white/10 p-6 sm:p-10 shadow-2xl">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-10 min-w-0">
+      {/* Cinematic Hero Backdrop Header */}
+      <div className="relative rounded-3xl overflow-hidden bg-surface border border-white/10 shadow-2xl">
         {/* Blurred Cover Backdrop */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <img
             src={manga.cover}
             alt={manga.title}
             referrerPolicy="no-referrer"
-            className="w-full h-full object-cover filter blur-3xl scale-125 opacity-20"
+            className="w-full h-full object-cover filter blur-3xl scale-125 opacity-25"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/90 to-card/60" />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-surface/90 to-surface/60" />
+          <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/90 via-transparent to-bg-primary/90" />
         </div>
 
-        <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-8">
-          {/* Cover Poster */}
-          <div className="relative w-52 sm:w-64 aspect-[3/4] rounded-2xl overflow-hidden shrink-0 shadow-2xl border-2 border-white/10 bg-slate-900">
+        <div className="relative z-10 p-6 sm:p-10 flex flex-col md:flex-row items-center md:items-start gap-8">
+          {/* Cover Poster with Floating Badges */}
+          <div className="relative group w-52 sm:w-64 aspect-[3/4] rounded-2xl overflow-hidden shrink-0 shadow-2xl border-2 border-white/10 bg-surface-elevated">
             <img
               src={manga.cover}
               alt={manga.title}
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
+            {/* Rating Badge */}
             {manga.rating && (
-              <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/80 backdrop-blur-md text-amber-300 text-xs font-bold border border-white/10 shadow-lg">
-                <Star className="w-3.5 h-3.5 fill-amber-300" />
+              <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#090912]/85 backdrop-blur-md text-amber-300 text-xs font-black border border-white/10 shadow-lg">
+                <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
                 {manga.rating}
+              </div>
+            )}
+            {/* Status Pill */}
+            {manga.status && (
+              <div className="absolute bottom-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#090912]/85 backdrop-blur-md text-emerald-400 text-[11px] font-bold border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                {manga.status}
               </div>
             )}
           </div>
 
           {/* Info & Synopsis */}
           <div className="flex-1 space-y-4 text-center md:text-left min-w-0">
+            {/* Chips Header */}
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
               <span
                 className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border shadow-sm ${typeBadgeColors}`}
               >
                 {manga.type || 'Manga'}
               </span>
-              {manga.status && (
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                  {manga.status}
-                </span>
-              )}
               {manga.release && (
-                <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-card text-slate-300 border border-white/5">
-                  <Calendar className="w-3.5 h-3.5 text-accent-cyan" />
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-surface-elevated text-slate-300 border border-white/8">
+                  <Calendar className="w-3.5 h-3.5 text-accent-soft" />
                   {manga.release}
                 </span>
               )}
               {manga.reader && (
-                <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-card text-slate-300 border border-white/5">
-                  <Users className="w-3.5 h-3.5 text-accent-purple" />
-                  {manga.reader}
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-surface-elevated text-slate-300 border border-white/8">
+                  <Users className="w-3.5 h-3.5 text-accent-primary" />
+                  {manga.reader} Pembaca
+                </span>
+              )}
+              {manga.chapters && (
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-surface-elevated text-slate-300 border border-white/8">
+                  <BookOpen className="w-3.5 h-3.5 text-accent-soft" />
+                  {manga.chapters.length} Chapter
                 </span>
               )}
             </div>
 
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+            {/* Title */}
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white font-heading tracking-tight leading-tight">
               {manga.title}
             </h1>
 
             {manga.otherTitle && (
-              <p className="text-xs sm:text-sm text-slate-400 font-medium line-clamp-2">
-                Alt: {manga.otherTitle}
+              <p className="text-xs sm:text-sm text-text-secondary font-medium line-clamp-2">
+                Judul Lain: {manga.otherTitle}
               </p>
             )}
 
@@ -195,14 +222,14 @@ export function MangaDetailPage() {
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs text-slate-300 pt-1">
                 {manga.author && (
                   <span className="flex items-center gap-1.5">
-                    <PenTool className="w-3.5 h-3.5 text-accent-indigo" />
-                    <strong className="text-slate-400">Author:</strong> {manga.author}
+                    <PenTool className="w-3.5 h-3.5 text-accent-soft" />
+                    <strong className="text-text-muted">Author:</strong> {manga.author}
                   </span>
                 )}
                 {manga.artist && manga.artist !== manga.author && (
                   <span className="flex items-center gap-1.5">
-                    <PenTool className="w-3.5 h-3.5 text-accent-cyan" />
-                    <strong className="text-slate-400">Artist:</strong> {manga.artist}
+                    <PenTool className="w-3.5 h-3.5 text-accent-primary" />
+                    <strong className="text-text-muted">Artist:</strong> {manga.artist}
                   </span>
                 )}
               </div>
@@ -215,9 +242,9 @@ export function MangaDetailPage() {
                   <Link
                     key={g.slug}
                     to={`/browse?genre=${encodeURIComponent(g.slug)}`}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface/80 hover:bg-accent-indigo/20 text-slate-300 hover:text-accent-indigo border border-white/5 hover:border-accent-indigo/30 transition-all"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface-elevated/90 hover:bg-accent-primary/20 text-text-secondary hover:text-white border border-white/5 hover:border-accent-primary/30 transition-all"
                   >
-                    <Tag className="w-3 h-3 text-accent-indigo" />
+                    <Tag className="w-3 h-3 text-accent-soft" />
                     {g.title}
                   </Link>
                 ))}
@@ -225,26 +252,29 @@ export function MangaDetailPage() {
             )}
 
             {/* Synopsis */}
-            <div className="pt-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                Synopsis
-              </h3>
-              <p
-                className={`text-sm text-slate-300 leading-relaxed ${
-                  !synopsisExpanded ? 'line-clamp-4' : ''
-                }`}
-              >
-                {manga.synopsis}
-              </p>
-              {manga.synopsis.length > 250 && (
-                <button
-                  onClick={() => setSynopsisExpanded(!synopsisExpanded)}
-                  className="mt-1 text-xs font-bold text-accent-indigo hover:text-accent-cyan transition-colors"
+            {manga.synopsis && (
+              <div className="pt-2 text-left">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-1 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-accent-soft" />
+                  Sinopsis
+                </h3>
+                <p
+                  className={`text-xs sm:text-sm text-slate-300 leading-relaxed ${
+                    !synopsisExpanded ? 'line-clamp-3' : ''
+                  }`}
                 >
-                  {synopsisExpanded ? 'Show Less' : 'Read Full Synopsis...'}
-                </button>
-              )}
-            </div>
+                  {manga.synopsis}
+                </p>
+                {manga.synopsis.length > 250 && (
+                  <button
+                    onClick={() => setSynopsisExpanded(!synopsisExpanded)}
+                    className="mt-1 text-xs font-bold text-accent-primary hover:text-accent-secondary transition-colors"
+                  >
+                    {synopsisExpanded ? 'Tampilkan Lebih Sedikit' : 'Baca Selengkapnya...'}
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center md:justify-start gap-3 pt-4">
@@ -252,18 +282,18 @@ export function MangaDetailPage() {
               {lastRead ? (
                 <Link
                   to={`/chapter/${lastRead.chapterSlug}`}
-                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-accent-indigo hover:bg-accent-indigo/90 text-white font-bold text-sm shadow-lg shadow-accent-indigo/30 transition-all transform hover:scale-[1.02] text-center"
+                  className="flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-accent-primary hover:bg-accent-primary/90 text-white font-black text-xs sm:text-sm shadow-lg shadow-accent-primary/25 transition-all transform hover:scale-[1.02] text-center"
                 >
-                  <PlayCircle className="w-4 h-4" />
-                  Continue {lastRead.chapterTitle}
+                  <PlayCircle className="w-4 h-4 fill-white" />
+                  Lanjutkan {lastRead.chapterTitle}
                 </Link>
               ) : firstChapter ? (
                 <Link
                   to={`/chapter/${firstChapter.slug}`}
-                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-accent-indigo hover:bg-accent-indigo/90 text-white font-bold text-sm shadow-lg shadow-accent-indigo/30 transition-all transform hover:scale-[1.02] text-center"
+                  className="flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-accent-primary hover:bg-accent-primary/90 text-white font-black text-xs sm:text-sm shadow-lg shadow-accent-primary/25 transition-all transform hover:scale-[1.02] text-center"
                 >
                   <BookOpen className="w-4 h-4" />
-                  Start Reading (Ch. 1)
+                  Mulai Baca (Ch. 1)
                 </Link>
               ) : null}
 
@@ -278,74 +308,93 @@ export function MangaDetailPage() {
                     type: manga.type,
                   })
                 }
-                className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold border transition-all text-center ${
+                className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-bold border transition-all text-center ${
                   bookmarked
-                    ? 'bg-accent-cyan/15 border-accent-cyan/30 text-accent-cyan'
-                    : 'bg-card hover:bg-slate-800 text-slate-200 border-white/10 hover:text-white'
+                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-400 shadow-sm'
+                    : 'bg-surface-elevated hover:bg-surface text-slate-200 border-white/10 hover:text-white'
                 }`}
               >
                 {bookmarked ? (
                   <>
-                    <BookmarkCheck className="w-4 h-4 fill-accent-cyan/20" />
-                    In Favorites
+                    <BookmarkCheck className="w-4 h-4 text-rose-400" />
+                    Tersimpan di Favorit
                   </>
                 ) : (
                   <>
-                    <Bookmark className="w-4 h-4" />
-                    Add to Favorites
+                    <Bookmark className="w-4 h-4 text-slate-400" />
+                    Simpan ke Favorit
                   </>
                 )}
               </button>
+
+              {/* Share Button */}
+              <button
+                onClick={handleShare}
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-surface-elevated hover:bg-surface text-slate-300 hover:text-white text-xs font-semibold border border-white/10 transition-colors"
+                title="Salin Tautan Komik"
+              >
+                <Share2 className="w-4 h-4" />
+                {copiedLink ? 'Tersalin!' : 'Bagikan'}
+              </button>
+
+              {/* Back to Manga Hub */}
+              <Link
+                to="/manga"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-surface-elevated hover:bg-surface text-slate-300 hover:text-white text-xs font-semibold border border-white/10 text-center transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Kembali ke Hub
+              </Link>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Chapters Section */}
+      {/* Chapters Directory */}
       <section className="space-y-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
           <div>
-            <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-accent-indigo" />
-              Chapter List
+            <h2 className="text-xl sm:text-2xl font-black text-white font-heading flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-accent-primary" />
+              Daftar Chapter
             </h2>
-            <p className="text-xs text-slate-400">
-              {manga.chapters?.length || 0} total chapters available
+            <p className="text-xs text-text-secondary mt-0.5">
+              {manga.chapters?.length || 0} total chapter tersedia untuk dibaca
             </p>
           </div>
 
           <div className="flex items-center gap-2.5">
             {/* Search Chapter */}
-            <div className="relative flex-1 sm:w-56">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <div className="relative flex-1 sm:w-60">
+              <Search className="w-3.5 h-3.5 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search chapter..."
+                placeholder="Cari chapter..."
                 value={searchChapter}
                 onChange={(e) => setSearchChapter(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-card border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-accent-indigo"
+                className="w-full pl-8 pr-3 py-2 text-xs bg-surface border border-white/10 rounded-xl text-white placeholder-text-muted focus:outline-none focus:border-accent-primary transition-colors"
               />
             </div>
 
             {/* Sort Toggle */}
             <button
               onClick={() => setSortDescending(!sortDescending)}
-              title={sortDescending ? 'Sort: Newest First' : 'Sort: Oldest First'}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold transition-colors"
+              title={sortDescending ? 'Urutkan: Chapter Terbaru' : 'Urutkan: Chapter Terlama'}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white border border-white/10 text-xs font-semibold transition-colors"
             >
-              <ArrowUpDown className="w-3.5 h-3.5" />
-              <span>{sortDescending ? 'Newest' : 'Oldest'}</span>
+              <ArrowUpDown className="w-3.5 h-3.5 text-accent-soft" />
+              <span>{sortDescending ? 'Terbaru' : 'Terlama'}</span>
             </button>
           </div>
         </div>
 
         {/* Chapters Grid */}
         {filteredChapters.length === 0 ? (
-          <div className="p-8 text-center rounded-2xl bg-card/40 border border-white/5 text-sm text-slate-400">
-            No chapters match your search query.
+          <div className="p-10 text-center rounded-2xl bg-surface/50 border border-white/5 text-sm text-text-secondary">
+            Tidak ada chapter yang cocok dengan pencarian "{searchChapter}".
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[700px] overflow-y-auto pr-1 scrollbar-thin">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[720px] overflow-y-auto pr-1 scrollbar-thin">
             {filteredChapters.map((ch) => {
               const isRead = readChapterSlugs.has(ch.slug);
               return (
@@ -354,38 +403,36 @@ export function MangaDetailPage() {
                   to={`/chapter/${ch.slug}`}
                   className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 group ${
                     isRead
-                      ? 'bg-card/40 border-white/5 hover:border-accent-indigo/40 opacity-70 hover:opacity-100'
-                      : 'bg-card hover:bg-slate-800 border-white/10 hover:border-accent-indigo/50 hover:shadow-md'
+                      ? 'bg-surface/50 border-white/5 hover:border-accent-primary/40 opacity-75 hover:opacity-100'
+                      : 'bg-surface hover:bg-surface-elevated border-white/10 hover:border-accent-primary/50 hover:shadow-lg hover:shadow-accent-primary/10'
                   }`}
                 >
                   <div className="min-w-0 flex-1 pr-2">
                     <p
-                      className={`text-xs sm:text-sm font-bold truncate group-hover:text-accent-indigo transition-colors ${
+                      className={`text-xs sm:text-sm font-bold truncate group-hover:text-accent-primary transition-colors ${
                         isRead ? 'text-slate-400' : 'text-slate-100'
                       }`}
                     >
                       {ch.title}
                     </p>
-                    {ch.date && (
-                      <p className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
-                        <Clock className="w-3 h-3" />
-                        {ch.date}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {ch.date && (
+                        <p className="flex items-center gap-1 text-[11px] text-text-muted">
+                          <Clock className="w-3 h-3 text-accent-soft" />
+                          {ch.date}
+                        </p>
+                      )}
+                      {isRead && (
+                        <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold">
+                          <CheckCircle className="w-3 h-3" /> Sudah Dibaca
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {isRead ? (
-                    <span
-                      title="Already Read"
-                      className="text-emerald-400 shrink-0 p-1"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                    </span>
-                  ) : (
-                    <span className="text-xs font-semibold text-accent-indigo opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                      Read →
-                    </span>
-                  )}
+                  <span className="text-xs font-semibold text-accent-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    Baca →
+                  </span>
                 </Link>
               );
             })}

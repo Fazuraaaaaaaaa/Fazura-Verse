@@ -72,7 +72,7 @@ export function MusicPlayerBar() {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0f131c]/95 border-t border-white/10 backdrop-blur-xl px-3 sm:px-6 py-2 sm:py-3 text-white transition-all shadow-2xl">
+    <div className="fixed bottom-14 md:bottom-0 left-0 right-0 z-40 bg-[#090912]/98 border-t border-white/10 backdrop-blur-2xl px-3 sm:px-6 py-2 sm:py-3 text-white transition-all shadow-2xl">
       {/* ======================================================== */}
       {/* MOBILE VIEW (< sm / 640px): 360px-390px Optimized       */}
       {/* ======================================================== */}

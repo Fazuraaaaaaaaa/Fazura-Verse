@@ -29,6 +29,7 @@ import { MusicHubPage } from './pages/MusicHubPage';
 import { MusicProvider, useMusic } from './context/MusicContext';
 import { MusicPlayerBar } from './components/music/MusicPlayerBar';
 import { LyricsModal } from './components/music/LyricsModal';
+import { MobileBottomNav } from './components/MobileBottomNav';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,9 +61,16 @@ function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-background text-slate-100 selection:bg-accent-indigo selection:text-white relative w-full overflow-x-hidden min-w-0">
       {!isReaderPage && <Navbar />}
-      <main className={`flex-1 flex flex-col w-full min-w-0 ${hasActivePlayer ? 'pb-24 sm:pb-28' : ''}`}>{children}</main>
+      <main
+        className={`flex-1 flex flex-col w-full min-w-0 ${
+          hasActivePlayer ? 'pb-44 md:pb-28' : 'pb-16 md:pb-0'
+        }`}
+      >
+        {children}
+      </main>
       {!isReaderPage && <Footer />}
       {!isReaderPage && <MusicPlayerBar />}
+      {!isReaderPage && <MobileBottomNav />}
       <LyricsModal />
     </div>
   );

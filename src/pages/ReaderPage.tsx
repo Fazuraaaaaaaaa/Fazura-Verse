@@ -9,6 +9,7 @@ import {
   BookOpen,
   AlertCircle,
   RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 import { getChapter, getDetail } from '../services/api';
 import { useReaderSettings } from '../hooks/useReaderSettings';
@@ -138,13 +139,13 @@ export function ReaderPage() {
     navigate(`/chapter/${chSlug}`);
   };
 
-  // Background color selection
+  // Background color selection matching Phase 2 tokens
   const bgClass =
     settings.background === 'black'
       ? 'bg-black text-slate-200'
       : settings.background === 'gray'
-      ? 'bg-[#182030] text-slate-200'
-      : 'bg-[#0a0d18] text-slate-200'; // dark default
+      ? 'bg-[#181827] text-slate-200'
+      : 'bg-[#090912] text-slate-200'; // dark default
 
   if (chapterLoading) {
     return <ReaderSkeleton />;
@@ -152,29 +153,31 @@ export function ReaderPage() {
 
   if (chapterError || !chapter) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full p-8 rounded-2xl bg-card border border-white/5 text-center space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto">
-            <AlertCircle className="w-6 h-6" />
+      <div className="min-h-screen bg-bg-primary flex items-center justify-center p-4">
+        <div className="max-w-md w-full p-8 rounded-3xl bg-surface border border-white/10 text-center space-y-5 shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto border border-rose-500/20 shadow-md">
+            <AlertCircle className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-bold text-white">Failed to load chapter</h2>
-          <p className="text-sm text-slate-400">
-            {(chapterError as any)?.message ||
-              'We were unable to retrieve images for this chapter. Please try again.'}
-          </p>
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold text-white font-heading">Gagal Memuat Chapter</h2>
+            <p className="text-xs text-text-secondary">
+              {(chapterError as any)?.message ||
+                'Tidak dapat mengambil gambar chapter ini dari server. Silakan coba kembali.'}
+            </p>
+          </div>
           <div className="flex gap-3 justify-center pt-2">
             <button
               onClick={() => refetchChapter()}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-indigo text-white font-semibold text-sm hover:bg-accent-indigo/90"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-primary text-white font-bold text-xs shadow-lg shadow-accent-primary/20 hover:bg-accent-primary/90 transition-all"
             >
               <RefreshCw className="w-4 h-4" />
-              Try Again
+              Coba Lagi
             </button>
             <Link
-              to={parentSlugGuess ? `/manga/${parentSlugGuess}` : '/'}
-              className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold text-sm hover:text-white"
+              to={parentSlugGuess ? `/manga/${parentSlugGuess}` : '/manga'}
+              className="px-5 py-2.5 rounded-xl bg-surface-elevated hover:bg-surface text-slate-300 font-semibold text-xs border border-white/10 transition-colors"
             >
-              Back to Manga
+              Kembali ke Komik
             </Link>
           </div>
         </div>
@@ -193,7 +196,7 @@ export function ReaderPage() {
         }
       }}
     >
-      {/* Top Controls Header */}
+      {/* Top Floating Controls Header */}
       <ReaderControls
         title={chapter.title}
         mangaSlug={parentSlugGuess}
@@ -209,9 +212,9 @@ export function ReaderPage() {
       />
 
       {/* Progress Bar at the Top */}
-      <div className="fixed top-0 left-0 right-0 h-1 z-50 bg-black/30">
+      <div className="fixed top-0 left-0 right-0 h-1.5 z-50 bg-black/40 backdrop-blur-sm">
         <div
-          className="h-full bg-gradient-to-r from-accent-indigo to-accent-cyan transition-all duration-150"
+          className="h-full bg-gradient-to-r from-accent-primary via-accent-secondary to-accent-soft shadow-sm shadow-accent-primary/50 transition-all duration-150"
           style={{
             width:
               settings.mode === 'vertical'
@@ -227,13 +230,13 @@ export function ReaderPage() {
         {images.length === 0 ? (
           <div className="py-24 text-center space-y-3">
             <BookOpen className="w-12 h-12 text-slate-500 mx-auto" />
-            <h3 className="text-lg font-bold text-white">No images available</h3>
-            <p className="text-sm text-slate-400">
-              This chapter does not have readable images yet from the provider.
+            <h3 className="text-lg font-bold text-white font-heading">Gambar Tidak Tersedia</h3>
+            <p className="text-xs text-text-secondary">
+              Chapter ini belum memiliki gambar yang dapat dimuat dari penyedia sumber.
             </p>
           </div>
         ) : settings.mode === 'vertical' ? (
-          /* Mode 1: Vertical Continuous Scroll */
+          /* Mode 1: Vertical Continuous Scroll (Webtoon) */
           <div
             className="flex flex-col items-center"
             style={{ rowGap: `${settings.gap}px` }}
@@ -275,26 +278,26 @@ export function ReaderPage() {
             </div>
 
             {/* Single Page Navigation Buttons */}
-            <div className="flex items-center justify-between w-full max-w-lg px-4 py-3 rounded-2xl bg-surface/90 border border-white/5 backdrop-blur-md">
+            <div className="flex items-center justify-between w-full max-w-lg px-4 py-3 rounded-2xl bg-surface/90 border border-white/10 backdrop-blur-md shadow-xl">
               <button
                 onClick={() => setSinglePageIndex((prev) => Math.max(0, prev - 1))}
                 disabled={singlePageIndex === 0}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-card hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-surface-elevated hover:bg-surface disabled:opacity-30 text-white text-xs font-semibold border border-white/5 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
-                Previous
+                Sebelumnya
               </button>
 
-              <span className="text-xs font-bold text-slate-300">
+              <span className="text-xs font-bold text-accent-soft">
                 {singlePageIndex + 1} / {totalPages}
               </span>
 
               <button
                 onClick={() => setSinglePageIndex((prev) => Math.min(totalPages - 1, prev + 1))}
                 disabled={singlePageIndex >= totalPages - 1}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent-indigo hover:bg-accent-indigo/90 disabled:opacity-30 text-white text-xs font-semibold"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent-primary hover:bg-accent-primary/90 disabled:opacity-30 text-white text-xs font-bold shadow-md shadow-accent-primary/20 transition-all"
               >
-                Next
+                Selanjutnya
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -325,27 +328,27 @@ export function ReaderPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-between w-full max-w-lg px-4 py-3 rounded-2xl bg-surface/90 border border-white/5 backdrop-blur-md">
+            <div className="flex items-center justify-between w-full max-w-lg px-4 py-3 rounded-2xl bg-surface/90 border border-white/10 backdrop-blur-md shadow-xl">
               <button
                 onClick={() => setSinglePageIndex((prev) => Math.max(0, prev - 2))}
                 disabled={singlePageIndex === 0}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-card hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-surface-elevated hover:bg-surface disabled:opacity-30 text-white text-xs font-semibold border border-white/5 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
-                Previous
+                Sebelumnya
               </button>
 
-              <span className="text-xs font-bold text-slate-300">
-                Pages {singlePageIndex + 1}
-                {singlePageIndex + 1 < totalPages ? `-${singlePageIndex + 2}` : ''} of {totalPages}
+              <span className="text-xs font-bold text-accent-soft">
+                Halaman {singlePageIndex + 1}
+                {singlePageIndex + 1 < totalPages ? `-${singlePageIndex + 2}` : ''} dari {totalPages}
               </span>
 
               <button
                 onClick={() => setSinglePageIndex((prev) => Math.min(totalPages - 1, prev + 2))}
                 disabled={singlePageIndex >= totalPages - 2}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent-indigo hover:bg-accent-indigo/90 disabled:opacity-30 text-white text-xs font-semibold"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent-primary hover:bg-accent-primary/90 disabled:opacity-30 text-white text-xs font-bold shadow-md shadow-accent-primary/20 transition-all"
               >
-                Next
+                Selanjutnya
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -354,16 +357,16 @@ export function ReaderPage() {
 
         {/* End of Chapter Card */}
         <div className="mt-14 p-6 sm:p-8 rounded-3xl bg-surface border border-white/10 text-center space-y-5 max-w-xl mx-auto shadow-2xl">
-          <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-6 h-6" />
+          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/20 shadow-md">
+            <CheckCircle2 className="w-7 h-7" />
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-lg sm:text-xl font-bold text-white">
-              You've finished this chapter!
+            <h3 className="text-lg sm:text-xl font-bold text-white font-heading">
+              Selesai Membaca Chapter Ini!
             </h3>
-            <p className="text-xs sm:text-sm text-slate-400">
-              {chapter.title} has concluded. What would you like to read next?
+            <p className="text-xs sm:text-sm text-text-secondary">
+              Kamu telah menyelesaikan {chapter.title}. Lanjut ke chapter berikutnya?
             </p>
           </div>
 
@@ -371,29 +374,29 @@ export function ReaderPage() {
             {chapter.navigation.prev && (
               <button
                 onClick={() => handleNavigateChapter(chapter.navigation.prev!)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card hover:bg-slate-800 text-slate-200 text-xs sm:text-sm font-semibold border border-white/5"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-elevated hover:bg-surface text-slate-200 text-xs sm:text-sm font-semibold border border-white/10 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
-                Prev Chapter
+                Chapter Sebelumnya
               </button>
             )}
 
             {parentSlugGuess && (
               <Link
                 to={`/manga/${parentSlugGuess}`}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card hover:bg-slate-800 text-slate-200 text-xs sm:text-sm font-semibold border border-white/5"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-elevated hover:bg-surface text-slate-200 text-xs sm:text-sm font-semibold border border-white/10 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Chapter List
+                Daftar Chapter
               </Link>
             )}
 
             {chapter.navigation.next && (
               <button
                 onClick={() => handleNavigateChapter(chapter.navigation.next!)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-indigo hover:bg-accent-indigo/90 text-white text-xs sm:text-sm font-bold shadow-lg shadow-accent-indigo/30"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-primary hover:bg-accent-primary/90 text-white text-xs sm:text-sm font-bold shadow-lg shadow-accent-primary/25 transition-all"
               >
-                Next Chapter
+                Chapter Berikutnya
                 <ChevronRight className="w-4 h-4" />
               </button>
             )}

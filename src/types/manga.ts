@@ -79,6 +79,7 @@ export interface ReaderSettings {
   fit: 'width' | 'height' | 'original';
   gap: number;
   background: 'black' | 'dark' | 'gray';
+  direction?: 'ltr' | 'rtl';
 }
 
 export type MangaType = 'manga' | 'manhwa' | 'manhua';
