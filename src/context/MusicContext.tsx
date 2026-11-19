@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { type MusicTrackItem, FAZURA_MUSIC_CATALOG, getTrackById } from '../services/musicApi';
+import { type MusicTrackItem, FAZURA_MUSIC_CATALOG, getTrackById, resolveTrackYouTubeId } from '../services/musicApi';
 import { recordCategoryHistory } from '../services/categoryStorage';
 
 // YouTube Iframe API types declaration
@@ -75,7 +75,21 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
 
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
-    const onEnded = () => handleTrackEndRef.current();
+    const onEnded = () => {
+      // If preview ended and track now has a resolved YouTube ID, switch seamlessly to full YouTube playback!
+      const current = currentTrackRef.current;
+      if (current?.youtubeId && current.youtubeId.length === 11 && playerRef.current) {
+        if (audioRef.current) audioRef.current.pause();
+        try {
+          playerRef.current.loadVideoById(current.youtubeId);
+          playerRef.current.playVideo();
+          return;
+        } catch {
+          // ignore
+        }
+      }
+      handleTrackEndRef.current();
+    };
     const onError = (e: Event) => {
       console.warn('[AudioPreview] HTML5 audio error on track:', currentTrackRef.current?.title, e);
       handleTrackEndRef.current();
@@ -251,33 +265,49 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       },
     });
 
-    // Check if track has previewUrl and no youtubeId (iTunes search)
-    if (track.previewUrl && !track.youtubeId) {
-      if (playerRef.current?.pauseVideo) {
-        playerRef.current.pauseVideo();
-      }
+    // 1. If track already has full-length YouTube ID (11 chars), play FULL track immediately on YouTube engine!
+    if (track.youtubeId && track.youtubeId.length === 11) {
       if (audioRef.current) {
-        audioRef.current.src = track.previewUrl;
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch((err) => console.warn('Audio play error:', err));
+        audioRef.current.pause();
+      }
+      if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
+        try {
+          playerRef.current.loadVideoById(track.youtubeId);
+          playerRef.current.playVideo();
+        } catch (err) {
+          console.warn('Error loading video by ID:', err);
+        }
       }
       return;
     }
 
-    // Otherwise play via YouTube
-    if (audioRef.current) {
-      audioRef.current.pause();
+    // 2. If track does NOT yet have a YouTube ID (e.g. newly searched online track):
+    // Start preview audio instantly if available so user gets instant sound in 0ms without waiting
+    if (track.previewUrl && audioRef.current) {
+      audioRef.current.src = track.previewUrl;
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch((err) => console.warn('Audio play error:', err));
     }
 
-    const yId = track.youtubeId || 'kPa7bsKwL-c';
-    if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
-      try {
-        playerRef.current.loadVideoById(yId);
-        playerRef.current.playVideo();
-      } catch (err) {
-        console.warn('Error loading video by ID:', err);
+    // 3. Concurrently resolve the official FULL YouTube video ID for complete full-length song playback!
+    resolveTrackYouTubeId(track).then((resolvedId) => {
+      // Only switch if this track is still the currently active track
+      if (resolvedId && currentTrackRef.current?.id === track.id) {
+        track.youtubeId = resolvedId;
+        // Pause preview and switch to full YouTube video player
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
+        if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
+          try {
+            playerRef.current.loadVideoById(resolvedId);
+            playerRef.current.playVideo();
+          } catch (err) {
+            console.warn('Failed to switch to full YouTube video:', err);
+          }
+        }
       }
-    }
+    });
   };
 
   const playTrack = useCallback((track: MusicTrackItem, newQueue?: MusicTrackItem[]) => {

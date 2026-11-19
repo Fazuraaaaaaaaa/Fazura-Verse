@@ -5,6 +5,7 @@
   "rewrites": [
     { "source": "/api/image-proxy", "destination": "/api/image-proxy" },
     { "source": "/api/resolve-mega", "destination": "/api/resolve-mega" },
+    { "source": "/api/yt-search", "destination": "/api/yt-search" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
