@@ -26,8 +26,10 @@ import {
   getOtakudesuDetail,
   getSamehadakuDetail,
   getAnimeServerUrl,
+  getOtakudesuByGenre,
 } from '../services/animeApi';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
+import { AnimeGridCard } from '../components/anime/AnimeGridCard';
 
 function formatEpisodeName(rawTitle: string | number, fallbackSlug?: string): string {
   const str = String(rawTitle || '').trim();
@@ -147,6 +149,36 @@ export function AnimeWatchPage() {
     });
     return set;
   }, [history]);
+
+  // Sorted episodes (Episode 1 first at the top)
+  const sortedEpisodes = useMemo(() => {
+    if (!animeDetail?.episodeList) return [];
+    return [...animeDetail.episodeList].reverse();
+  }, [animeDetail?.episodeList]);
+
+  // Primary genre for related anime recommendations
+  const primaryGenre = useMemo(() => {
+    if (!animeDetail?.genres || animeDetail.genres.length === 0) return null;
+    const first = animeDetail.genres[0];
+    const genreId = first.id || first.title.toLowerCase().replace(/\s+/g, '-');
+    return {
+      id: genreId,
+      title: first.title,
+    };
+  }, [animeDetail?.genres]);
+
+  const { data: relatedAnimeData } = useQuery({
+    queryKey: ['anime', 'related', primaryGenre?.id],
+    queryFn: () => getOtakudesuByGenre(primaryGenre?.id || ''),
+    enabled: Boolean(primaryGenre?.id),
+  });
+
+  const relatedAnimeList = useMemo(() => {
+    if (!relatedAnimeData?.animeList) return [];
+    return relatedAnimeData.animeList
+      .filter((item) => item.id !== animeId && !item.id.includes(animeId || ''))
+      .slice(0, 12);
+  }, [relatedAnimeData?.animeList, animeId]);
 
   // Filter out unwanted servers (ODStream HD, ondesuhd/OnDesu, and OCDCN/ODCDN)
   const filteredServers = useMemo(() => {
@@ -321,7 +353,7 @@ export function AnimeWatchPage() {
                 onChange={(e) => navigate(`/anime/watch/${provider}/${e.target.value}`)}
                 className="bg-surface text-xs text-slate-200 border border-white/10 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-accent-primary cursor-pointer max-w-[150px] sm:max-w-[200px] truncate"
               >
-                {animeDetail.episodeList.map((ep) => (
+                {sortedEpisodes.map((ep) => (
                   <option key={ep.episodeId} value={ep.episodeId}>
                     {formatEpisodeName(ep.title, ep.episodeId)}
                   </option>
@@ -495,7 +527,7 @@ export function AnimeWatchPage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin">
-            {animeDetail.episodeList.map((ep) => {
+            {sortedEpisodes.map((ep) => {
               const isCurrent = ep.episodeId === episodeId;
               const isWatched = watchedEpisodeSlugs.has(ep.episodeId);
               const displayName = formatEpisodeName(ep.title, ep.episodeId);
@@ -562,6 +594,46 @@ export function AnimeWatchPage() {
                   ))}
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Rekomendasi Terkait Sesuai Genre Anime */}
+      {relatedAnimeList.length > 0 && (
+        <div className="p-5 rounded-2xl bg-surface border border-white/10 shadow-xl space-y-4 animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  REKOMENDASI GENRE
+                </span>
+                {primaryGenre && (
+                  <span className="text-xs text-text-muted capitalize">
+                    Genre: <strong className="text-amber-400">{primaryGenre.title}</strong>
+                  </span>
+                )}
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2 font-heading">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span>Rekomendasi Anime Terkait Lainnya</span>
+              </h3>
+            </div>
+
+            {primaryGenre && (
+              <Link
+                to={`/anime?tab=genres&genre=${encodeURIComponent(primaryGenre.id)}`}
+                className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 self-start sm:self-auto"
+              >
+                <span>Lihat Koleksi Genre {primaryGenre.title}</span>
+                <span aria-hidden="true">→</span>
+              </Link>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+            {relatedAnimeList.map((item) => (
+              <AnimeGridCard key={item.id} anime={item} />
             ))}
           </div>
         </div>

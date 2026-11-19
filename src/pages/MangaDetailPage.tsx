@@ -21,15 +21,17 @@ import {
   Share2,
   ArrowLeft,
 } from 'lucide-react';
-import { getDetail } from '../services/api';
+import { getDetail, getByGenre } from '../services/api';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { useReadingHistory } from '../hooks/useReadingHistory';
 import { DetailSkeleton } from '../components/SkeletonLoader';
+import { MangaCard } from '../components/MangaCard';
 
 export function MangaDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const [searchChapter, setSearchChapter] = useState('');
-  const [sortDescending, setSortDescending] = useState(true);
+  // Urutan default: Chapter 1 paling atas (Ascending)
+  const [sortDescending, setSortDescending] = useState(false);
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -49,6 +51,33 @@ export function MangaDetailPage() {
 
   const bookmarked = slug ? isBookmarked(slug) : false;
   const lastRead = slug ? getLastRead(slug) : undefined;
+
+  // Query Rekomendasi Terkait sesuai Genre Manga
+  const primaryGenre = useMemo(() => {
+    if (!manga?.genres || manga.genres.length === 0) return null;
+    const first = manga.genres[0];
+    const genreSlug = first.slug || first.title.toLowerCase().replace(/\s+/g, '-');
+    return {
+      slug: genreSlug,
+      title: first.title,
+    };
+  }, [manga?.genres]);
+
+  const { data: relatedMangaData } = useQuery({
+    queryKey: ['manga', 'related', primaryGenre?.slug],
+    queryFn: () => getByGenre(primaryGenre?.slug || ''),
+    enabled: Boolean(primaryGenre?.slug),
+  });
+
+  const relatedMangaList = useMemo(() => {
+    if (!relatedMangaData) return [];
+    const list: any[] = Array.isArray(relatedMangaData)
+      ? relatedMangaData
+      : (relatedMangaData as any).komikList || [];
+    return list
+      .filter((item: any) => item.slug !== slug && !item.slug.includes(slug || ''))
+      .slice(0, 12);
+  }, [relatedMangaData, slug]);
 
   // Filter and sort chapters
   const filteredChapters = useMemo(() => {
@@ -379,11 +408,11 @@ export function MangaDetailPage() {
             {/* Sort Toggle */}
             <button
               onClick={() => setSortDescending(!sortDescending)}
-              title={sortDescending ? 'Urutkan: Chapter Terbaru' : 'Urutkan: Chapter Terlama'}
+              title={sortDescending ? 'Urutkan: Chapter 1 Teratas' : 'Urutkan: Chapter Terbaru'}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white border border-white/10 text-xs font-semibold transition-colors"
             >
               <ArrowUpDown className="w-3.5 h-3.5 text-accent-soft" />
-              <span>{sortDescending ? 'Terbaru' : 'Terlama'}</span>
+              <span>{sortDescending ? 'Ch Terbaru' : 'Ch 1 Teratas'}</span>
             </button>
           </div>
         </div>
@@ -439,6 +468,49 @@ export function MangaDetailPage() {
           </div>
         )}
       </section>
+
+      {/* Rekomendasi Terkait Sesuai Genre Manga */}
+      {relatedMangaList.length > 0 && (
+        <section className="space-y-4 pt-6 border-t border-white/5 animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#8B5CF6]/20 text-[#A78BFA] border border-[#8B5CF6]/30">
+                  REKOMENDASI GENRE
+                </span>
+                {primaryGenre && (
+                  <span className="text-xs text-text-muted capitalize">
+                    Genre: <strong className="text-accent-primary">{primaryGenre.title}</strong>
+                  </span>
+                )}
+              </div>
+              <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2 font-heading">
+                <Sparkles className="w-5 h-5 text-accent-primary" />
+                <span>Rekomendasi Komik Terkait</span>
+              </h2>
+              <p className="text-xs text-text-secondary">
+                Komik populer lainnya dengan genre yang serupa untuk menemani bacaan Anda
+              </p>
+            </div>
+
+            {primaryGenre && (
+              <Link
+                to={`/manga?tab=genres&genre=${encodeURIComponent(primaryGenre.slug)}`}
+                className="text-xs font-bold text-accent-primary hover:text-accent-soft flex items-center gap-1 self-start sm:self-auto"
+              >
+                <span>Lihat Genre {primaryGenre.title} Lainnya</span>
+                <span aria-hidden="true">→</span>
+              </Link>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+            {relatedMangaList.map((item: any) => (
+              <MangaCard key={item.slug} manga={item} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
