@@ -21,6 +21,7 @@ import {
   Loader2,
   X,
   Filter,
+  ChevronRight,
 } from 'lucide-react';
 import { FAZURA_MUSIC_CATALOG, searchMusic, getTrackById, type MusicTrackItem } from '../services/musicApi';
 import { useMusic } from '../context/MusicContext';
@@ -570,6 +571,18 @@ export function MusicHubPage() {
               </button>
 
               <button
+                onClick={() => setActiveTab('bookmarks')}
+                className={`px-4 py-3 rounded-full border transition-all text-sm font-bold flex items-center gap-2 ${
+                  activeTab === 'bookmarks'
+                    ? 'bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-500/30'
+                    : 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border-rose-500/30'
+                }`}
+              >
+                <Heart className="w-4 h-4 fill-rose-500 text-rose-500" />
+                <span>Lihat Favorit ({bookmarks.length})</span>
+              </button>
+
+              <button
                 onClick={() => setShowLyrics(true)}
                 className="px-4 py-3 rounded-full bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 text-sm font-semibold flex items-center gap-2 transition-colors"
               >
@@ -651,6 +664,132 @@ export function MusicHubPage() {
         {/* Hub History Shelf */}
         <HubHistoryShelf category="music" />
 
+        {/* Dedicated Favorites Shelf (Shown when user has bookmarked songs) */}
+        {bookmarks.length > 0 && activeTab === 'all' && !searchQuery && (
+          <section className="space-y-4 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                    <Heart className="w-3 h-3 fill-rose-500 text-rose-500" />
+                    KOLEKSI FAVORIT ANDA
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono font-semibold">
+                    ({bookmarks.length} lagu)
+                  </span>
+                </div>
+                <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2 font-heading">
+                  <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
+                  <span>Lagu Favorit Anda</span>
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Daftar lagu yang telah Anda sukai — klik untuk langsung memutar
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const tracks: MusicTrackItem[] = bookmarks.map((b) => ({
+                      id: b.id,
+                      youtubeId: b.extra?.youtubeId || b.id,
+                      title: b.title,
+                      artist: b.extra?.artist || b.subtitle || 'FAZURAVERSE',
+                      thumbnail: b.cover,
+                      previewUrl: b.extra?.previewUrl,
+                    }));
+                    if (tracks.length > 0) {
+                      playTrack(tracks[0], tracks);
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold text-xs flex items-center gap-1.5 shadow-md shadow-[#1DB954]/20 transition-all active:scale-95"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Putar Semua</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('bookmarks')}
+                  className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-bold flex items-center gap-1 transition-colors"
+                >
+                  <span>Buka Semua</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Horizontal Carousel */}
+            <div
+              id="music-favorites-carousel"
+              className="flex items-stretch gap-3.5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 scroll-smooth"
+            >
+              {bookmarks.map((b) => {
+                const isTrackActive = currentTrack?.id === b.id;
+                const isTrackPlaying = isTrackActive && isPlaying;
+                const matchTrack: MusicTrackItem = getTrackById(b.id) ||
+                  FAZURA_MUSIC_CATALOG.find((t) => t.id === b.id) || {
+                    id: b.id,
+                    youtubeId: b.extra?.youtubeId || b.id,
+                    title: b.title,
+                    artist: b.extra?.artist || b.subtitle || 'FAZURAVERSE',
+                    thumbnail: b.cover,
+                    previewUrl: b.extra?.previewUrl,
+                  };
+
+                return (
+                  <div
+                    key={`fav-shelf-${b.id}`}
+                    onClick={() => {
+                      if (isTrackActive) togglePlay();
+                      else playTrack(matchTrack);
+                    }}
+                    className={`w-64 sm:w-72 shrink-0 snap-start flex items-center gap-3 p-3 rounded-2xl cursor-pointer border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group relative overflow-hidden ${
+                      isTrackActive
+                        ? 'bg-[#181827] border-[#1DB954]/50 shadow-lg shadow-[#1DB954]/10'
+                        : 'bg-[#141824]/90 hover:bg-[#1a2030] border-white/5'
+                    }`}
+                  >
+                    <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-slate-800 shrink-0 shadow-md">
+                      <img
+                        src={b.cover}
+                        alt={b.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        {isTrackPlaying ? (
+                          <Pause className="w-5 h-5 text-white fill-current" />
+                        ) : (
+                          <Play className="w-5 h-5 text-white fill-current ml-0.5" />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex-1 min-w-0 pr-6">
+                      <h4 className={`text-xs sm:text-sm font-bold truncate ${isTrackActive ? 'text-[#1DB954]' : 'text-white'}`}>
+                        {b.title}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                        {b.subtitle || 'FAZURAVERSE'}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeBookmark(b.id);
+                      }}
+                      title="Hapus dari Favorit"
+                      className="absolute top-2 right-2 p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* Navigation Tabs & Search Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Category Tabs */}
@@ -664,6 +803,24 @@ export function MusicHubPage() {
               }`}
             >
               Semua Lagu
+            </button>
+
+            {/* Category Bookmarks Tab (Positioned as Tab 2 for Instant Discovery) */}
+            <button
+              onClick={() => setActiveTab('bookmarks')}
+              className={`px-3.5 py-2 rounded-xl transition-all shrink-0 flex items-center gap-1.5 ${
+                activeTab === 'bookmarks'
+                  ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/25 border border-rose-400'
+                  : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20'
+              }`}
+            >
+              <Heart className={`w-3.5 h-3.5 ${activeTab === 'bookmarks' ? 'fill-white text-white' : 'fill-rose-500 text-rose-500'}`} />
+              <span>Lagu Favorit</span>
+              {bookmarks.length > 0 && (
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${activeTab === 'bookmarks' ? 'bg-black/30 text-white' : 'bg-rose-500/30 text-rose-200'}`}>
+                  {bookmarks.length}
+                </span>
+              )}
             </button>
 
             <button
@@ -732,24 +889,6 @@ export function MusicHubPage() {
               Rock & Klasik
             </button>
 
-            {/* Category Bookmarks Tab */}
-            <button
-              onClick={() => setActiveTab('bookmarks')}
-              className={`px-3.5 py-2 rounded-xl transition-all shrink-0 flex items-center gap-1.5 ${
-                activeTab === 'bookmarks'
-                  ? 'bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Heart className="w-3.5 h-3.5 fill-rose-500/30" />
-              Lagu Favorit
-              {bookmarks.length > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-rose-500/30 text-rose-300 text-[10px] font-bold">
-                  {bookmarks.length}
-                </span>
-              )}
-            </button>
-
             {/* Category History Tab */}
             <button
               onClick={() => setActiveTab('history')}
@@ -803,7 +942,7 @@ export function MusicHubPage() {
         {/* ======================================================== */}
         {activeTab === 'bookmarks' ? (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
@@ -813,6 +952,30 @@ export function MusicHubPage() {
                   Daftar lagu favorit khusus kategori Musik FAZURAVERSE ({bookmarks.length} lagu tersimpan).
                 </p>
               </div>
+
+              {bookmarks.length > 0 && (
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <button
+                    onClick={() => {
+                      const tracks: MusicTrackItem[] = bookmarks.map((b) => ({
+                        id: b.id,
+                        youtubeId: b.extra?.youtubeId || b.id,
+                        title: b.title,
+                        artist: b.extra?.artist || b.subtitle || 'FAZURAVERSE',
+                        thumbnail: b.cover,
+                        previewUrl: b.extra?.previewUrl,
+                      }));
+                      if (tracks.length > 0) {
+                        playTrack(tracks[0], tracks);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold text-xs flex items-center gap-1.5 shadow-md shadow-[#1DB954]/25 transition-all active:scale-95"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    Putar Semua Favorit
+                  </button>
+                </div>
+              )}
             </div>
 
             {bookmarks.length > 0 ? (
