@@ -26,6 +26,9 @@ import { MovieHubPage } from './pages/MovieHubPage';
 import { MovieDetailPage } from './pages/MovieDetailPage';
 import { MovieWatchPage } from './pages/MovieWatchPage';
 import { MusicHubPage } from './pages/MusicHubPage';
+import { MusicProvider } from './context/MusicContext';
+import { MusicPlayerBar } from './components/music/MusicPlayerBar';
+import { LyricsModal } from './components/music/LyricsModal';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,13 +54,14 @@ function ScrollToTop() {
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const isReaderPage = location.pathname.startsWith('/chapter/');
-  const isMusicPage = location.pathname.startsWith('/music');
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-slate-100 selection:bg-accent-indigo selection:text-white relative w-full overflow-x-hidden min-w-0">
       {!isReaderPage && <Navbar />}
       <main className="flex-1 flex flex-col w-full min-w-0">{children}</main>
-      {!isReaderPage && !isMusicPage && <Footer />}
+      {!isReaderPage && <Footer />}
+      {!isReaderPage && <MusicPlayerBar />}
+      <LyricsModal />
     </div>
   );
 }
@@ -65,9 +69,10 @@ function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <ScrollToTop />
-        <Layout>
+      <MusicProvider>
+        <Router>
+          <ScrollToTop />
+          <Layout>
           <Routes>
             {/* Grand Landing Portal */}
             <Route path="/" element={<LandingPage />} />
@@ -107,6 +112,7 @@ export default function App() {
           </Routes>
         </Layout>
       </Router>
-    </QueryClientProvider>
-  );
+    </MusicProvider>
+  </QueryClientProvider>
+);
 }

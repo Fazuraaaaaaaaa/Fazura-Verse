@@ -5,8 +5,6 @@ import {
   BookOpen,
   Film,
   Tv,
-  Bookmark,
-  History,
   Compass,
   Search,
   Menu,
@@ -15,7 +13,6 @@ import {
   Clapperboard,
   Headphones,
 } from 'lucide-react';
-import { useBookmarks } from '../hooks/useBookmarks';
 import { search as searchManga } from '../services/api';
 import { searchOtakudesu } from '../services/animeApi';
 import { searchDonghua } from '../services/donghuaApi';
@@ -40,8 +37,6 @@ export function Navbar() {
   const [searchResults, setSearchResults] = useState<SearchDropdownItem[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-
-  const { bookmarks } = useBookmarks();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -365,55 +360,6 @@ export function Navbar() {
             )}
           </div>
 
-          <NavLink
-            to="/bookmarks"
-            title="Bookmarks"
-            className={({ isActive }) =>
-              `relative p-2 rounded-xl border border-white/5 transition-all ${
-                isActive
-                  ? 'bg-accent-indigo/20 text-accent-indigo border-accent-indigo/30'
-                  : 'bg-card/70 hover:bg-card text-slate-300 hover:text-white'
-              }`
-            }
-          >
-            <Bookmark className="w-4 h-4" />
-            {bookmarks.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent-indigo text-white text-[9px] font-black flex items-center justify-center">
-                {bookmarks.length > 99 ? '99+' : bookmarks.length}
-              </span>
-            )}
-          </NavLink>
-
-          <NavLink
-            to="/history"
-            title="Riwayat Baca"
-            className={({ isActive }) =>
-              `p-2 rounded-xl border border-white/5 transition-all hidden sm:flex ${
-                isActive
-                  ? 'bg-accent-indigo/20 text-accent-indigo border-accent-indigo/30'
-                  : 'bg-card/70 hover:bg-card text-slate-300 hover:text-white'
-              }`
-            }
-          >
-            <History className="w-4 h-4" />
-          </NavLink>
-
-          {/* Prominent Music Action Button in Navbar */}
-          <NavLink
-            to="/music"
-            title="Buka Fazura Music Player"
-            className={({ isActive }) =>
-              `flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border transition-all text-xs font-bold shrink-0 ${
-                isActive
-                  ? 'bg-[#1DB954] text-black border-[#1DB954] shadow-md shadow-[#1DB954]/30'
-                  : 'bg-[#1DB954]/15 hover:bg-[#1DB954]/25 text-[#1DB954] border-[#1DB954]/30 hover:border-[#1DB954]/60 shadow-sm shadow-[#1DB954]/10'
-              }`
-            }
-          >
-            <Headphones className="w-3.5 h-3.5 text-[#1DB954] animate-pulse" />
-            <span className="font-extrabold tracking-wider hidden sm:inline">MUSIC</span>
-          </NavLink>
-
           {/* Mobile Menu Hamburger Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -493,32 +439,7 @@ export function Navbar() {
             className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-200 hover:bg-card"
           >
             <Headphones className="w-4 h-4 text-[#1DB954]" />
-            Musik (Fazura Music)
-          </NavLink>
-
-          <NavLink
-            to="/bookmarks"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-200 hover:bg-card"
-          >
-            <span className="flex items-center gap-3">
-              <Bookmark className="w-4 h-4 text-accent-indigo" />
-              Favorit Saya
-            </span>
-            {bookmarks.length > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-accent-indigo text-white text-xs font-bold">
-                {bookmarks.length}
-              </span>
-            )}
-          </NavLink>
-
-          <NavLink
-            to="/history"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-200 hover:bg-card"
-          >
-            <History className="w-4 h-4 text-accent-indigo" />
-            Riwayat Baca
+            Music
           </NavLink>
         </div>
       )}

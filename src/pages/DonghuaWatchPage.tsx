@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -13,8 +13,11 @@ import {
   Play,
   RefreshCw,
   Info,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 import { getDonghuaEpisode } from '../services/donghuaApi';
+import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 
 export function DonghuaWatchPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -63,6 +66,24 @@ export function DonghuaWatchPage() {
     episode.navigation.allEpisodesSlug ||
     slug?.replace(/-episode-\d+.*$/i, '');
 
+  const { recordHistory } = useCategoryHistory('donghua');
+  const { isBookmarked, toggleBookmark } = useCategoryBookmarks('donghua');
+  const bookmarked = parentSlug ? isBookmarked(parentSlug) : false;
+
+  useEffect(() => {
+    if (episode && slug) {
+      recordHistory({
+        id: parentSlug || slug,
+        category: 'donghua',
+        title: episode.donghuaDetails?.title || episode.episode || 'Donghua',
+        cover: episode.donghuaDetails?.poster || '',
+        lastItemTitle: episode.episode || `Episode ${slug}`,
+        lastItemLink: `/donghua/watch/${slug}`,
+        watchedAt: Date.now(),
+      });
+    }
+  }, [episode, slug, parentSlug]);
+
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6 min-w-0">
       {/* Top Breadcrumb & Navigation */}
@@ -85,8 +106,38 @@ export function DonghuaWatchPage() {
           </div>
         </div>
 
-        {/* Next / Prev Navigation */}
+        {/* Next / Prev Navigation & Bookmark */}
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end shrink-0">
+          {parentSlug && (
+            <button
+              onClick={() =>
+                toggleBookmark({
+                  id: parentSlug,
+                  category: 'donghua',
+                  title: episode.donghuaDetails?.title || episode.episode || 'Donghua',
+                  cover: episode.donghuaDetails?.poster || '',
+                  link: `/donghua/detail/${parentSlug}`,
+                  subtitle: episode.episode,
+                  type: 'Donghua 3D',
+                  addedAt: Date.now(),
+                })
+              }
+              title={bookmarked ? 'Hapus Bookmark' : 'Bookmark Donghua'}
+              className={`p-2 rounded-xl border transition-all text-xs font-semibold flex items-center gap-1.5 ${
+                bookmarked
+                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                  : 'bg-card hover:bg-slate-800 text-slate-300 border-white/5'
+              }`}
+            >
+              {bookmarked ? (
+                <BookmarkCheck className="w-4 h-4 text-rose-400" />
+              ) : (
+                <Bookmark className="w-4 h-4 text-slate-400" />
+              )}
+              <span className="hidden md:inline">{bookmarked ? 'Tersimpan' : 'Bookmark'}</span>
+            </button>
+          )}
+
           <button
             onClick={() =>
               episode.navigation.prevSlug &&

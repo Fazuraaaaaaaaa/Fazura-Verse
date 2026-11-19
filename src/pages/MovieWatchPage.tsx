@@ -26,6 +26,7 @@ import {
   getMovieEpisodes,
 } from '../services/movieApi';
 import type { StreamResponse, StreamServer, SeasonItem, EpisodeItem } from '../types/movie';
+import { useCategoryHistory } from '../services/categoryStorage';
 
 export function MovieWatchPage() {
   const { id } = useParams<{ id: string }>();
@@ -49,6 +50,22 @@ export function MovieWatchPage() {
 
   const movie = detailResponse?.data;
   const isTv = movie?.mediaType === 'tv';
+
+  const { recordHistory } = useCategoryHistory('movies');
+
+  useEffect(() => {
+    if (movie && id) {
+      recordHistory({
+        id: String(id),
+        category: 'movies',
+        title: movie.title,
+        cover: movie.posterUrl || '',
+        lastItemTitle: isTv ? `Season ${seasonParam} Ep ${episodeParam}` : (movie.duration || 'Film Bioskop'),
+        lastItemLink: `/movies/watch/${id}${isTv ? `?season=${seasonParam}&episode=${episodeParam}` : ''}`,
+        watchedAt: Date.now(),
+      });
+    }
+  }, [movie, id, isTv, seasonParam, episodeParam]);
 
   // 2. Fetch Stream Data
   const {

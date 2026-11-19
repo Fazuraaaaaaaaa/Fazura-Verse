@@ -13,8 +13,11 @@ import {
   Tag,
   ArrowLeft,
   AlertCircle,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 import { getOtakudesuDetail, getSamehadakuDetail } from '../services/animeApi';
+import { useCategoryBookmarks } from '../services/categoryStorage';
 
 function formatEpisodeName(rawTitle: string | number, fallbackSlug?: string): string {
   const str = String(rawTitle || '').trim();
@@ -35,6 +38,9 @@ export function AnimeDetailPage() {
   const [sortDescending, setSortDescending] = useState(true);
 
   const isSame = provider === 'samehadaku';
+
+  const { isBookmarked, toggleBookmark } = useCategoryBookmarks('anime');
+  const bookmarked = id ? isBookmarked(id) : false;
 
   const { data: anime, isLoading, error } = useQuery({
     queryKey: ['anime', 'detail', provider, id],
@@ -188,6 +194,39 @@ export function AnimeDetailPage() {
                   Nonton {formatEpisodeName(firstEpisode.title, firstEpisode.episodeId)}
                 </Link>
               )}
+
+              <button
+                onClick={() =>
+                  toggleBookmark({
+                    id: id || '',
+                    category: 'anime',
+                    title: anime.title,
+                    cover: anime.poster,
+                    link: `/anime/detail/${provider || 'otakudesu'}/${id}`,
+                    subtitle: anime.genres?.map((g) => g.title).slice(0, 2).join(', ') || anime.status || 'Anime',
+                    type: anime.type || 'Anime',
+                    addedAt: Date.now(),
+                  })
+                }
+                className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all border ${
+                  bookmarked
+                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                    : 'bg-card hover:bg-slate-800 text-slate-300 hover:text-white border-white/10'
+                }`}
+              >
+                {bookmarked ? (
+                  <>
+                    <BookmarkCheck className="w-4 h-4 text-rose-400" />
+                    Tersimpan di Favorit
+                  </>
+                ) : (
+                  <>
+                    <Bookmark className="w-4 h-4 text-slate-400" />
+                    Simpan ke Favorit
+                  </>
+                )}
+              </button>
+
               <Link
                 to="/anime"
                 className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-white/10 text-center"

@@ -14,6 +14,10 @@ import {
   ChevronRight,
   Loader2,
   Sparkles,
+  Bookmark,
+  History,
+  Trash2,
+  Heart,
 } from 'lucide-react';
 import {
   getDonghuaOngoing,
@@ -25,8 +29,9 @@ import {
   proxyDonghuaPoster,
 } from '../services/donghuaApi';
 import type { DonghuaItem, DonghuaScheduleDay, DonghuaGenre } from '../types/media';
+import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 
-type TabType = 'ongoing' | 'completed' | 'schedule' | 'genres';
+type TabType = 'ongoing' | 'completed' | 'schedule' | 'genres' | 'bookmarks' | 'history';
 
 export function DonghuaHubPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -41,6 +46,9 @@ export function DonghuaHubPage() {
   const [selectedGenre, setSelectedGenre] = useState<string>(genreParam);
   const [searchInput, setSearchInput] = useState(searchParam);
   const [jumpPageInput, setJumpPageInput] = useState<string>('');
+
+  const { bookmarks, removeBookmark } = useCategoryBookmarks('donghua');
+  const { history, clearHistory, removeHistoryItem } = useCategoryHistory('donghua');
 
   const totalPages = React.useMemo(() => {
     if (activeTab === 'ongoing') return 3; // 72 ongoing donghua
@@ -316,6 +324,42 @@ export function DonghuaHubPage() {
             <Tag className="w-4 h-4" />
             Katalog 102 Genre (~1.000+ Judul)
           </button>
+
+          {/* Donghua Bookmark Tab */}
+          <button
+            onClick={() => handleTabChange('bookmarks')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
+              activeTab === 'bookmarks' && !searchParam
+                ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Bookmark className="w-4 h-4" />
+            Favorit Saya
+            {bookmarks.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-rose-500/30 text-rose-200 text-[10px] font-bold">
+                {bookmarks.length}
+              </span>
+            )}
+          </button>
+
+          {/* Donghua History Tab */}
+          <button
+            onClick={() => handleTabChange('history')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
+              activeTab === 'history' && !searchParam
+                ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <History className="w-4 h-4" />
+            Riwayat Tonton
+            {history.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-indigo-500/30 text-indigo-200 text-[10px] font-bold">
+                {history.length}
+              </span>
+            )}
+          </button>
         </div>
 
         {searchParam && (
@@ -357,6 +401,167 @@ export function DonghuaHubPage() {
               <p className="text-xs text-slate-400">
                 Judul "{searchParam}" tidak ditemukan di database Donghua. Coba kata kunci yang lebih ringkas.
               </p>
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'bookmarks' ? (
+        /* SECTION: Donghua Bookmarks View */
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Bookmark className="w-5 h-5 text-rose-500 fill-rose-500" />
+                Donghua Favorit Saya ({bookmarks.length})
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Koleksi judul animasi Tiongkok (Donghua) yang Anda simpan.
+              </p>
+            </div>
+          </div>
+
+          {bookmarks.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {bookmarks.map((b) => (
+                <div key={b.id} className="relative group rounded-xl overflow-hidden bg-[#111622] border border-white/5 hover:border-rose-500/40 transition-all flex flex-col justify-between">
+                  <Link to={b.link} className="block relative aspect-[3/4] overflow-hidden bg-slate-900">
+                    <img
+                      src={b.cover}
+                      alt={b.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    <span className="absolute bottom-2 left-2 text-[10px] px-2 py-0.5 rounded bg-emerald-500 text-black font-bold">
+                      Donghua 3D
+                    </span>
+                  </Link>
+
+                  <div className="p-3 space-y-1.5">
+                    <Link to={b.link} className="text-xs font-bold text-white hover:text-emerald-400 line-clamp-2 block">
+                      {b.title}
+                    </Link>
+                    {b.subtitle && (
+                      <p className="text-[10px] text-slate-400 truncate">{b.subtitle}</p>
+                    )}
+                    <div className="pt-2 flex items-center justify-between border-t border-white/5">
+                      <Link
+                        to={b.link}
+                        className="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                      >
+                        <Play className="w-3 h-3 fill-current" /> Tonton
+                      </Link>
+                      <button
+                        onClick={() => removeBookmark(b.id)}
+                        title="Hapus dari Bookmark"
+                        className="p-1 rounded text-slate-400 hover:text-rose-400 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-16 text-center bg-[#111622] rounded-2xl border border-white/5 space-y-3 p-6">
+              <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
+                <Bookmark className="w-6 h-6" />
+              </div>
+              <h4 className="text-base font-bold text-white">Belum Ada Donghua Favorit</h4>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Buka halaman detail donghua dan klik tombol "Bookmark" untuk menambahkannya ke koleksi ini.
+              </p>
+              <button
+                onClick={() => handleTabChange('ongoing')}
+                className="px-4 py-2 rounded-xl bg-emerald-500 text-black font-bold text-xs"
+              >
+                Jelajahi Donghua Ongoing
+              </button>
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'history' ? (
+        /* SECTION: Donghua Watch History View */
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <History className="w-5 h-5 text-indigo-400" />
+                Riwayat Tonton Donghua ({history.length})
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Riwayat episode donghua yang terakhir Anda tonton.
+              </p>
+            </div>
+
+            {history.length > 0 && (
+              <button
+                onClick={clearHistory}
+                className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 text-xs font-semibold text-slate-400 transition-colors flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Hapus Semua Riwayat
+              </button>
+            )}
+          </div>
+
+          {history.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {history.map((h, idx) => (
+                <div key={`${h.id}-${idx}`} className="relative group rounded-xl overflow-hidden bg-[#111622] border border-white/5 hover:border-indigo-500/40 transition-all flex flex-col justify-between">
+                  <Link to={h.lastItemLink || `/donghua/detail/${h.id}`} className="block relative aspect-[3/4] overflow-hidden bg-slate-900">
+                    <img
+                      src={h.cover}
+                      alt={h.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    {h.lastItemTitle && (
+                      <span className="absolute bottom-2 left-2 text-[10px] px-2 py-0.5 rounded bg-indigo-500 text-white font-bold truncate max-w-[85%]">
+                        {h.lastItemTitle}
+                      </span>
+                    )}
+                  </Link>
+
+                  <div className="p-3 space-y-1.5">
+                    <Link to={h.lastItemLink || `/donghua/detail/${h.id}`} className="text-xs font-bold text-white hover:text-indigo-400 line-clamp-2 block">
+                      {h.title}
+                    </Link>
+                    <p className="text-[10px] text-slate-400">
+                      Terakhir tonton: {new Date(h.watchedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                    </p>
+                    <div className="pt-2 flex items-center justify-between border-t border-white/5">
+                      <Link
+                        to={h.lastItemLink || `/donghua/detail/${h.id}`}
+                        className="text-[11px] font-bold text-indigo-400 hover:underline flex items-center gap-1"
+                      >
+                        <Play className="w-3 h-3 fill-current" /> Lanjut Nonton
+                      </Link>
+                      <button
+                        onClick={() => removeHistoryItem(h.id)}
+                        title="Hapus item riwayat"
+                        className="p-1 rounded text-slate-400 hover:text-rose-400 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-16 text-center bg-[#111622] rounded-2xl border border-white/5 space-y-3 p-6">
+              <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+                <History className="w-6 h-6" />
+              </div>
+              <h4 className="text-base font-bold text-white">Belum Ada Riwayat Nonton Donghua</h4>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Episode donghua yang Anda tonton akan secara otomatis tersimpan di sini.
+              </p>
+              <button
+                onClick={() => handleTabChange('ongoing')}
+                className="px-4 py-2 rounded-xl bg-emerald-500 text-black font-bold text-xs"
+              >
+                Mulai Nonton Donghua
+              </button>
             </div>
           )}
         </div>

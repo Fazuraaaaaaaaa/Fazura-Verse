@@ -128,13 +128,13 @@ export function LandingPage() {
         type: 'MUSIK • SPOTIFY-STYLE STREAMING',
         tag: 'Spotlight Release',
         description:
-          'Streaming musik modern YouTube Music API di Fazura Music: jutaan lagu hits internasional & Indonesia, playlist viral, audio background playback, lirik interaktif real-time, dan kontrol pemutar modern.',
+          'Streaming musik modern di FAZURAVERSE: jutaan lagu hits internasional & Indonesia, playlist viral, audio background playback, lirik interaktif real-time, dan kontrol pemutar modern.',
         backdrop:
           'https://i.ytimg.com/vi/kPa7bsKwL-c/maxresdefault.jpg',
         actionLink: '/music',
         actionText: 'Putar Musik Sekarang',
         channelLink: '/music',
-        channelText: 'Buka Fazura Music',
+        channelText: 'Buka Music',
         color: 'emerald',
       };
     }
@@ -458,7 +458,7 @@ export function LandingPage() {
             </div>
           </Link>
 
-          {/* Channel 5: Music (Fazura Music) */}
+          {/* Channel 5: Music */}
           <Link
             to="/music"
             className="group relative rounded-2xl overflow-hidden bg-[#111622] border border-white/5 hover:border-[#1DB954]/50 transition-all duration-300 p-6 flex flex-col justify-between"
@@ -475,10 +475,10 @@ export function LandingPage() {
 
               <div>
                 <h3 className="text-xl font-bold text-white group-hover:text-[#1DB954] transition-colors">
-                  Fazura Music
+                  Music
                 </h3>
                 <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                  Streaming musik YouTube Music API: ribuan lagu hits, lirik sinkronisasi real-time, background playback, smart autoplay & mini player.
+                  Streaming musik YouTube: ribuan lagu hits, lirik sinkronisasi real-time, background playback, smart autoplay & mini player.
                 </p>
               </div>
             </div>

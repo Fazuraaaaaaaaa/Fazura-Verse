@@ -13,8 +13,11 @@ import {
   Tag,
   ArrowLeft,
   AlertCircle,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 import { getDonghuaDetail } from '../services/donghuaApi';
+import { useCategoryBookmarks } from '../services/categoryStorage';
 
 function formatEpisodeName(rawTitle: string | number, fallbackSlug?: string): string {
   const str = String(rawTitle || '').trim();
@@ -34,6 +37,9 @@ export function DonghuaDetailPage() {
   const [searchEpisode, setSearchEpisode] = useState('');
   const [sortDescending, setSortDescending] = useState(true);
   const [imgError, setImgError] = useState(false);
+
+  const { isBookmarked, toggleBookmark } = useCategoryBookmarks('donghua');
+  const bookmarked = slug ? isBookmarked(slug) : false;
 
   const fallbackPoster =
     "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22300%22%20viewBox%3D%220%200%20200%20300%22%3E%3Crect%20fill%3D%22%230f172a%22%20width%3D%22200%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2310b981%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%2210.5%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3EDONGHUA%3C%2Ftext%3E%3C%2Fsvg%3E";
@@ -202,6 +208,39 @@ export function DonghuaDetailPage() {
                   Episode 1
                 </Link>
               )}
+
+              <button
+                onClick={() =>
+                  toggleBookmark({
+                    id: slug || '',
+                    category: 'donghua',
+                    title: donghua.title,
+                    cover: donghua.poster,
+                    link: `/donghua/detail/${slug}`,
+                    subtitle: donghua.genres?.map((g) => g.name).slice(0, 2).join(', ') || donghua.status || 'Donghua 3D',
+                    type: 'Donghua 3D',
+                    addedAt: Date.now(),
+                  })
+                }
+                className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all border ${
+                  bookmarked
+                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                    : 'bg-card hover:bg-slate-800 text-slate-300 hover:text-white border-white/10'
+                }`}
+              >
+                {bookmarked ? (
+                  <>
+                    <BookmarkCheck className="w-4 h-4 text-rose-400" />
+                    Tersimpan di Favorit
+                  </>
+                ) : (
+                  <>
+                    <Bookmark className="w-4 h-4 text-slate-400" />
+                    Simpan ke Favorit
+                  </>
+                )}
+              </button>
+
               <Link
                 to="/donghua"
                 className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-white/10 text-center"

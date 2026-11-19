@@ -20,6 +20,10 @@ import {
   ChevronRight,
   Loader2,
   Layers,
+  Bookmark,
+  History,
+  Trash2,
+  Heart,
 } from 'lucide-react';
 import {
   getMovies,
@@ -30,6 +34,7 @@ import {
   LOCAL_API_URL,
 } from '../services/movieApi';
 import type { Movie, MovieQueryParams } from '../types/movie';
+import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 
 const COLLECTION_TABS = [
   { id: 'trending', label: 'Trending', icon: Flame },
@@ -38,6 +43,8 @@ const COLLECTION_TABS = [
   { id: 'now_playing', label: 'Sedang Tayang', icon: Film },
   { id: 'upcoming', label: 'Segera Hadir', icon: Calendar },
   { id: 'tv', label: 'Serial TV & Drama', icon: Tv },
+  { id: 'bookmarks', label: 'Favorit Saya', icon: Bookmark },
+  { id: 'history', label: 'Riwayat Nonton', icon: History },
 ];
 
 const SORT_OPTIONS = [
@@ -63,6 +70,9 @@ export function MovieHubPage() {
   const [searchInput, setSearchInput] = useState(qParam);
   const [currentBaseUrl, setCurrentBaseUrl] = useState(getMovieApiBaseUrl());
   const [showConfigModal, setShowConfigModal] = useState(false);
+
+  const { bookmarks, removeBookmark } = useCategoryBookmarks('movies');
+  const { history, clearHistory, removeHistoryItem } = useCategoryHistory('movies');
 
   // Sync search input with URL qParam
   useEffect(() => {
@@ -451,7 +461,166 @@ export function MovieHubPage() {
         </div>
 
         {/* Movies Grid */}
-        {moviesLoading ? (
+        {activeCollection === 'bookmarks' ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Bookmark className="w-5 h-5 text-rose-500 fill-rose-500" />
+                  Film & Serial Favorit Saya ({bookmarks.length})
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Daftar film dan serial yang Anda simpan di koleksi bioskop FAZURAVERSE.
+                </p>
+              </div>
+            </div>
+
+            {bookmarks.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {bookmarks.map((b) => (
+                  <div key={b.id} className="relative group rounded-xl overflow-hidden bg-[#111622] border border-white/5 hover:border-rose-500/40 transition-all flex flex-col justify-between">
+                    <Link to={b.link} className="block relative aspect-[2/3] overflow-hidden bg-slate-900">
+                      <img
+                        src={b.cover}
+                        alt={b.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                      <span className="absolute bottom-2 left-2 text-[10px] px-2 py-0.5 rounded bg-rose-600 text-white font-bold">
+                        {b.type || 'Movie'}
+                      </span>
+                    </Link>
+
+                    <div className="p-3 space-y-1.5">
+                      <Link to={b.link} className="text-xs font-bold text-white hover:text-rose-400 line-clamp-2 block">
+                        {b.title}
+                      </Link>
+                      {b.subtitle && (
+                        <p className="text-[10px] text-slate-400 truncate">{b.subtitle}</p>
+                      )}
+                      <div className="pt-2 flex items-center justify-between border-t border-white/5">
+                        <Link
+                          to={b.link}
+                          className="text-[11px] font-bold text-rose-400 hover:underline flex items-center gap-1"
+                        >
+                          <Play className="w-3 h-3 fill-current" /> Tonton
+                        </Link>
+                        <button
+                          onClick={() => removeBookmark(b.id)}
+                          title="Hapus dari Favorit"
+                          className="p-1 rounded text-slate-400 hover:text-rose-400 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-16 text-center bg-[#111622] rounded-2xl border border-white/5 space-y-3 p-6">
+                <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
+                  <Bookmark className="w-6 h-6" />
+                </div>
+                <h4 className="text-base font-bold text-white">Belum Ada Film Favorit</h4>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  Buka detail film bioskop dan klik tombol Bookmark untuk menambahkannya ke koleksi ini.
+                </p>
+                <button
+                  onClick={() => updateParams({ collection: 'trending', page: 1 })}
+                  className="px-4 py-2 rounded-xl bg-rose-600 text-white font-bold text-xs"
+                >
+                  Jelajahi Film Trending
+                </button>
+              </div>
+            )}
+          </div>
+        ) : activeCollection === 'history' ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <History className="w-5 h-5 text-indigo-400" />
+                  Riwayat Nonton Film & Serial ({history.length})
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Daftar film dan serial yang terakhir Anda tonton di FAZURAVERSE.
+                </p>
+              </div>
+
+              {history.length > 0 && (
+                <button
+                  onClick={clearHistory}
+                  className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 text-xs font-semibold text-slate-400 transition-colors flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Hapus Semua Riwayat
+                </button>
+              )}
+            </div>
+
+            {history.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {history.map((h, idx) => (
+                  <div key={`${h.id}-${idx}`} className="relative group rounded-xl overflow-hidden bg-[#111622] border border-white/5 hover:border-indigo-500/40 transition-all flex flex-col justify-between">
+                    <Link to={h.lastItemLink || `/movies/${h.id}`} className="block relative aspect-[2/3] overflow-hidden bg-slate-900">
+                      <img
+                        src={h.cover}
+                        alt={h.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                      {h.lastItemTitle && (
+                        <span className="absolute bottom-2 left-2 text-[10px] px-2 py-0.5 rounded bg-indigo-500 text-white font-bold truncate max-w-[85%]">
+                          {h.lastItemTitle}
+                        </span>
+                      )}
+                    </Link>
+
+                    <div className="p-3 space-y-1.5">
+                      <Link to={h.lastItemLink || `/movies/${h.id}`} className="text-xs font-bold text-white hover:text-indigo-400 line-clamp-2 block">
+                        {h.title}
+                      </Link>
+                      <p className="text-[10px] text-slate-400">
+                        Terakhir tonton: {new Date(h.watchedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                      </p>
+                      <div className="pt-2 flex items-center justify-between border-t border-white/5">
+                        <Link
+                          to={h.lastItemLink || `/movies/${h.id}`}
+                          className="text-[11px] font-bold text-indigo-400 hover:underline flex items-center gap-1"
+                        >
+                          <Play className="w-3 h-3 fill-current" /> Lanjut Nonton
+                        </Link>
+                        <button
+                          onClick={() => removeHistoryItem(h.id)}
+                          title="Hapus item riwayat"
+                          className="p-1 rounded text-slate-400 hover:text-rose-400 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-16 text-center bg-[#111622] rounded-2xl border border-white/5 space-y-3 p-6">
+                <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+                  <History className="w-6 h-6" />
+                </div>
+                <h4 className="text-base font-bold text-white">Belum Ada Riwayat Nonton Film</h4>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  Film yang Anda tonton akan secara otomatis tersimpan di sini.
+                </p>
+                <button
+                  onClick={() => updateParams({ collection: 'trending', page: 1 })}
+                  className="px-4 py-2 rounded-xl bg-rose-600 text-white font-bold text-xs"
+                >
+                  Mulai Nonton Film
+                </button>
+              </div>
+            )}
+          </div>
+        ) : moviesLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 py-8">
             {Array.from({ length: 12 }).map((_, idx) => (
               <div

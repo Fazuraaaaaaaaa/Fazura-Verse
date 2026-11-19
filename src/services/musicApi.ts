@@ -1,3 +1,8 @@
+export interface LyricLine {
+  time: number; // in seconds
+  text: string;
+}
+
 export interface MusicTrackItem {
   id: string;
   youtubeId: string;
@@ -7,6 +12,8 @@ export interface MusicTrackItem {
   thumbnail: string;
   durationFormatted?: string;
   tag?: string;
+  genre?: 'pop' | 'indie' | 'anime' | 'rock' | 'acoustic';
+  lyrics?: LyricLine[];
 }
 
 export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
@@ -19,6 +26,22 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/kPa7bsKwL-c/hqdefault.jpg',
     durationFormatted: '4:11',
     tag: 'Global #1',
+    genre: 'pop',
+    lyrics: [
+      { time: 10, text: 'I, I just woke up from a dream' },
+      { time: 17, text: 'Where you and I had to say goodbye' },
+      { time: 24, text: 'And I don\'t know what it all means' },
+      { time: 31, text: 'But since I survived, I realized' },
+      { time: 37, text: 'Wherever you go, that\'s where I\'ll follow' },
+      { time: 43, text: 'Nobody\'s promised tomorrow' },
+      { time: 51, text: 'So I\'m gonna love you every night like it\'s the last night' },
+      { time: 59, text: 'Like it\'s the last night' },
+      { time: 64, text: 'If the world was ending, I\'d wanna be next to you' },
+      { time: 76, text: 'If the party was over and our time on Earth was through' },
+      { time: 88, text: 'I\'d wanna hold you just for a while' },
+      { time: 94, text: 'And die with a smile' },
+      { time: 100, text: 'If the world was ending, I\'d wanna be next to you' },
+    ],
   },
   {
     id: 'yjnSX_iUFVo',
@@ -29,6 +52,17 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/yjnSX_iUFVo/hqdefault.jpg',
     durationFormatted: '3:14',
     tag: 'Viral Indo',
+    genre: 'pop',
+    lyrics: [
+      { time: 12, text: 'Sudah satu bulan ku tak mendengar suaramu' },
+      { time: 19, text: 'Tak lagi berbagi cerita tentang harimu' },
+      { time: 27, text: 'Bagaimana kabarmu di sana?' },
+      { time: 34, text: 'Apakah kamu sudah bahagia tanpa aku?' },
+      { time: 42, text: 'Belum ada satu bulan' },
+      { time: 48, text: 'Ku dengar kamu sudah punya yang baru' },
+      { time: 55, text: 'Cepat sekali kamu melupakan' },
+      { time: 63, text: 'Semua janji yang pernah kau ucapkan' },
+    ],
   },
   {
     id: '9hjMIOIysng',
@@ -39,6 +73,13 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/9hjMIOIysng/hqdefault.jpg',
     durationFormatted: '3:12',
     tag: 'Pop Indo',
+    genre: 'pop',
+    lyrics: [
+      { time: 15, text: 'Ku tak pernah meminta banyak hal darimu' },
+      { time: 23, text: 'Hanya ingin kau sedikit peduli' },
+      { time: 31, text: 'Kata mereka ku berlebihan mencintaimu' },
+      { time: 40, text: 'Hingga lupa mencintai diri sendiri' },
+    ],
   },
   {
     id: 'HB8vftGxsIc',
@@ -49,6 +90,13 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/HB8vftGxsIc/hqdefault.jpg',
     durationFormatted: '3:04',
     tag: 'Acoustic',
+    genre: 'acoustic',
+    lyrics: [
+      { time: 10, text: 'Untungnya bumi masih berputar' },
+      { time: 16, text: 'Matahari masih bersinar terang' },
+      { time: 22, text: 'Walau hatiku patah berkeping-keping' },
+      { time: 30, text: 'Hidup ini harus tetap berjalan' },
+    ],
   },
   {
     id: 'AQpEIZ8dNcU',
@@ -59,6 +107,13 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/AQpEIZ8dNcU/hqdefault.jpg',
     durationFormatted: '3:50',
     tag: 'Top Hits',
+    genre: 'indie',
+    lyrics: [
+      { time: 14, text: 'Mungkinkah, mungkinkah kau ada di sana' },
+      { time: 22, text: 'Menjadi bunga matahari yang bermekaran' },
+      { time: 30, text: 'Kuingin mendengar kabarmu' },
+      { time: 38, text: 'Apakah kau tenang dan bahagia di keabadian' },
+    ],
   },
   {
     id: 'Osdp7rUjK6o',
@@ -69,6 +124,7 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/Osdp7rUjK6o/hqdefault.jpg',
     durationFormatted: '2:55',
     tag: 'Indie Hits',
+    genre: 'indie',
   },
   {
     id: 'fJ56-r_0Qy0',
@@ -79,6 +135,14 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/fJ56-r_0Qy0/hqdefault.jpg',
     durationFormatted: '3:35',
     tag: 'Indie Pop',
+    genre: 'indie',
+    lyrics: [
+      { time: 12, text: 'Yang tak bisa kau kendalikan, lepaskan' },
+      { time: 19, text: 'Kukira kita akan bersama' },
+      { time: 26, text: 'Ternyata kau dan aku berbeda arah' },
+      { time: 33, text: 'Bilas muka, gosok gigi, evaluasi' },
+      { time: 40, text: 'Tidur sejenak, esok mulai lagi' },
+    ],
   },
   {
     id: 'jE1rC5VvR9E',
@@ -89,6 +153,7 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/jE1rC5VvR9E/hqdefault.jpg',
     durationFormatted: '4:37',
     tag: 'Trending',
+    genre: 'indie',
   },
   {
     id: 'S408Q0v9gX8',
@@ -98,7 +163,8 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     album: 'Menari Dengan Bayangan',
     thumbnail: 'https://i.ytimg.com/vi/S408Q0v9gX8/hqdefault.jpg',
     durationFormatted: '3:27',
-    tag: 'OST Nanti Kita Cerita',
+    tag: 'OST Film',
+    genre: 'indie',
   },
   {
     id: 'hM8e7y0cW7s',
@@ -109,26 +175,7 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/hM8e7y0cW7s/hqdefault.jpg',
     durationFormatted: '4:03',
     tag: 'Viral Hits',
-  },
-  {
-    id: 'Xy7fQ8kM1v0',
-    youtubeId: 'Xy7fQ8kM1v0',
-    title: 'Mati-Matian',
-    artist: 'Mahalini',
-    album: 'Single',
-    thumbnail: 'https://i.ytimg.com/vi/Xy7fQ8kM1v0/hqdefault.jpg',
-    durationFormatted: '4:10',
-    tag: 'Pop Galau',
-  },
-  {
-    id: 'L0pB2sN7eYo',
-    youtubeId: 'L0pB2sN7eYo',
-    title: 'Sisa Rasa',
-    artist: 'Mahalini',
-    album: 'FÁBULA',
-    thumbnail: 'https://i.ytimg.com/vi/L0pB2sN7eYo/hqdefault.jpg',
-    durationFormatted: '4:14',
-    tag: 'Pop Melow',
+    genre: 'pop',
   },
   {
     id: 'K8kL3rT6vWo',
@@ -139,26 +186,7 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/K8kL3rT6vWo/hqdefault.jpg',
     durationFormatted: '4:21',
     tag: 'Folk Pop',
-  },
-  {
-    id: 'w4gQ8y1bZso',
-    youtubeId: 'w4gQ8y1bZso',
-    title: 'Semua Aku Dirayakan',
-    artist: 'Nadin Amizah',
-    album: 'Untuk Dunia, Cinta, dan Kotornya',
-    thumbnail: 'https://i.ytimg.com/vi/w4gQ8y1bZso/hqdefault.jpg',
-    durationFormatted: '4:40',
-    tag: 'Acoustic',
-  },
-  {
-    id: 'V1bC9x0kLyo',
-    youtubeId: 'V1bC9x0kLyo',
-    title: 'Bertaut',
-    artist: 'Nadin Amizah',
-    album: 'Selamat Ulang Tahun',
-    thumbnail: 'https://i.ytimg.com/vi/V1bC9x0kLyo/hqdefault.jpg',
-    durationFormatted: '5:16',
-    tag: 'Nostalgic',
+    genre: 'acoustic',
   },
   {
     id: 'mG_1l7U7Dfo',
@@ -169,16 +197,7 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/mG_1l7U7Dfo/hqdefault.jpg',
     durationFormatted: '4:02',
     tag: 'Spotify Top',
-  },
-  {
-    id: 'N8vC1bX9yZo',
-    youtubeId: 'N8vC1bX9yZo',
-    title: 'Monokrom',
-    artist: 'Tulus',
-    album: 'Monokrom',
-    thumbnail: 'https://i.ytimg.com/vi/N8vC1bX9yZo/hqdefault.jpg',
-    durationFormatted: '3:34',
-    tag: 'Legend Hits',
+    genre: 'pop',
   },
   {
     id: 't-birdsofafeather',
@@ -189,36 +208,16 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/V9PVRfjEBTI/hqdefault.jpg',
     durationFormatted: '3:18',
     tag: 'Billboard #1',
-  },
-  {
-    id: '34Na4j8AVgA',
-    youtubeId: '34Na4j8AVgA',
-    title: 'Starboy',
-    artist: 'The Weeknd, Daft Punk',
-    album: 'Starboy',
-    thumbnail: 'https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg',
-    durationFormatted: '3:50',
-    tag: 'Pop Legend',
-  },
-  {
-    id: '7wtfhZwyrcc',
-    youtubeId: '7wtfhZwyrcc',
-    title: 'Believer',
-    artist: 'Imagine Dragons',
-    album: 'Evolve',
-    thumbnail: 'https://i.ytimg.com/vi/7wtfhZwyrcc/hqdefault.jpg',
-    durationFormatted: '3:24',
-    tag: 'Rock Hits',
-  },
-  {
-    id: 'eVTXPUF4Oz4',
-    youtubeId: 'eVTXPUF4Oz4',
-    title: 'In the End',
-    artist: 'Linkin Park',
-    album: 'Hybrid Theory',
-    thumbnail: 'https://i.ytimg.com/vi/eVTXPUF4Oz4/hqdefault.jpg',
-    durationFormatted: '3:36',
-    tag: 'Rock Classic',
+    genre: 'pop',
+    lyrics: [
+      { time: 10, text: 'I want you to stay \'til I\'m in the grave' },
+      { time: 16, text: '\'Til I rot away, dead and buried' },
+      { time: 22, text: '\'Til I\'m in the casket you carry' },
+      { time: 27, text: 'If you go, I\'m goin\' too, uh' },
+      { time: 33, text: '\'Cause it was always you' },
+      { time: 39, text: 'And if I\'m turnin\' blue, please don\'t save me' },
+      { time: 45, text: 'Nothing in this world could ever break me' },
+    ],
   },
   {
     id: 't-espresso',
@@ -229,26 +228,40 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/eVli-tstM5E/hqdefault.jpg',
     durationFormatted: '2:55',
     tag: 'Viral Global',
+    genre: 'pop',
   },
   {
-    id: 'JGwWNGJdvx8',
-    youtubeId: 'JGwWNGJdvx8',
-    title: 'Shape of You',
-    artist: 'Ed Sheeran',
-    album: '÷ (Divide)',
-    thumbnail: 'https://i.ytimg.com/vi/JGwWNGJdvx8/hqdefault.jpg',
-    durationFormatted: '3:53',
-    tag: 'Spotify All-Time',
+    id: '34Na4j8AVgA',
+    youtubeId: '34Na4j8AVgA',
+    title: 'Starboy',
+    artist: 'The Weeknd, Daft Punk',
+    album: 'Starboy',
+    thumbnail: 'https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg',
+    durationFormatted: '3:50',
+    tag: 'Pop Legend',
+    genre: 'pop',
   },
   {
-    id: 'dvgZkm1xWPE',
-    youtubeId: 'dvgZkm1xWPE',
-    title: 'Viva La Vida',
-    artist: 'Coldplay',
-    album: 'Viva La Vida',
-    thumbnail: 'https://i.ytimg.com/vi/dvgZkm1xWPE/hqdefault.jpg',
-    durationFormatted: '4:02',
-    tag: 'Rock Anthem',
+    id: '7wtfhZwyrcc',
+    youtubeId: '7wtfhZwyrcc',
+    title: 'Believer',
+    artist: 'Imagine Dragons',
+    album: 'Evolve',
+    thumbnail: 'https://i.ytimg.com/vi/7wtfhZwyrcc/hqdefault.jpg',
+    durationFormatted: '3:24',
+    tag: 'Rock Hits',
+    genre: 'rock',
+  },
+  {
+    id: 'eVTXPUF4Oz4',
+    youtubeId: 'eVTXPUF4Oz4',
+    title: 'In the End',
+    artist: 'Linkin Park',
+    album: 'Hybrid Theory',
+    thumbnail: 'https://i.ytimg.com/vi/eVTXPUF4Oz4/hqdefault.jpg',
+    durationFormatted: '3:36',
+    tag: 'Rock Classic',
+    genre: 'rock',
   },
   {
     id: 'yKNxeF4KMsY',
@@ -259,68 +272,84 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/yKNxeF4KMsY/hqdefault.jpg',
     durationFormatted: '4:29',
     tag: 'Indie Rock',
+    genre: 'rock',
   },
   {
-    id: 'TUVcZfQe-Kw',
-    youtubeId: 'TUVcZfQe-Kw',
-    title: 'Levitating',
-    artist: 'Dua Lipa',
-    album: 'Future Nostalgia',
-    thumbnail: 'https://i.ytimg.com/vi/TUVcZfQe-Kw/hqdefault.jpg',
-    durationFormatted: '3:23',
-    tag: 'Dance Pop',
+    id: 't-idol-yoasobi',
+    youtubeId: 'ZRtdQ81jPUQ',
+    title: 'Idol (アイドル)',
+    artist: 'YOASOBI',
+    album: 'Oshi no Ko OST',
+    thumbnail: 'https://i.ytimg.com/vi/ZRtdQ81jPUQ/hqdefault.jpg',
+    durationFormatted: '3:33',
+    tag: 'Anime #1',
+    genre: 'anime',
+    lyrics: [
+      { time: 10, text: 'Muteki no egao de arasu media' },
+      { time: 15, text: 'Shiritai sono himitsu misuteriasu' },
+      { time: 20, text: 'Nuketeru toko sae kanojo no eria' },
+      { time: 25, text: 'Kanpeki de usotsuki na kimi wa' },
+      { time: 30, text: 'Tensai-teki na aidoru-sama' },
+    ],
   },
   {
-    id: 'H5v3kku4y6Q',
-    youtubeId: 'H5v3kku4y6Q',
-    title: 'As It Was',
-    artist: 'Harry Styles',
-    album: 'Harry\'s House',
-    thumbnail: 'https://i.ytimg.com/vi/H5v3kku4y6Q/hqdefault.jpg',
-    durationFormatted: '2:47',
-    tag: 'Grammy Winner',
+    id: 't-gurenge-lisa',
+    youtubeId: 'CwkzK-Fh408',
+    title: 'Gurenge (紅蓮華)',
+    artist: 'LiSA',
+    album: 'Demon Slayer: Kimetsu no Yaiba OP',
+    thumbnail: 'https://i.ytimg.com/vi/CwkzK-Fh408/hqdefault.jpg',
+    durationFormatted: '3:58',
+    tag: 'Anime Classic',
+    genre: 'anime',
+  },
+  {
+    id: 't-unravel-tk',
+    youtubeId: '7aMOurgDB-o',
+    title: 'Unravel',
+    artist: 'TK from Ling Tosite Sigure',
+    album: 'Tokyo Ghoul OP',
+    thumbnail: 'https://i.ytimg.com/vi/7aMOurgDB-o/hqdefault.jpg',
+    durationFormatted: '3:59',
+    tag: 'Anime Legend',
+    genre: 'anime',
+  },
+  {
+    id: 't-kaikaikitan-eve',
+    youtubeId: '1tk1P44rD2U',
+    title: 'Kaikai Kitan (廻廻奇譚)',
+    artist: 'Eve',
+    album: 'Jujutsu Kaisen OP 1',
+    thumbnail: 'https://i.ytimg.com/vi/1tk1P44rD2U/hqdefault.jpg',
+    durationFormatted: '3:40',
+    tag: 'JJK Anthem',
+    genre: 'anime',
+  },
+  {
+    id: 't-silhouette-kanaboon',
+    youtubeId: 'dlFA0Zq1k2A',
+    title: 'Silhouette (シルエット)',
+    artist: 'KANA-BOON',
+    album: 'Naruto Shippuden OP 16',
+    thumbnail: 'https://i.ytimg.com/vi/dlFA0Zq1k2A/hqdefault.jpg',
+    durationFormatted: '4:00',
+    tag: 'Naruto Hits',
+    genre: 'anime',
   },
 ];
 
 export async function searchMusic(query: string): Promise<MusicTrackItem[]> {
   const q = (query || '').trim().toLowerCase();
-  if (!q) return [];
+  if (!q) return FAZURA_MUSIC_CATALOG;
 
-  // Try live API query to localhost:3000
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1800);
-    const sonoraUrl = import.meta.env.VITE_SONORA_URL || 'http://localhost:3000';
-    const res = await fetch(`${sonoraUrl}/api/ytmusic/search?q=${encodeURIComponent(query)}&type=songs`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data.tracks) && data.tracks.length > 0) {
-        return data.tracks.map((t: any) => ({
-          id: t.id || t.youtubeId,
-          youtubeId: t.youtubeId || t.id,
-          title: t.title,
-          artist: t.artist,
-          album: t.album,
-          thumbnail: t.thumbnail || `https://i.ytimg.com/vi/${t.youtubeId || t.id}/hqdefault.jpg`,
-          durationFormatted: t.durationFormatted || '3:30',
-          tag: 'YouTube Music',
-        }));
-      }
-    }
-  } catch (err) {
-    // ignore network errors, proceed to catalog filter
-  }
-
-  // Filter local catalog
+  // Search local catalog first (instant & reliable)
   return FAZURA_MUSIC_CATALOG.filter((track) => {
     return (
       track.title.toLowerCase().includes(q) ||
       track.artist.toLowerCase().includes(q) ||
-      (track.album && track.album.toLowerCase().includes(q))
+      (track.album && track.album.toLowerCase().includes(q)) ||
+      (track.tag && track.tag.toLowerCase().includes(q)) ||
+      (track.genre && track.genre.toLowerCase().includes(q))
     );
   });
 }

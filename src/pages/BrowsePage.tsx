@@ -11,6 +11,10 @@ import {
   ChevronRight,
   Filter,
   Search,
+  Bookmark,
+  History,
+  Trash2,
+  Play,
 } from 'lucide-react';
 import {
   getLatest,
@@ -24,6 +28,7 @@ import {
 import { MangaGrid } from '../components/MangaGrid';
 import { GenreChips } from '../components/GenreChips';
 import type { MangaType } from '../types/manga';
+import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 
 type TabType =
   | 'all'
@@ -34,7 +39,9 @@ type TabType =
   | 'manhwa'
   | 'manhua'
   | 'colored'
-  | 'genres';
+  | 'genres'
+  | 'bookmarks'
+  | 'history';
 
 export function BrowsePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -49,6 +56,9 @@ export function BrowsePage() {
   const [page, setPage] = useState<number>(pageParam);
   const [searchInput, setSearchInput] = useState<string>('');
   const [jumpPageInput, setJumpPageInput] = useState<string>('');
+
+  const { bookmarks, removeBookmark } = useCategoryBookmarks('manga');
+  const { history, clearHistory, removeHistoryItem } = useCategoryHistory('manga');
 
   // Catalog depth and total pages estimation for BacaKomik
   const totalPages = React.useMemo(() => {
@@ -298,6 +308,42 @@ export function BrowsePage() {
           <Filter className="w-4 h-4 text-accent-purple" />
           By Genre
         </button>
+
+        {/* Manga Bookmarks Tab */}
+        <button
+          onClick={() => handleTabChange('bookmarks')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 whitespace-nowrap ${
+            activeTab === 'bookmarks'
+              ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
+              : 'bg-card/70 hover:bg-card text-slate-300 hover:text-white'
+          }`}
+        >
+          <Bookmark className="w-4 h-4" />
+          Favorit Saya
+          {bookmarks.length > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full bg-rose-500/30 text-rose-200 text-[10px] font-bold">
+              {bookmarks.length}
+            </span>
+          )}
+        </button>
+
+        {/* Manga History Tab */}
+        <button
+          onClick={() => handleTabChange('history')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 whitespace-nowrap ${
+            activeTab === 'history'
+              ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
+              : 'bg-card/70 hover:bg-card text-slate-300 hover:text-white'
+          }`}
+        >
+          <History className="w-4 h-4" />
+          Riwayat Baca
+          {history.length > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full bg-indigo-500/30 text-indigo-200 text-[10px] font-bold">
+              {history.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Genre Chips Filter Bar */}
@@ -314,6 +360,166 @@ export function BrowsePage() {
       </div>
 
       {/* Grid Results */}
+      {activeTab === 'bookmarks' ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Bookmark className="w-5 h-5 text-rose-500 fill-rose-500" />
+                Manga & Komik Favorit Saya ({bookmarks.length})
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Koleksi judul manga dan komik yang Anda simpan.
+              </p>
+            </div>
+          </div>
+
+          {bookmarks.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {bookmarks.map((b) => (
+                <div key={b.id} className="relative group rounded-xl overflow-hidden bg-[#111622] border border-white/5 hover:border-rose-500/40 transition-all flex flex-col justify-between">
+                  <a href={b.link} className="block relative aspect-[3/4] overflow-hidden bg-slate-900">
+                    <img
+                      src={b.cover}
+                      alt={b.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    <span className="absolute bottom-2 left-2 text-[10px] px-2 py-0.5 rounded bg-accent-indigo text-white font-bold">
+                      {b.type || 'Manga'}
+                    </span>
+                  </a>
+
+                  <div className="p-3 space-y-1.5">
+                    <a href={b.link} className="text-xs font-bold text-white hover:text-accent-indigo line-clamp-2 block">
+                      {b.title}
+                    </a>
+                    {b.subtitle && (
+                      <p className="text-[10px] text-slate-400 truncate">{b.subtitle}</p>
+                    )}
+                    <div className="pt-2 flex items-center justify-between border-t border-white/5">
+                      <a
+                        href={b.link}
+                        className="text-[11px] font-bold text-accent-indigo hover:underline flex items-center gap-1"
+                      >
+                        <Play className="w-3 h-3 fill-current" /> Baca
+                      </a>
+                      <button
+                        onClick={() => removeBookmark(b.id)}
+                        title="Hapus dari Bookmark"
+                        className="p-1 rounded text-slate-400 hover:text-rose-400 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-16 text-center bg-[#111622] rounded-2xl border border-white/5 space-y-3 p-6">
+              <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
+                <Bookmark className="w-6 h-6" />
+              </div>
+              <h4 className="text-base font-bold text-white">Belum Ada Komik Favorit</h4>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Buka halaman komik dan tekan tombol Bookmark untuk menambahkannya ke koleksi ini.
+              </p>
+              <button
+                onClick={() => handleTabChange('all')}
+                className="px-4 py-2 rounded-xl bg-accent-indigo text-white font-bold text-xs"
+              >
+                Jelajahi Semua Komik
+              </button>
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'history' ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <History className="w-5 h-5 text-indigo-400" />
+                Riwayat Baca Komik ({history.length})
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Daftar manga & chapter terakhir yang Anda baca.
+              </p>
+            </div>
+
+            {history.length > 0 && (
+              <button
+                onClick={clearHistory}
+                className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 text-xs font-semibold text-slate-400 transition-colors flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Hapus Semua Riwayat
+              </button>
+            )}
+          </div>
+
+          {history.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {history.map((h, idx) => (
+                <div key={`${h.id}-${idx}`} className="relative group rounded-xl overflow-hidden bg-[#111622] border border-white/5 hover:border-indigo-500/40 transition-all flex flex-col justify-between">
+                  <a href={h.lastItemLink || `/manga/${h.id}`} className="block relative aspect-[3/4] overflow-hidden bg-slate-900">
+                    <img
+                      src={h.cover}
+                      alt={h.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    {h.lastItemTitle && (
+                      <span className="absolute bottom-2 left-2 text-[10px] px-2 py-0.5 rounded bg-accent-indigo text-white font-bold truncate max-w-[85%]">
+                        {h.lastItemTitle}
+                      </span>
+                    )}
+                  </a>
+
+                  <div className="p-3 space-y-1.5">
+                    <a href={h.lastItemLink || `/manga/${h.id}`} className="text-xs font-bold text-white hover:text-accent-indigo line-clamp-2 block">
+                      {h.title}
+                    </a>
+                    <p className="text-[10px] text-slate-400">
+                      Terakhir baca: {new Date(h.watchedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                    </p>
+                    <div className="pt-2 flex items-center justify-between border-t border-white/5">
+                      <a
+                        href={h.lastItemLink || `/manga/${h.id}`}
+                        className="text-[11px] font-bold text-accent-indigo hover:underline flex items-center gap-1"
+                      >
+                        <Play className="w-3 h-3 fill-current" /> Lanjut Baca
+                      </a>
+                      <button
+                        onClick={() => removeHistoryItem(h.id)}
+                        title="Hapus item riwayat"
+                        className="p-1 rounded text-slate-400 hover:text-rose-400 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-16 text-center bg-[#111622] rounded-2xl border border-white/5 space-y-3 p-6">
+              <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+                <History className="w-6 h-6" />
+              </div>
+              <h4 className="text-base font-bold text-white">Belum Ada Riwayat Baca Komik</h4>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Chapter komik yang Anda baca akan tercatat secara otomatis di sini.
+              </p>
+              <button
+                onClick={() => handleTabChange('all')}
+                className="px-4 py-2 rounded-xl bg-accent-indigo text-white font-bold text-xs"
+              >
+                Mulai Membaca Komik
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#111622] p-4 rounded-2xl border border-white/5">
           <div className="space-y-0.5">
@@ -472,6 +678,7 @@ export function BrowsePage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

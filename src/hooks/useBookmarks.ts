@@ -1,115 +1,42 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCategoryBookmarks } from '../services/categoryStorage';
 import type { BookmarkItem } from '../types/manga';
 
-const STORAGE_KEY = 'fazuraverse_bookmarks';
-const LEGACY_STORAGE_KEY = 'mangaverse_bookmarks';
-const EVENT_NAME = 'fazuraverse_bookmarks_updated';
-
-function getStoredBookmarks(): BookmarkItem[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    console.error('Failed to parse bookmarks from localStorage:', e);
-    return [];
-  }
-}
-
-function persistBookmarks(items: BookmarkItem[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    window.dispatchEvent(new Event(EVENT_NAME));
-  } catch (e) {
-    console.error('Failed to persist bookmarks to localStorage:', e);
-  }
-}
-
 export function useBookmarks() {
-  const [bookmarks, setBookmarks] = useState<BookmarkItem[]>(getStoredBookmarks);
+  const { bookmarks, isBookmarked, toggleBookmark, removeBookmark, clearBookmarks } =
+    useCategoryBookmarks('manga');
 
-  useEffect(() => {
-    const handler = () => {
-      setBookmarks(getStoredBookmarks());
-    };
+  // Convert CategoryBookmarkItem to Manga BookmarkItem
+  const mangaBookmarks: BookmarkItem[] = bookmarks.map((b) => ({
+    slug: b.id,
+    title: b.title,
+    cover: b.cover,
+    type: b.type,
+    addedAt: b.addedAt,
+  }));
 
-    window.addEventListener(EVENT_NAME, handler);
-    window.addEventListener('storage', handler);
-
-    return () => {
-      window.removeEventListener(EVENT_NAME, handler);
-      window.removeEventListener('storage', handler);
-    };
-  }, []);
-
-  const getAll = useCallback((): BookmarkItem[] => {
-    return getStoredBookmarks();
-  }, []);
-
-  const isBookmarked = useCallback(
-    (slug: string): boolean => {
-      if (!slug) return false;
-      return bookmarks.some((item) => item.slug === slug);
-    },
-    [bookmarks]
-  );
-
-  const addBookmark = useCallback((item: Omit<BookmarkItem, 'addedAt'> & { addedAt?: number }) => {
-    const current = getStoredBookmarks();
-    const existingIndex = current.findIndex((b) => b.slug === item.slug);
-    const newBookmark: BookmarkItem = {
-      slug: item.slug,
+  const handleToggle = (item: Omit<BookmarkItem, 'addedAt'> & { addedAt?: number }) => {
+    toggleBookmark({
+      id: item.slug,
+      category: 'manga',
       title: item.title,
       cover: item.cover,
+      link: `/manga/${item.slug}`,
       type: item.type,
-      addedAt: item.addedAt || Date.now(),
-    };
+      addedAt: item.addedAt,
+    });
+  };
 
-    let updated: BookmarkItem[];
-    if (existingIndex >= 0) {
-      updated = [...current];
-      updated[existingIndex] = newBookmark;
-    } else {
-      updated = [newBookmark, ...current];
-    }
-
-    persistBookmarks(updated);
-    setBookmarks(updated);
-  }, []);
-
-  const removeBookmark = useCallback((slug: string) => {
-    const current = getStoredBookmarks();
-    const updated = current.filter((b) => b.slug !== slug);
-    persistBookmarks(updated);
-    setBookmarks(updated);
-  }, []);
-
-  const toggleBookmark = useCallback(
-    (item: Omit<BookmarkItem, 'addedAt'> & { addedAt?: number }) => {
-      if (isBookmarked(item.slug)) {
-        removeBookmark(item.slug);
-      } else {
-        addBookmark(item);
-      }
-    },
-    [isBookmarked, addBookmark, removeBookmark]
-  );
-
-  const clearBookmarks = useCallback(() => {
-    persistBookmarks([]);
-    setBookmarks([]);
-  }, []);
+  const handleAdd = (item: Omit<BookmarkItem, 'addedAt'> & { addedAt?: number }) => {
+    handleToggle(item);
+  };
 
   return {
-    bookmarks,
-    addBookmark,
-    removeBookmark,
-    toggleBookmark,
+    bookmarks: mangaBookmarks,
+    getAll: () => mangaBookmarks,
     isBookmarked,
-    getAll,
+    addBookmark: handleAdd,
+    removeBookmark,
+    toggleBookmark: handleToggle,
     clearBookmarks,
   };
 }
-

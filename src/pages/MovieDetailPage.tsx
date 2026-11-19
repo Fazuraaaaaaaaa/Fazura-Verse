@@ -30,6 +30,7 @@ import {
   postMovieComment,
 } from '../services/movieApi';
 import type { MovieDetail, SeasonItem, EpisodeItem, MovieComment } from '../types/movie';
+import { useCategoryBookmarks } from '../services/categoryStorage';
 
 export function MovieDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -43,6 +44,9 @@ export function MovieDetailPage() {
   const [isSpoiler, setIsSpoiler] = useState(false);
   const [revealedSpoilers, setRevealedSpoilers] = useState<Record<string, boolean>>({});
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const { isBookmarked, toggleBookmark } = useCategoryBookmarks('movies');
+  const bookmarked = id ? isBookmarked(id) : false;
 
   // 1. Fetch Movie Detail & Related
   const {
@@ -208,6 +212,29 @@ export function MovieDetailPage() {
               </Link>
 
               <div className="flex gap-2">
+                <button
+                  onClick={() =>
+                    toggleBookmark({
+                      id: String(movie.id),
+                      category: 'movies',
+                      title: movie.title,
+                      cover: movie.posterUrl || '',
+                      link: `/movies/${movie.id}`,
+                      subtitle: movie.genres?.slice(0, 2).join(', ') || (movie.mediaType === 'tv' ? 'Serial TV' : 'Film Bioskop'),
+                      type: movie.mediaType === 'tv' ? 'Serial TV' : 'Movie',
+                      addedAt: Date.now(),
+                    })
+                  }
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 ${
+                    bookmarked
+                      ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                      : 'bg-card hover:bg-slate-800 text-slate-300 hover:text-white border-white/5'
+                  }`}
+                >
+                  <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-rose-500 text-rose-400' : ''}`} />
+                  {bookmarked ? 'Tersimpan' : 'Bookmark'}
+                </button>
+
                 <button
                   onClick={handleShare}
                   className="flex-1 py-2.5 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-white/5 flex items-center justify-center gap-1.5 transition-colors"

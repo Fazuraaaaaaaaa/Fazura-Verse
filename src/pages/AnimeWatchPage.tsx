@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -15,12 +15,15 @@ import {
   CheckCircle2,
   RefreshCw,
   Info,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 import {
   getOtakudesuEpisode,
   getSamehadakuEpisode,
   getAnimeServerUrl,
 } from '../services/animeApi';
+import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 
 export function AnimeWatchPage() {
   const { provider, episodeId } = useParams<{
@@ -45,6 +48,25 @@ export function AnimeWatchPage() {
   const [switchingServer, setSwitchingServer] = useState<boolean>(false);
   const [switchError, setSwitchError] = useState<string>('');
   const [playerKey, setPlayerKey] = useState<number>(0);
+
+  const { recordHistory } = useCategoryHistory('anime');
+  const animeId = episode?.animeId || (episodeId ? episodeId.split('-episode-')[0] : '');
+  const { isBookmarked, toggleBookmark } = useCategoryBookmarks('anime');
+  const bookmarked = animeId ? isBookmarked(animeId) : false;
+
+  useEffect(() => {
+    if (episode && episodeId) {
+      recordHistory({
+        id: animeId || episodeId,
+        category: 'anime',
+        title: episode.title || 'Anime',
+        cover: '',
+        lastItemTitle: episode.title || `Episode ${episodeId}`,
+        lastItemLink: `/anime/watch/${provider || 'otakudesu'}/${episodeId}`,
+        watchedAt: Date.now(),
+      });
+    }
+  }, [episode, episodeId, provider, animeId]);
 
   const activeStream = customStreamUrl || episode?.streamUrl || '';
 
@@ -121,8 +143,38 @@ export function AnimeWatchPage() {
           </div>
         </div>
 
-        {/* Previous & Next Episode Navigation */}
+        {/* Previous & Next Episode Navigation & Bookmark */}
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end shrink-0">
+          {animeId && (
+            <button
+              onClick={() =>
+                toggleBookmark({
+                  id: animeId,
+                  category: 'anime',
+                  title: episode.title || 'Anime',
+                  cover: '',
+                  link: `/anime/detail/${provider || 'otakudesu'}/${animeId}`,
+                  subtitle: `Episode ${episodeId}`,
+                  type: 'Anime',
+                  addedAt: Date.now(),
+                })
+              }
+              title={bookmarked ? 'Hapus Bookmark' : 'Bookmark Anime'}
+              className={`p-2 rounded-xl border transition-all text-xs font-semibold flex items-center gap-1.5 ${
+                bookmarked
+                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                  : 'bg-card hover:bg-slate-800 text-slate-300 border-white/5'
+              }`}
+            >
+              {bookmarked ? (
+                <BookmarkCheck className="w-4 h-4 text-rose-400" />
+              ) : (
+                <Bookmark className="w-4 h-4 text-slate-400" />
+              )}
+              <span className="hidden md:inline">{bookmarked ? 'Tersimpan' : 'Bookmark'}</span>
+            </button>
+          )}
+
           <button
             onClick={() => {
               setCustomStreamUrl('');
