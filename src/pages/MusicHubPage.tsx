@@ -18,11 +18,11 @@ import {
   TrendingUp,
   Volume2,
 } from 'lucide-react';
-import { FAZURA_MUSIC_CATALOG, type MusicTrackItem } from '../services/musicApi';
+import { FAZURA_MUSIC_CATALOG, searchMusic, getTrackById, type MusicTrackItem } from '../services/musicApi';
 import { useMusic } from '../context/MusicContext';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 
-type MusicTabType = 'all' | 'viral' | 'pop_indo' | 'anime' | 'rock' | 'bookmarks' | 'history';
+type MusicTabType = 'all' | 'viral' | 'pop_indo' | 'anime' | 'donghua' | 'kpop' | 'rock' | 'bookmarks' | 'history';
 
 export function MusicHubPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -33,6 +33,8 @@ export function MusicHubPage() {
     tabParam === 'bookmarks' || tabParam === 'history' ? tabParam : 'all'
   );
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchedList, setSearchedList] = useState<MusicTrackItem[]>(FAZURA_MUSIC_CATALOG);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const {
     currentTrack,
@@ -55,10 +57,33 @@ export function MusicHubPage() {
     removeHistoryItem,
   } = useCategoryHistory('music');
 
+  // Handle dynamic live search across catalog + millions of online tracks (iTunes API)
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchedList(FAZURA_MUSIC_CATALOG);
+      setSearchLoading(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const results = await searchMusic(searchQuery.trim());
+        setSearchedList(results);
+      } catch {
+        // ignore
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 280);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Handle auto-play from query param (?play=t-diewithasmile)
   useEffect(() => {
     if (playParam) {
-      const found = FAZURA_MUSIC_CATALOG.find(
+      const found = getTrackById(playParam) || FAZURA_MUSIC_CATALOG.find(
         (t) => t.id === playParam || t.youtubeId === playParam
       );
       if (found) {
@@ -76,31 +101,24 @@ export function MusicHubPage() {
 
   // Filtered tracks based on query and active tab
   const filteredTracks = useMemo(() => {
-    let list = FAZURA_MUSIC_CATALOG;
+    let list = searchedList;
 
     if (activeTab === 'viral') {
-      list = list.filter((t) => t.tag?.toLowerCase().includes('global') || t.tag?.toLowerCase().includes('viral') || t.tag?.toLowerCase().includes('top'));
+      list = list.filter((t) => t.tag?.toLowerCase().includes('global') || t.tag?.toLowerCase().includes('viral') || t.tag?.toLowerCase().includes('top') || t.tag?.toLowerCase().includes('billboard'));
     } else if (activeTab === 'pop_indo') {
       list = list.filter((t) => t.genre === 'pop' || t.genre === 'indie' || t.genre === 'acoustic');
     } else if (activeTab === 'anime') {
       list = list.filter((t) => t.genre === 'anime');
+    } else if (activeTab === 'donghua') {
+      list = list.filter((t) => t.genre === 'donghua');
+    } else if (activeTab === 'kpop') {
+      list = list.filter((t) => t.genre === 'kpop');
     } else if (activeTab === 'rock') {
       list = list.filter((t) => t.genre === 'rock');
     }
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        (t) =>
-          t.title.toLowerCase().includes(q) ||
-          t.artist.toLowerCase().includes(q) ||
-          (t.album && t.album.toLowerCase().includes(q)) ||
-          (t.tag && t.tag.toLowerCase().includes(q))
-      );
-    }
-
     return list;
-  }, [activeTab, searchQuery]);
+  }, [activeTab, searchedList]);
 
   const heroTrack = currentTrack || FAZURA_MUSIC_CATALOG[0];
   const isHeroPlaying = isPlaying && currentTrack?.id === heroTrack.id;
@@ -119,6 +137,8 @@ export function MusicHubPage() {
       extra: {
         youtubeId: heroTrack.youtubeId,
         album: heroTrack.album,
+        artist: heroTrack.artist,
+        previewUrl: heroTrack.previewUrl,
       },
     });
   };
@@ -272,7 +292,29 @@ export function MusicHubPage() {
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Disc3 className="w-3.5 h-3.5" /> Anime & Donghua OST
+              <Disc3 className="w-3.5 h-3.5" /> Anime OST
+            </button>
+
+            <button
+              onClick={() => setActiveTab('donghua')}
+              className={`px-3.5 py-2 rounded-xl transition-all shrink-0 flex items-center gap-1.5 ${
+                activeTab === 'donghua'
+                  ? 'bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Disc3 className="w-3.5 h-3.5 text-emerald-400" /> Donghua OST
+            </button>
+
+            <button
+              onClick={() => setActiveTab('kpop')}
+              className={`px-3.5 py-2 rounded-xl transition-all shrink-0 flex items-center gap-1.5 ${
+                activeTab === 'kpop'
+                  ? 'bg-purple-500/20 text-purple-400 font-bold border border-purple-500/30'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" /> K-Pop Hits
             </button>
 
             <button
@@ -377,12 +419,13 @@ export function MusicHubPage() {
                           />
                           <button
                             onClick={() => {
-                              const matchTrack = FAZURA_MUSIC_CATALOG.find((t) => t.id === b.id) || {
+                              const matchTrack = getTrackById(b.id) || FAZURA_MUSIC_CATALOG.find((t) => t.id === b.id) || {
                                 id: b.id,
                                 youtubeId: b.extra?.youtubeId || b.id,
                                 title: b.title,
                                 artist: b.extra?.artist || b.subtitle || 'FAZURAVERSE',
                                 thumbnail: b.cover,
+                                previewUrl: b.extra?.previewUrl,
                               };
                               if (isTrackActive) {
                                 togglePlay();
@@ -403,12 +446,13 @@ export function MusicHubPage() {
                         <div className="min-w-0 flex-1">
                           <h4
                             onClick={() => {
-                              const matchTrack = FAZURA_MUSIC_CATALOG.find((t) => t.id === b.id) || {
+                              const matchTrack = getTrackById(b.id) || FAZURA_MUSIC_CATALOG.find((t) => t.id === b.id) || {
                                 id: b.id,
                                 youtubeId: b.extra?.youtubeId || b.id,
                                 title: b.title,
                                 artist: b.extra?.artist || b.subtitle || 'FAZURAVERSE',
                                 thumbnail: b.cover,
+                                previewUrl: b.extra?.previewUrl,
                               };
                               playTrack(matchTrack, FAZURA_MUSIC_CATALOG);
                             }}
@@ -509,12 +553,13 @@ export function MusicHubPage() {
                           />
                           <button
                             onClick={() => {
-                              const matchTrack = FAZURA_MUSIC_CATALOG.find((t) => t.id === h.id) || {
+                              const matchTrack = getTrackById(h.id) || FAZURA_MUSIC_CATALOG.find((t) => t.id === h.id) || {
                                 id: h.id,
                                 youtubeId: h.extra?.youtubeId || h.id,
                                 title: h.title,
                                 artist: h.extra?.artist || 'FAZURAVERSE',
                                 thumbnail: h.cover,
+                                previewUrl: h.extra?.previewUrl,
                               };
                               if (isTrackActive) {
                                 togglePlay();
@@ -535,12 +580,13 @@ export function MusicHubPage() {
                         <div className="min-w-0 flex-1">
                           <h4
                             onClick={() => {
-                              const matchTrack = FAZURA_MUSIC_CATALOG.find((t) => t.id === h.id) || {
+                              const matchTrack = getTrackById(h.id) || FAZURA_MUSIC_CATALOG.find((t) => t.id === h.id) || {
                                 id: h.id,
                                 youtubeId: h.extra?.youtubeId || h.id,
                                 title: h.title,
                                 artist: h.extra?.artist || 'FAZURAVERSE',
                                 thumbnail: h.cover,
+                                previewUrl: h.extra?.previewUrl,
                               };
                               playTrack(matchTrack, FAZURA_MUSIC_CATALOG);
                             }}
@@ -690,6 +736,8 @@ export function MusicHubPage() {
                             extra: {
                               youtubeId: track.youtubeId,
                               album: track.album,
+                              artist: track.artist,
+                              previewUrl: track.previewUrl,
                             },
                           })
                         }

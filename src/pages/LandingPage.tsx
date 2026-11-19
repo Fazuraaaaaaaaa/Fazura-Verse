@@ -303,7 +303,7 @@ export function LandingPage() {
             <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Cari judul manga, anime, atau donghua favorit Anda..."
+              placeholder="Cari komik, anime, donghua, movie, atau musik favorit Anda..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-transparent text-white text-sm placeholder-slate-400 focus:outline-none"

@@ -11,6 +11,7 @@ import {
   VolumeX,
   Mic2,
   Heart,
+  X,
 } from 'lucide-react';
 import { useMusic } from '../../context/MusicContext';
 import { useCategoryBookmarks } from '../../services/categoryStorage';
@@ -32,6 +33,7 @@ export function MusicPlayerBar() {
     isMuted,
     isShuffle,
     repeatMode,
+    isPlayerDismissed,
     togglePlay,
     nextTrack,
     prevTrack,
@@ -41,11 +43,12 @@ export function MusicPlayerBar() {
     toggleShuffle,
     toggleRepeat,
     setShowLyrics,
+    dismissPlayer,
   } = useMusic();
 
   const { isBookmarked, toggleBookmark } = useCategoryBookmarks('music');
 
-  if (!currentTrack) return null;
+  if (!currentTrack || isPlayerDismissed) return null;
 
   const bookmarked = isBookmarked(currentTrack.id);
 
@@ -216,6 +219,14 @@ export function MusicPlayerBar() {
               className="w-16 md:w-20 h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-[#1DB954]"
             />
           </div>
+
+          <button
+            onClick={dismissPlayer}
+            title="Tutup Pemutar Musik"
+            className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-white/5 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>

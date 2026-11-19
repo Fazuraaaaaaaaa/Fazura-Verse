@@ -22,12 +22,15 @@ import { searchDonghua } from '../services/donghuaApi';
 import { getMovies } from '../services/movieApi';
 import { searchMusic } from '../services/musicApi';
 import { MangaCard } from '../components/MangaCard';
+import { useMusic } from '../context/MusicContext';
 
 export function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const qParam = searchParams.get('q') || '';
   const [inputVal, setInputVal] = useState(qParam);
   const [activeTab, setActiveTab] = useState<'all' | 'manga' | 'anime' | 'donghua' | 'movie' | 'music'>('all');
+
+  const { currentTrack, isPlaying, playTrack, togglePlay } = useMusic();
 
   useEffect(() => {
     if (qParam !== inputVal) {
@@ -96,12 +99,13 @@ export function SearchPage() {
   const popularSuggestions = [
     'Solo Leveling',
     'One Piece',
+    'Die With A Smile',
     'Swallowed Star',
     'Jujutsu Kaisen',
+    'Yoasobi',
     'Battle Through the Heavens',
-    'Nano Machine',
+    'Galdive',
     'Bleach',
-    'Soul Land',
   ];
 
   return (
@@ -113,7 +117,7 @@ export function SearchPage() {
           Pencarian Lintas Saluran FAZURAVERSE
         </div>
         <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-          Cari Manga, Anime, & Donghua
+          Cari Manga, Anime, Donghua, Movie & Musik
         </h1>
         <p className="text-xs sm:text-sm text-slate-400">
           Satu kotak pencarian langsung menghubungkan ribuan judul komik dari BacaKomik, anime dari Samehadaku & Otakudesu, serta donghua dari Anichin.
@@ -262,7 +266,7 @@ export function SearchPage() {
               <Search className="w-12 h-12 text-slate-600 mx-auto" />
               <h3 className="text-base font-bold text-white">Tidak Ada Hasil Ditemukan</h3>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                Judul "{qParam}" tidak ditemukan di database BacaKomik, Otakudesu, atau Anichin. Coba kata kunci yang lebih singkat.
+                Judul "{qParam}" tidak ditemukan di database FAZURAVERSE. Coba kata kunci yang lebih singkat.
               </p>
             </div>
           )}
@@ -459,61 +463,70 @@ export function SearchPage() {
                 <span className="text-xs text-slate-500">{musicList.length} lagu</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {musicList.map((track) => (
-                  <Link
-                    key={track.id}
-                    to="/music"
-                    onClick={() => {
-                      try {
-                        localStorage.setItem('sonora_queue_first', JSON.stringify({
-                          id: track.id,
-                          youtubeId: track.youtubeId,
-                          title: track.title,
-                          artist: track.artist,
-                          thumbnail: track.thumbnail,
-                          album: track.album || track.title,
-                        }));
-                      } catch {
-                        // ignore
-                      }
-                    }}
-                    className="group relative flex items-center gap-3 p-2.5 rounded-xl bg-[#111622] border border-white/5 hover:border-[#1DB954]/50 hover:bg-slate-900/90 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
-                  >
-                    <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-slate-900 border border-white/5">
-                      <img
-                        src={track.thumbnail || `https://i.ytimg.com/vi/${track.youtubeId}/hqdefault.jpg`}
-                        alt={track.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="w-7 h-7 rounded-full bg-[#1DB954] text-black flex items-center justify-center shadow-md">
-                          <Play className="w-3.5 h-3.5 fill-black ml-0.5" />
+                {musicList.map((track) => {
+                  const isTrackActive = currentTrack?.id === track.id;
+                  const isTrackPlaying = isTrackActive && isPlaying;
+
+                  return (
+                    <div
+                      key={track.id}
+                      onClick={() => {
+                        if (isTrackActive) {
+                          togglePlay();
+                        } else {
+                          playTrack(track, musicList);
+                        }
+                      }}
+                      className={`group relative flex items-center gap-3 p-2.5 rounded-xl bg-[#111622] border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer ${
+                        isTrackActive
+                          ? 'border-[#1DB954] bg-[#1DB954]/10 shadow-[0_0_15px_rgba(29,185,84,0.15)]'
+                          : 'border-white/5 hover:border-[#1DB954]/50 hover:bg-slate-900/90'
+                      }`}
+                    >
+                      <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-slate-900 border border-white/5">
+                        <img
+                          src={track.thumbnail || `https://i.ytimg.com/vi/${track.youtubeId}/hqdefault.jpg`}
+                          alt={track.title}
+                          loading="lazy"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                        <div className={`absolute inset-0 bg-black/40 transition-opacity flex items-center justify-center ${
+                          isTrackActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        }`}>
+                          <div className="w-7 h-7 rounded-full bg-[#1DB954] text-black flex items-center justify-center shadow-md">
+                            {isTrackPlaying ? (
+                              <span className="w-2.5 h-2.5 bg-black rounded-sm" />
+                            ) : (
+                              <Play className="w-3.5 h-3.5 fill-black ml-0.5" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0 pr-1">
+                        <h4 className={`text-xs font-bold truncate transition-colors ${
+                          isTrackActive ? 'text-[#1DB954]' : 'text-slate-100 group-hover:text-[#1DB954]'
+                        }`}>
+                          {track.title}
+                        </h4>
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                          {track.artist}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {track.tag && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#1DB954]/15 text-[#1DB954] font-medium border border-[#1DB954]/30">
+                              {track.tag}
+                            </span>
+                          )}
+                          {track.durationFormatted && (
+                            <span className="text-[10px] text-slate-500">
+                              {track.durationFormatted}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1 min-w-0 pr-1">
-                      <h4 className="text-xs font-bold text-slate-100 group-hover:text-[#1DB954] truncate transition-colors">
-                        {track.title}
-                      </h4>
-                      <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                        {track.artist}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {track.tag && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#1DB954]/15 text-[#1DB954] font-medium border border-[#1DB954]/30">
-                            {track.tag}
-                          </span>
-                        )}
-                        {track.durationFormatted && (
-                          <span className="text-[10px] text-slate-500">
-                            {track.durationFormatted}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { type MusicTrackItem, FAZURA_MUSIC_CATALOG } from '../services/musicApi';
+import { type MusicTrackItem, FAZURA_MUSIC_CATALOG, getTrackById } from '../services/musicApi';
 import { recordCategoryHistory } from '../services/categoryStorage';
 
 // YouTube Iframe API types declaration
@@ -21,6 +21,7 @@ interface MusicContextType {
   repeatMode: 'off' | 'all' | 'one';
   queue: MusicTrackItem[];
   showLyrics: boolean;
+  isPlayerDismissed: boolean;
   playTrack: (track: MusicTrackItem, newQueue?: MusicTrackItem[]) => void;
   togglePlay: () => void;
   pause: () => void;
@@ -33,12 +34,14 @@ interface MusicContextType {
   toggleShuffle: () => void;
   toggleRepeat: () => void;
   setShowLyrics: (show: boolean | ((prev: boolean) => boolean)) => void;
+  dismissPlayer: () => void;
 }
 
 const MusicContext = createContext<MusicContextType | null>(null);
 
 export function MusicProvider({ children }: { children: React.ReactNode }) {
-  const [currentTrack, setCurrentTrack] = useState<MusicTrackItem | null>(() => FAZURA_MUSIC_CATALOG[0]);
+  // Start with null so that player bar does NOT overlap or show until user initiates playback
+  const [currentTrack, setCurrentTrack] = useState<MusicTrackItem | null>(null);
   const [queue, setQueue] = useState<MusicTrackItem[]>(() => FAZURA_MUSIC_CATALOG);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -48,9 +51,10 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   const [isShuffle, setIsShuffle] = useState<boolean>(false);
   const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('all');
   const [showLyrics, setShowLyrics] = useState<boolean>(false);
+  const [isPlayerDismissed, setIsPlayerDismissed] = useState<boolean>(false);
 
   const playerRef = useRef<any>(null);
-  const isApiReadyRef = useRef<boolean>(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentTrackRef = useRef<MusicTrackItem | null>(currentTrack);
   const queueRef = useRef<MusicTrackItem[]>(queue);
   const repeatModeRef = useRef(repeatMode);
@@ -60,6 +64,39 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   queueRef.current = queue;
   repeatModeRef.current = repeatMode;
   isShuffleRef.current = isShuffle;
+
+  // Initialize HTML5 Audio instance for preview streams
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const audio = new Audio();
+    audio.volume = 0.8;
+    audioRef.current = audio;
+
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    const onEnded = () => handleTrackEnd();
+    const onTimeUpdate = () => {
+      if (audioRef.current && currentTrackRef.current?.previewUrl && !currentTrackRef.current?.youtubeId) {
+        setCurrentTime(audioRef.current.currentTime);
+        if (audioRef.current.duration && !isNaN(audioRef.current.duration)) {
+          setDuration(audioRef.current.duration);
+        }
+      }
+    };
+
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('timeupdate', onTimeUpdate);
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+    };
+  }, []);
 
   // Initialize YouTube Iframe API
   useEffect(() => {
@@ -73,7 +110,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
         playerRef.current = new window.YT.Player('yt-music-audio-engine', {
           height: '1',
           width: '1',
-          videoId: currentTrackRef.current?.youtubeId || 'kPa7bsKwL-c',
+          videoId: 'kPa7bsKwL-c',
           playerVars: {
             autoplay: 0,
             controls: 0,
@@ -85,7 +122,6 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
           },
           events: {
             onReady: (event: any) => {
-              isApiReadyRef.current = true;
               event.target.setVolume(80);
             },
             onStateChange: (event: any) => {
@@ -122,16 +158,12 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
         firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
       }
     }
-
-    return () => {
-      // Keep player intact across pages
-    };
   }, []);
 
-  // Sync current time & duration timer
+  // Sync current time & duration timer for YouTube Player
   useEffect(() => {
     const timer = setInterval(() => {
-      if (playerRef.current && isPlaying) {
+      if (playerRef.current && isPlaying && currentTrackRef.current?.youtubeId) {
         try {
           if (typeof playerRef.current.getCurrentTime === 'function') {
             const cur = playerRef.current.getCurrentTime() || 0;
@@ -151,10 +183,8 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   // Handler for track end
   const handleTrackEnd = useCallback(() => {
     if (repeatModeRef.current === 'one') {
-      if (playerRef.current?.seekTo) {
-        playerRef.current.seekTo(0);
-        playerRef.current.playVideo();
-      }
+      seekTo(0);
+      resume();
       return;
     }
 
@@ -185,6 +215,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     setCurrentTrack(track);
     setCurrentTime(0);
     setIsPlaying(true);
+    setIsPlayerDismissed(false); // Un-dismiss when user plays a song
 
     // Save to Music History
     recordCategoryHistory('music', {
@@ -199,12 +230,32 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
         youtubeId: track.youtubeId,
         artist: track.artist,
         album: track.album,
+        previewUrl: track.previewUrl,
       },
     });
 
+    // Check if track has previewUrl and no youtubeId (iTunes search)
+    if (track.previewUrl && !track.youtubeId) {
+      if (playerRef.current?.pauseVideo) {
+        playerRef.current.pauseVideo();
+      }
+      if (audioRef.current) {
+        audioRef.current.src = track.previewUrl;
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch((err) => console.warn('Audio play error:', err));
+      }
+      return;
+    }
+
+    // Otherwise play via YouTube
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+
+    const yId = track.youtubeId || 'kPa7bsKwL-c';
     if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
       try {
-        playerRef.current.loadVideoById(track.youtubeId);
+        playerRef.current.loadVideoById(yId);
         playerRef.current.playVideo();
       } catch (err) {
         console.warn('Error loading video by ID:', err);
@@ -221,6 +272,23 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const togglePlay = useCallback(() => {
+    const track = currentTrackRef.current;
+    if (!track) {
+      // Default to first track if clicked
+      const first = FAZURA_MUSIC_CATALOG[0];
+      playTrackInternal(first);
+      return;
+    }
+
+    if (track.previewUrl && !track.youtubeId && audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch(() => {});
+      }
+      return;
+    }
+
     if (!playerRef.current) return;
     try {
       if (isPlaying) {
@@ -236,17 +304,23 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   }, [isPlaying]);
 
   const pause = useCallback(() => {
-    if (playerRef.current?.pauseVideo) {
+    const track = currentTrackRef.current;
+    if (track?.previewUrl && !track?.youtubeId && audioRef.current) {
+      audioRef.current.pause();
+    } else if (playerRef.current?.pauseVideo) {
       playerRef.current.pauseVideo();
-      setIsPlaying(false);
     }
+    setIsPlaying(false);
   }, []);
 
   const resume = useCallback(() => {
-    if (playerRef.current?.playVideo) {
+    const track = currentTrackRef.current;
+    if (track?.previewUrl && !track?.youtubeId && audioRef.current) {
+      audioRef.current.play().catch(() => {});
+    } else if (playerRef.current?.playVideo) {
       playerRef.current.playVideo();
-      setIsPlaying(true);
     }
+    setIsPlaying(true);
   }, []);
 
   const nextTrack = useCallback(() => {
@@ -291,6 +365,13 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   }, [currentTime]);
 
   const seekTo = useCallback((seconds: number) => {
+    const track = currentTrackRef.current;
+    if (track?.previewUrl && !track?.youtubeId && audioRef.current) {
+      audioRef.current.currentTime = seconds;
+      setCurrentTime(seconds);
+      return;
+    }
+
     if (playerRef.current?.seekTo) {
       try {
         playerRef.current.seekTo(seconds, true);
@@ -304,6 +385,14 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   const setVolume = useCallback((vol: number) => {
     const clamped = Math.max(0, Math.min(100, vol));
     setVolumeState(clamped);
+
+    if (audioRef.current) {
+      audioRef.current.volume = clamped / 100;
+      if (clamped > 0 && isMuted) {
+        audioRef.current.muted = false;
+      }
+    }
+
     if (playerRef.current?.setVolume) {
       playerRef.current.setVolume(clamped);
       if (clamped > 0 && isMuted) {
@@ -314,12 +403,13 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   }, [isMuted]);
 
   const toggleMute = useCallback(() => {
-    if (!playerRef.current) return;
     if (isMuted) {
-      playerRef.current.unMute();
+      if (audioRef.current) audioRef.current.muted = false;
+      if (playerRef.current?.unMute) playerRef.current.unMute();
       setIsMuted(false);
     } else {
-      playerRef.current.mute();
+      if (audioRef.current) audioRef.current.muted = true;
+      if (playerRef.current?.mute) playerRef.current.mute();
       setIsMuted(true);
     }
   }, [isMuted]);
@@ -336,6 +426,11 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const dismissPlayer = useCallback(() => {
+    pause();
+    setIsPlayerDismissed(true);
+  }, [pause]);
+
   return (
     <MusicContext.Provider
       value={{
@@ -349,6 +444,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
         repeatMode,
         queue,
         showLyrics,
+        isPlayerDismissed,
         playTrack,
         togglePlay,
         pause,
@@ -361,6 +457,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
         toggleShuffle,
         toggleRepeat,
         setShowLyrics,
+        dismissPlayer,
       }}
     >
       {children}
