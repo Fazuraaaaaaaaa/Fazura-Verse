@@ -11,7 +11,7 @@ export interface AnimeItem {
   type?: string;
   estimation?: string;
   genres?: string | { title: string; genreId: string }[];
-  provider: 'samehadaku' | 'otakudesu';
+  provider: 'samehadaku' | 'otakudesu' | 'nimegami' | 'kusonime';
 }
 
 export interface AnimePagination {
@@ -33,6 +33,11 @@ export interface AnimeScheduleDay {
   animeList: AnimeItem[];
 }
 
+export interface AnimeBatchDownloadGroup {
+  resolution: string;
+  links: { host: string; url: string }[];
+}
+
 export interface AnimeDetail {
   id: string;
   title: string;
@@ -51,7 +56,8 @@ export interface AnimeDetail {
     episodeId: string;
     date?: string;
   }[];
-  provider: 'samehadaku' | 'otakudesu';
+  batchDownloads?: AnimeBatchDownloadGroup[];
+  provider: 'samehadaku' | 'otakudesu' | 'nimegami' | 'kusonime';
 }
 
 export interface AnimeEpisodeData {

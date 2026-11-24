@@ -172,7 +172,61 @@ function ytSearchPlugin(): Plugin {
   };
 }
 
+function nimegamiProxyPlugin(): Plugin {
+  const handler = async (req: any, res: any) => {
+    try {
+      const urlObj = new URL(req.url, 'http://localhost');
+      const targetUrl = urlObj.searchParams.get('url');
+      if (!targetUrl) {
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ success: false, error: 'Missing url parameter' }));
+        return;
+      }
+
+      const upstream = await fetch(targetUrl, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+      });
+
+      const text = await upstream.text();
+      let streamUrl = targetUrl;
+
+      const part = text.split('data-src=')[1];
+      if (part) {
+        const quote = part[0];
+        const direct = part.slice(1).split(quote)[0];
+        if (direct && direct.startsWith('http')) {
+          streamUrl = direct;
+        }
+      }
+
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.end(JSON.stringify({ success: true, streamUrl }));
+    } catch (err: any) {
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ success: false, error: err.message || 'Resolve failed' }));
+    }
+  };
+
+  return {
+    name: 'nimegami-proxy-middleware',
+    configureServer(server) {
+      server.middlewares.use('/api/resolve-nimegami', handler);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use('/api/resolve-nimegami', handler);
+    },
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), imageProxyPlugin(), megaProxyPlugin(), ytSearchPlugin()],
+  plugins: [react(), imageProxyPlugin(), megaProxyPlugin(), ytSearchPlugin(), nimegamiProxyPlugin()],
 })

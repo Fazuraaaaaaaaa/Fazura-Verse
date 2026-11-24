@@ -51,6 +51,29 @@ export function AnimeGridCard({ anime }: AnimeGridCardProps) {
           </div>
         ) : null}
 
+        {/* Provider Tag */}
+        {anime.provider && (
+          <div
+            className={`absolute bottom-2 left-2 z-10 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shadow backdrop-blur-md ${
+              anime.provider === 'nimegami'
+                ? 'bg-amber-600/90 text-white border border-amber-400/40'
+                : anime.provider === 'kusonime'
+                ? 'bg-cyan-600/90 text-white border border-cyan-400/40'
+                : anime.provider === 'samehadaku'
+                ? 'bg-emerald-600/90 text-white border border-emerald-400/40'
+                : 'bg-purple-600/80 text-white border border-purple-400/30'
+            }`}
+          >
+            {anime.provider === 'nimegami'
+              ? 'Klasik'
+              : anime.provider === 'kusonime'
+              ? 'Batch'
+              : anime.provider === 'samehadaku'
+              ? 'Samehada'
+              : 'Otaku'}
+          </div>
+        )}
+
         {/* Play Icon on hover */}
         <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-background/40 backdrop-blur-[2px]">
           <div className="w-10 h-10 rounded-full bg-amber-500 text-black flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">

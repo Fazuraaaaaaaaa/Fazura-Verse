@@ -19,8 +19,16 @@ import {
   Sparkles,
   Share2,
   Layers,
+  Download,
+  ExternalLink,
 } from 'lucide-react';
-import { getOtakudesuDetail, getSamehadakuDetail, getOtakudesuByGenre } from '../services/animeApi';
+import {
+  getOtakudesuDetail,
+  getSamehadakuDetail,
+  getNimegamiDetail,
+  getKusonimeDetail,
+  getOtakudesuByGenre,
+} from '../services/animeApi';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 import { AnimeGridCard } from '../components/anime/AnimeGridCard';
 
@@ -38,14 +46,12 @@ function formatEpisodeName(rawTitle: string | number, fallbackSlug?: string): st
 }
 
 export function AnimeDetailPage() {
-  const { provider, id } = useParams<{ provider: 'samehadaku' | 'otakudesu'; id: string }>();
+  const { provider, id } = useParams<{ provider: 'samehadaku' | 'otakudesu' | 'nimegami' | 'kusonime'; id: string }>();
   const [searchEpisode, setSearchEpisode] = useState('');
   // Urutan default: Episode 1 paling atas (Ascending)
   const [sortDescending, setSortDescending] = useState(false);
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-
-  const isSame = provider === 'samehadaku';
 
   const { isBookmarked, toggleBookmark } = useCategoryBookmarks('anime');
   const bookmarked = id ? isBookmarked(id) : false;
@@ -54,7 +60,12 @@ export function AnimeDetailPage() {
 
   const { data: anime, isLoading, error } = useQuery({
     queryKey: ['anime', 'detail', provider, id],
-    queryFn: () => (isSame ? getSamehadakuDetail(id || '') : getOtakudesuDetail(id || '')),
+    queryFn: () => {
+      if (provider === 'nimegami') return getNimegamiDetail(id || '');
+      if (provider === 'kusonime') return getKusonimeDetail(id || '');
+      if (provider === 'samehadaku') return getSamehadakuDetail(id || '');
+      return getOtakudesuDetail(id || '');
+    },
     enabled: Boolean(id),
   });
 
@@ -211,9 +222,19 @@ export function AnimeDetailPage() {
           <div className="flex-1 space-y-4 text-center md:text-left min-w-0">
             {/* Chips Header */}
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-accent-primary/15 text-accent-soft border border-accent-primary/30 flex items-center gap-1.5">
-                <Tv className="w-3.5 h-3.5 text-accent-primary" />
-                Server: {(provider || 'samehadaku').toUpperCase()}
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                  provider === 'nimegami'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    : provider === 'kusonime'
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                    : provider === 'samehadaku'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    : 'bg-accent-primary/15 text-accent-soft border border-accent-primary/30'
+                }`}
+              >
+                <Tv className="w-3.5 h-3.5" />
+                Server: {provider === 'nimegami' ? 'NIMEGAMI (KLASIK)' : provider === 'kusonime' ? 'KUSONIME (BATCH)' : (provider || 'samehadaku').toUpperCase()}
               </span>
               {anime.type && (
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-surface-elevated text-slate-300 border border-white/8">
@@ -226,7 +247,7 @@ export function AnimeDetailPage() {
                   {anime.duration}
                 </span>
               )}
-              {anime.episodeList && (
+              {anime.episodeList && anime.episodeList.length > 0 && (
                 <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-surface-elevated text-slate-300 border border-white/8">
                   <Layers className="w-3 h-3 text-accent-primary" />
                   {anime.episodeList.length} Episode
@@ -287,7 +308,7 @@ export function AnimeDetailPage() {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center md:justify-start gap-3 pt-3">
-              {/* Play Button (Continue or First Episode) */}
+              {/* Play Button (Continue or First Episode or Batch Link) */}
               {lastWatchedItem ? (
                 <Link
                   to={lastWatchedItem.lastItemLink}
@@ -304,6 +325,14 @@ export function AnimeDetailPage() {
                   <Play className="w-4 h-4 fill-white" />
                   Mulai Nonton {formatEpisodeName(firstEpisode.title, firstEpisode.episodeId)}
                 </Link>
+              ) : anime.batchDownloads && anime.batchDownloads.length > 0 ? (
+                <a
+                  href="#batch-downloads"
+                  className="flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-black text-xs sm:text-sm shadow-lg shadow-cyan-500/25 transition-all transform hover:scale-[1.02] text-center"
+                >
+                  <Download className="w-4 h-4" />
+                  Unduh Full Season Batch
+                </a>
               ) : null}
 
               {/* Bookmark Toggle */}
@@ -365,7 +394,63 @@ export function AnimeDetailPage() {
         </div>
       </div>
 
+      {/* Batch Downloads Section (Kusonime & Nimegami) */}
+      {anime.batchDownloads && anime.batchDownloads.length > 0 && (
+        <section id="batch-downloads" className="space-y-4 pt-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-white font-heading flex items-center gap-2">
+                <Download className="w-5 h-5 text-cyan-400" />
+                <span>Unduh Batch Full Season</span>
+              </h2>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Download langsung paket full series via Google Drive, Mega, Acefile, dan server lainnya.
+              </p>
+            </div>
+            <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 self-start sm:self-auto">
+              {anime.batchDownloads.length} Opsi Paket
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {anime.batchDownloads.map((group, idx) => (
+              <div
+                key={idx}
+                className="p-4 sm:p-5 rounded-2xl bg-surface border border-white/10 hover:border-cyan-500/30 transition-all space-y-3"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                    {group.resolution}
+                  </h3>
+                  <span className="text-[11px] text-text-muted">
+                    {group.links.length} Server Host
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {group.links.map((link, lIdx) => (
+                    <a
+                      key={lIdx}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-surface-elevated hover:bg-cyan-500 hover:text-black text-slate-200 border border-white/10 hover:border-cyan-400 transition-all shadow-sm hover:scale-[1.02]"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>{link.host}</span>
+                      <ExternalLink className="w-3 h-3 opacity-60" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Episode Directory */}
+      {anime.episodeList && anime.episodeList.length > 0 ? (
       <section className="space-y-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
           <div>
@@ -454,6 +539,7 @@ export function AnimeDetailPage() {
           </div>
         )}
       </section>
+      ) : null}
 
       {/* Rekomendasi Terkait Sesuai Genre Anime */}
       {relatedAnimeList.length > 0 && (

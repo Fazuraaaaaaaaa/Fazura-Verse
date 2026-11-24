@@ -18,20 +18,23 @@ import {
   History,
   Trash2,
   Heart,
+  Download,
 } from 'lucide-react';
 import {
   getOtakudesuOngoing,
   getOtakudesuCompleted,
+  getNimegamiHome,
+  getKusonimeLatest,
   getOtakudesuSchedule,
   getOtakudesuGenres,
   getOtakudesuByGenre,
-  searchOtakudesu,
+  searchAllAnime,
 } from '../services/animeApi';
 import type { AnimeItem, AnimeScheduleDay } from '../types/media';
 import { HubHistoryShelf } from '../components/library/HubHistoryShelf';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 
-type TabType = 'ongoing' | 'completed' | 'genres' | 'schedule' | 'bookmarks' | 'history';
+type TabType = 'ongoing' | 'completed' | 'retro' | 'batch' | 'genres' | 'schedule' | 'bookmarks' | 'history';
 
 export function AnimeHubPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -42,7 +45,13 @@ export function AnimeHubPage() {
 
   const provider = 'otakudesu';
   const [activeTab, setActiveTab] = useState<TabType>(
-    tabParam === 'schedule' || tabParam === 'completed' || tabParam === 'genres' || tabParam === 'bookmarks' || tabParam === 'history'
+    tabParam === 'schedule' ||
+      tabParam === 'completed' ||
+      tabParam === 'retro' ||
+      tabParam === 'batch' ||
+      tabParam === 'genres' ||
+      tabParam === 'bookmarks' ||
+      tabParam === 'history'
       ? tabParam
       : 'ongoing'
   );
@@ -51,6 +60,7 @@ export function AnimeHubPage() {
   const [selectedDay, setSelectedDay] = useState<string>('Senin');
   const [searchInput, setSearchInput] = useState(searchParam);
   const [jumpPageInput, setJumpPageInput] = useState('');
+  const [searchFilter, setSearchFilter] = useState<'all' | 'otakudesu' | 'nimegami' | 'kusonime' | 'samehadaku'>('all');
 
   const { bookmarks, removeBookmark } = useCategoryBookmarks('anime');
   const { history, clearHistory, removeHistoryItem } = useCategoryHistory('anime');
@@ -75,10 +85,10 @@ export function AnimeHubPage() {
     staleTime: 1000 * 60 * 60,
   });
 
-  // Query: Search Results (Otakudesu)
+  // Query: Multi-Provider Search (Otakudesu, Nimegami Klasik, Kusonime Batch, Samehadaku)
   const { data: searchResults, isLoading: searchLoading } = useQuery({
-    queryKey: ['anime', 'search', 'otakudesu', searchParam],
-    queryFn: () => searchOtakudesu(searchParam),
+    queryKey: ['anime', 'search', 'all-providers', searchParam],
+    queryFn: () => searchAllAnime(searchParam),
     enabled: Boolean(searchParam && searchParam.trim().length > 0),
   });
 
@@ -94,6 +104,20 @@ export function AnimeHubPage() {
     queryKey: ['anime', 'completed', 'otakudesu', page],
     queryFn: () => getOtakudesuCompleted(page),
     enabled: activeTab === 'completed' && !searchParam,
+  });
+
+  // Query: Retro & Classic Anime (Nimegami - 80s/90s/00s classics)
+  const { data: retroData, isLoading: retroLoading } = useQuery({
+    queryKey: ['anime', 'retro', 'nimegami', page],
+    queryFn: () => getNimegamiHome(page),
+    enabled: activeTab === 'retro' && !searchParam,
+  });
+
+  // Query: Full Season Batch Downloads (Kusonime - batch downloads)
+  const { data: batchData, isLoading: batchLoading } = useQuery({
+    queryKey: ['anime', 'batch', 'kusonime', page],
+    queryFn: () => getKusonimeLatest(page),
+    enabled: activeTab === 'batch' && !searchParam,
   });
 
   // Query: Genre Filter (Otakudesu - up to 48+ pages per genre)
@@ -171,11 +195,28 @@ export function AnimeHubPage() {
     activeAnimeList = completedData?.animeList || [];
     currentPagination = completedData?.pagination || currentPagination;
     isLoading = completedLoading;
+  } else if (activeTab === 'retro') {
+    activeAnimeList = retroData?.animeList || [];
+    currentPagination = retroData?.pagination || currentPagination;
+    isLoading = retroLoading;
+  } else if (activeTab === 'batch') {
+    activeAnimeList = batchData?.animeList || [];
+    currentPagination = batchData?.pagination || currentPagination;
+    isLoading = batchLoading;
   } else if (activeTab === 'genres') {
     activeAnimeList = genreData?.animeList || [];
     currentPagination = genreData?.pagination || currentPagination;
     isLoading = genreLoading;
   }
+
+  const displayedSearchResults = React.useMemo(() => {
+    if (!searchResults) return [];
+    if (searchFilter === 'otakudesu') return searchResults.otakudesu;
+    if (searchFilter === 'nimegami') return searchResults.nimegami;
+    if (searchFilter === 'kusonime') return searchResults.kusonime;
+    if (searchFilter === 'samehadaku') return searchResults.samehadaku;
+    return searchResults.all;
+  }, [searchResults, searchFilter]);
 
   const topGenreChips = [
     'action',
@@ -316,6 +357,30 @@ export function AnimeHubPage() {
           </button>
 
           <button
+            onClick={() => handleTabChange('retro')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
+              activeTab === 'retro' && !searchParam
+                ? 'bg-amber-500 text-black font-bold shadow-md shadow-amber-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            Anime Klasik (Nimegami)
+          </button>
+
+          <button
+            onClick={() => handleTabChange('batch')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
+              activeTab === 'batch' && !searchParam
+                ? 'bg-cyan-500 text-black font-bold shadow-md shadow-cyan-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Download className="w-4 h-4 text-cyan-400" />
+            Batch Download (Kusonime)
+          </button>
+
+          <button
             onClick={() => handleTabChange('genres')}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
               activeTab === 'genres' && !searchParam
@@ -393,19 +458,90 @@ export function AnimeHubPage() {
       {searchParam ? (
         /* SECTION A: Search Results Active */
         <div className="space-y-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            Hasil Pencarian: "<span className="text-amber-400">{searchParam}</span>" di Otakudesu
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                Hasil Pencarian: "<span className="text-amber-400">{searchParam}</span>"
+              </h2>
+              <p className="text-xs text-text-secondary">
+                Ditemukan {searchResults?.all.length || 0} judul dari Otakudesu, Nimegami Klasik, Kusonime Batch, dan Samehadaku
+              </p>
+            </div>
+
+            {/* Provider Filter Chips */}
+            {searchResults && searchResults.all.length > 0 && (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                <button
+                  onClick={() => setSearchFilter('all')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                    searchFilter === 'all'
+                      ? 'bg-amber-500 text-black border-amber-400'
+                      : 'bg-[#111622] hover:bg-slate-800 text-slate-300 border-white/10'
+                  }`}
+                >
+                  Semua ({searchResults.all.length})
+                </button>
+                {searchResults.nimegami.length > 0 && (
+                  <button
+                    onClick={() => setSearchFilter('nimegami')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                      searchFilter === 'nimegami'
+                        ? 'bg-amber-600 text-white border-amber-400 shadow-sm'
+                        : 'bg-[#111622] hover:bg-slate-800 text-amber-300 border-white/10'
+                    }`}
+                  >
+                    Nimegami Klasik ({searchResults.nimegami.length})
+                  </button>
+                )}
+                {searchResults.kusonime.length > 0 && (
+                  <button
+                    onClick={() => setSearchFilter('kusonime')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                      searchFilter === 'kusonime'
+                        ? 'bg-cyan-600 text-white border-cyan-400 shadow-sm'
+                        : 'bg-[#111622] hover:bg-slate-800 text-cyan-300 border-white/10'
+                    }`}
+                  >
+                    Kusonime Batch ({searchResults.kusonime.length})
+                  </button>
+                )}
+                {searchResults.otakudesu.length > 0 && (
+                  <button
+                    onClick={() => setSearchFilter('otakudesu')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                      searchFilter === 'otakudesu'
+                        ? 'bg-purple-600 text-white border-purple-400 shadow-sm'
+                        : 'bg-[#111622] hover:bg-slate-800 text-purple-300 border-white/10'
+                    }`}
+                  >
+                    Otakudesu ({searchResults.otakudesu.length})
+                  </button>
+                )}
+                {searchResults.samehadaku.length > 0 && (
+                  <button
+                    onClick={() => setSearchFilter('samehadaku')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                      searchFilter === 'samehadaku'
+                        ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm'
+                        : 'bg-[#111622] hover:bg-slate-800 text-emerald-300 border-white/10'
+                    }`}
+                  >
+                    Samehadaku ({searchResults.samehadaku.length})
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
           {searchLoading ? (
             <div className="py-20 text-center space-y-3">
               <Loader2 className="w-8 h-8 text-amber-500 animate-spin mx-auto" />
-              <p className="text-sm text-slate-400">Mencari anime di Otakudesu...</p>
+              <p className="text-sm text-slate-400">Mencari anime di seluruh database provider...</p>
             </div>
-          ) : searchResults && searchResults.length > 0 ? (
+          ) : displayedSearchResults && displayedSearchResults.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {searchResults.map((anime) => (
-                <AnimeGridCard key={anime.id} anime={anime} />
+              {displayedSearchResults.map((anime) => (
+                <AnimeGridCard key={`${anime.provider}-${anime.id}`} anime={anime} />
               ))}
             </div>
           ) : (
@@ -413,7 +549,7 @@ export function AnimeHubPage() {
               <Search className="w-12 h-12 text-slate-600 mx-auto" />
               <h3 className="text-base font-bold text-white">Tidak Ada Anime Ditemukan</h3>
               <p className="text-xs text-slate-400">
-                Judul "{searchParam}" tidak ditemukan di database Otakudesu. Coba kata kunci lain.
+                Judul "{searchParam}" tidak ditemukan di database. Coba kata kunci lain atau judul alternatif.
               </p>
             </div>
           )}
@@ -657,20 +793,36 @@ export function AnimeHubPage() {
           </div>
         </div>
       ) : (
-        /* SECTION D: Paginated Anime Grids (Ongoing, Completed, or Genre Filter) */
+        /* SECTION D: Paginated Anime Grids (Ongoing, Completed, Retro Nimegami, Batch Kusonime, or Genre Filter) */
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              {activeTab === 'ongoing' && <Clock className="w-4 h-4 text-amber-400" />}
-              {activeTab === 'completed' && <CheckCircle className="w-4 h-4 text-emerald-400" />}
-              {activeTab === 'genres' && <Tag className="w-4 h-4 text-amber-400" />}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-3">
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                {activeTab === 'ongoing' && <Clock className="w-4 h-4 text-amber-400" />}
+                {activeTab === 'completed' && <CheckCircle className="w-4 h-4 text-emerald-400" />}
+                {activeTab === 'retro' && <Sparkles className="w-4 h-4 text-amber-400" />}
+                {activeTab === 'batch' && <Download className="w-4 h-4 text-cyan-400" />}
+                {activeTab === 'genres' && <Tag className="w-4 h-4 text-amber-400" />}
 
-              <span>
-                {activeTab === 'ongoing' && 'Anime Sedang Tayang (Otakudesu)'}
-                {activeTab === 'completed' && 'Daftar Anime Tamat (Otakudesu)'}
-                {activeTab === 'genres' && `Koleksi Genre: ${selectedGenre.toUpperCase()} (Otakudesu)`}
-              </span>
-            </h2>
+                <span>
+                  {activeTab === 'ongoing' && 'Anime Sedang Tayang (Otakudesu)'}
+                  {activeTab === 'completed' && 'Daftar Anime Tamat (Otakudesu)'}
+                  {activeTab === 'retro' && 'Katalog Anime Klasik & Retro (Nimegami)'}
+                  {activeTab === 'batch' && 'Batch Download Full Season (Kusonime)'}
+                  {activeTab === 'genres' && `Koleksi Genre: ${selectedGenre.toUpperCase()} (Otakudesu)`}
+                </span>
+              </h2>
+              {activeTab === 'retro' && (
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Arsip serial anime legendaris era 80-an, 90-an & 2000-an dengan streaming per episode & download lengkap.
+                </p>
+              )}
+              {activeTab === 'batch' && (
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Koleksi anime full season dalam format arsip .zip/.rar via Google Drive, Mega, dan Acefile.
+                </p>
+              )}
+            </div>
 
             <span className="text-xs text-slate-400">
               Halaman {currentPagination.currentPage} dari {currentPagination.totalPages}

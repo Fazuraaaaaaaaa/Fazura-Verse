@@ -35,9 +35,32 @@ async function fetchJson<T>(url: string): Promise<T> {
  * Fetch real embed stream URL for a specific server and quality
  */
 export async function getAnimeServerUrl(
-  provider: 'samehadaku' | 'otakudesu',
+  provider: 'samehadaku' | 'otakudesu' | 'nimegami' | 'kusonime',
   serverId: string
 ): Promise<string> {
+  // Handle direct URLs or Nimegami synthetic server
+  if (serverId.startsWith('nimegami::')) {
+    const rawUrl = serverId.replace('nimegami::', '').trim();
+    if (rawUrl.endsWith('.mp4') || rawUrl.includes('stream-stor') || rawUrl.includes('berkasdrive.com/v/')) {
+      return rawUrl;
+    }
+    try {
+      const res = await fetch(`/api/resolve-nimegami?url=${encodeURIComponent(rawUrl)}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.streamUrl) {
+          return json.streamUrl;
+        }
+      }
+    } catch (e) {
+      console.warn('Nimegami resolver proxy warning:', e);
+    }
+    return rawUrl;
+  }
+  if (serverId.startsWith('http://') || serverId.startsWith('https://')) {
+    return serverId.trim();
+  }
+
   // Handle synthetic Mega 1080p server
   if (serverId.startsWith('mega-1080p::')) {
     const rawUrl = serverId.replace('mega-1080p::', '').trim();
@@ -785,4 +808,350 @@ export async function getSamehadakuByGenre(
   };
 
   return { animeList: list, pagination };
+}
+
+/* ==================== NIMEGAMI (RETRO & CLASSIC) ==================== */
+
+export async function searchNimegami(query: string): Promise<AnimeItem[]> {
+  try {
+    const json: any = await fetchJson(`${ANIME_BASE_URL}/nimegami/search/${encodeURIComponent(query)}`);
+    const list = json?.anime_list || [];
+    if (!Array.isArray(list)) return [];
+
+    return list
+      .filter((item: any) => item.slug && !item.slug.startsWith('#') && item.title && !item.title.startsWith('#'))
+      .map((item: any) => ({
+        id: item.slug,
+        title: cleanAnimeTitle(item.title || item.slug),
+        poster: item.poster || '',
+        status: item.status || 'Completed',
+        type: item.type || 'Retro Anime',
+        episodes: item.episode || undefined,
+        provider: 'nimegami' as const,
+      }));
+  } catch (err) {
+    console.warn('Nimegami search warning:', err);
+    return [];
+  }
+}
+
+export async function getNimegamiHome(page = 1): Promise<{
+  animeList: AnimeItem[];
+  pagination: AnimePagination;
+}> {
+  const json: any = await fetchJson(`${ANIME_BASE_URL}/nimegami/home?page=${page}`);
+  const rawList = json?.anime_list || [];
+
+  const list: AnimeItem[] = (Array.isArray(rawList) ? rawList : [])
+    .filter((item: any) => item.slug && !item.slug.startsWith('#') && item.title && !item.title.startsWith('#'))
+    .map((item: any) => ({
+      id: item.slug,
+      title: cleanAnimeTitle(item.title || item.slug),
+      poster: item.poster || '',
+      status: item.status || 'Completed',
+      type: item.type || 'Retro Series',
+      episodes: item.episode || undefined,
+      provider: 'nimegami' as const,
+    }));
+
+  const pagination: AnimePagination = {
+    currentPage: page,
+    totalPages: 50,
+    hasPrevPage: page > 1,
+    hasNextPage: Boolean(json?.pagination?.hasNext ?? true),
+    prevPage: page > 1 ? page - 1 : null,
+    nextPage: json?.pagination?.hasNext ? page + 1 : (list.length > 0 ? page + 1 : null),
+  };
+
+  return { animeList: list, pagination };
+}
+
+export async function getNimegamiDetail(slug: string): Promise<AnimeDetail> {
+  const json: any = await fetchJson(`${ANIME_BASE_URL}/nimegami/detail/${encodeURIComponent(slug)}`);
+  const data = json || {};
+  const d = data.detail || {};
+  const info = d.info || {};
+
+  // Parse genres
+  let genres: { title: string; id: string }[] = [];
+  if (info.genre) {
+    genres = info.genre
+      .split(',')
+      .map((g: string) => g.trim())
+      .filter(Boolean)
+      .map((g: string) => ({
+        title: g,
+        id: g.toLowerCase().replace(/\s+/g, '-'),
+      }));
+  }
+
+  // Parse episodes from streams_by_episode
+  const rawEps = Object.keys(data.streams_by_episode || {});
+  const getEpNum = (k: string) => {
+    const m = k.match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : 99999;
+  };
+
+  const episodeKeys = rawEps
+    .filter((k) => !k.toLowerCase().includes('batch'))
+    .sort((a, b) => getEpNum(a) - getEpNum(b));
+
+  const episodeList = episodeKeys.map((key) => ({
+    title: key,
+    episodeId: `${slug}__${encodeURIComponent(key)}`,
+  }));
+
+  // Parse batch download groups
+  const batchDownloads: { resolution: string; links: { host: string; url: string }[] }[] = [];
+  const rawDownloadGroups = data.download_groups || {};
+
+  for (const [groupTitle, groupItems] of Object.entries(rawDownloadGroups)) {
+    if (Array.isArray(groupItems) && groupItems.length > 0) {
+      batchDownloads.push({
+        resolution: groupTitle,
+        links: (groupItems as any[]).map((item: any) => ({
+          host: `${item.name || 'Download'} (${item.resolution || 'Direct'})`,
+          url: item.url,
+        })),
+      });
+    }
+  }
+
+  return {
+    id: slug,
+    title: d.title || slug,
+    poster: d.poster || '',
+    score: info.skor || info.score || '8.2',
+    japanese: info.judul_asli || info.japanese,
+    type: info.format || info.type || 'TV Series',
+    status: info.status || 'Finished Airing',
+    episodes: info.total_episode || episodeList.length || 'Full',
+    synopsis: d.synopsis || 'Tidak ada sinopsis.',
+    genres,
+    episodeList,
+    batchDownloads: batchDownloads.length > 0 ? batchDownloads : undefined,
+    provider: 'nimegami',
+  };
+}
+
+export async function getNimegamiEpisode(episodeId: string): Promise<AnimeEpisodeData> {
+  const [slug, epKeyRaw] = episodeId.split('__');
+  const epKey = decodeURIComponent(epKeyRaw || 'Episode 1');
+
+  const json: any = await fetchJson(`${ANIME_BASE_URL}/nimegami/detail/${encodeURIComponent(slug)}`);
+  const data = json || {};
+  const d = data.detail || {};
+  const streamsMap = data.streams_by_episode || {};
+
+  // Find stream items matching epKey, or fallback to first key
+  let streams = streamsMap[epKey] || [];
+  if ((!streams || streams.length === 0) && Object.keys(streamsMap).length > 0) {
+    const keys = Object.keys(streamsMap);
+    const matchedKey = keys.find((k) => k.toLowerCase() === epKey.toLowerCase()) || keys[0];
+    streams = streamsMap[matchedKey] || [];
+  }
+
+  // Build servers list grouped by quality
+  const serversByQuality = new Map<string, { title: string; serverId: string; href?: string }[]>();
+
+  for (const s of streams) {
+    const quality = s.resolution || 'Default';
+    if (!serversByQuality.has(quality)) {
+      serversByQuality.set(quality, []);
+    }
+    const sName = s.name && !s.name.includes('$undefined') ? s.name : 'Server Video';
+    serversByQuality.get(quality)!.push({
+      title: `${sName} (${quality})`,
+      serverId: `nimegami::${s.url}`,
+      href: s.url,
+    });
+  }
+
+  const servers = Array.from(serversByQuality.entries()).map(([quality, serverList]) => ({
+    quality,
+    serverList,
+  }));
+
+  // Build episode navigation
+  const getEpNum = (k: string) => {
+    const m = k.match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : 99999;
+  };
+  const allEpKeys = Object.keys(streamsMap)
+    .filter((k) => !k.toLowerCase().includes('batch'))
+    .sort((a, b) => getEpNum(a) - getEpNum(b));
+
+  const currentIdx = allEpKeys.indexOf(epKey);
+  const prevEpKey = currentIdx > 0 ? allEpKeys[currentIdx - 1] : null;
+  const nextEpKey = currentIdx >= 0 && currentIdx < allEpKeys.length - 1 ? allEpKeys[currentIdx + 1] : null;
+
+  const defaultStream = streams[0]?.url ? `nimegami::${streams[0].url}` : undefined;
+
+  // Single episode downloads if present in download_groups
+  const dlGroups = data.download_groups || {};
+  const epDlKey = Object.keys(dlGroups).find((k) => k.toLowerCase().includes(epKey.toLowerCase()));
+  const epDlItems = epDlKey ? dlGroups[epDlKey] : [];
+  const downloads = Array.isArray(epDlItems) && epDlItems.length > 0 ? [
+    {
+      quality: epKey,
+      urls: epDlItems.map((item: any) => ({
+        title: `${item.name || 'Download'} (${item.resolution || ''})`,
+        url: item.url,
+      })),
+    }
+  ] : [];
+
+  return {
+    title: `${d.title || slug} - ${epKey}`,
+    animeId: slug,
+    streamUrl: defaultStream,
+    hasPrev: Boolean(prevEpKey),
+    hasNext: Boolean(nextEpKey),
+    prevEpisodeId: prevEpKey ? `${slug}__${encodeURIComponent(prevEpKey)}` : null,
+    nextEpisodeId: nextEpKey ? `${slug}__${encodeURIComponent(nextEpKey)}` : null,
+    servers,
+    downloads,
+  };
+}
+
+/* ==================== KUSONIME (FULL BATCH DOWNLOADS) ==================== */
+
+export async function searchKusonime(query: string, page = 1): Promise<AnimeItem[]> {
+  try {
+    const json: any = await fetchJson(`${ANIME_BASE_URL}/kusonime/search/${encodeURIComponent(query)}?page=${page}`);
+    const list = json?.anime_list || [];
+    if (!Array.isArray(list)) return [];
+
+    return list.map((item: any) => ({
+      id: item.slug,
+      title: cleanAnimeTitle(item.title || item.slug),
+      poster: item.poster || '',
+      status: 'Batch',
+      type: 'Batch Download',
+      genres: Array.isArray(item.genres) ? item.genres.map((g: any) => g.name).join(', ') : undefined,
+      provider: 'kusonime' as const,
+    }));
+  } catch (err) {
+    console.warn('Kusonime search warning:', err);
+    return [];
+  }
+}
+
+export async function getKusonimeLatest(page = 1): Promise<{
+  animeList: AnimeItem[];
+  pagination: AnimePagination;
+}> {
+  const json: any = await fetchJson(`${ANIME_BASE_URL}/kusonime/latest?page=${page}`);
+  const rawList = json?.anime_list || [];
+
+  const list: AnimeItem[] = (Array.isArray(rawList) ? rawList : []).map((item: any) => ({
+    id: item.slug,
+    title: cleanAnimeTitle(item.title || item.slug),
+    poster: item.poster || '',
+    status: 'Batch',
+    type: 'Batch Download',
+    genres: Array.isArray(item.genres) ? item.genres.map((g: any) => g.name).join(', ') : undefined,
+    releasedOn: item.released,
+    provider: 'kusonime' as const,
+  }));
+
+  const pagination: AnimePagination = {
+    currentPage: page,
+    totalPages: 35,
+    hasPrevPage: page > 1,
+    hasNextPage: true,
+    prevPage: page > 1 ? page - 1 : null,
+    nextPage: page + 1,
+  };
+
+  return { animeList: list, pagination };
+}
+
+export async function getKusonimeDetail(slug: string): Promise<AnimeDetail> {
+  const json: any = await fetchJson(`${ANIME_BASE_URL}/kusonime/detail/${encodeURIComponent(slug)}`);
+  const d = json?.detail || {};
+  const info = d.info || {};
+
+  const genres = (d.genres || []).map((g: any) => ({
+    title: g.name,
+    id: g.slug || g.name.toLowerCase().replace(/\s+/g, '-'),
+  }));
+
+  const batchDownloads: { resolution: string; links: { host: string; url: string }[] }[] = [];
+  const rawDownloads = d.download_links || [];
+
+  for (const dl of rawDownloads) {
+    if (dl.links && Array.isArray(dl.links) && dl.links.length > 0) {
+      batchDownloads.push({
+        resolution: dl.resolution || 'Batch Download',
+        links: dl.links.map((lnk: any) => ({
+          host: lnk.host || 'Direct',
+          url: lnk.url,
+        })),
+      });
+    }
+  }
+
+  return {
+    id: slug,
+    title: cleanAnimeTitle(d.title || slug),
+    poster: d.poster || '',
+    score: info.score || '8.0',
+    japanese: info.japanese,
+    type: info.type || 'Batch Download',
+    status: info.status || 'Completed',
+    episodes: info.total_episode || 'Full Season',
+    duration: info.duration,
+    synopsis: d.synopsis || 'Tidak ada sinopsis.',
+    genres,
+    episodeList: [], // Batch anime has direct batch downloads
+    batchDownloads,
+    provider: 'kusonime',
+  };
+}
+
+/* ==================== MULTI-PROVIDER SEARCH ==================== */
+
+export async function searchAllAnime(query: string): Promise<{
+  otakudesu: AnimeItem[];
+  samehadaku: AnimeItem[];
+  nimegami: AnimeItem[];
+  kusonime: AnimeItem[];
+  all: AnimeItem[];
+}> {
+  if (!query || !query.trim()) {
+    return { otakudesu: [], samehadaku: [], nimegami: [], kusonime: [], all: [] };
+  }
+
+  const [otkRes, sameRes, nimeRes, kusoRes] = await Promise.allSettled([
+    searchOtakudesu(query),
+    searchSamehadaku(query),
+    searchNimegami(query),
+    searchKusonime(query),
+  ]);
+
+  const otakudesu = otkRes.status === 'fulfilled' ? otkRes.value : [];
+  const samehadaku = sameRes.status === 'fulfilled' ? sameRes.value : [];
+  const nimegami = nimeRes.status === 'fulfilled' ? nimeRes.value : [];
+  const kusonime = kusoRes.status === 'fulfilled' ? kusoRes.value : [];
+
+  // Combine and deduplicate
+  const seen = new Set<string>();
+  const all: AnimeItem[] = [];
+
+  for (const item of [...nimegami, ...otakudesu, ...samehadaku, ...kusonime]) {
+    const key = `${item.provider}-${item.id}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      all.push(item);
+    }
+  }
+
+  return {
+    otakudesu,
+    samehadaku,
+    nimegami,
+    kusonime,
+    all,
+  };
 }

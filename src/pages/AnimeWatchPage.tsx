@@ -23,8 +23,10 @@ import {
 import {
   getOtakudesuEpisode,
   getSamehadakuEpisode,
+  getNimegamiEpisode,
   getOtakudesuDetail,
   getSamehadakuDetail,
+  getNimegamiDetail,
   getAnimeServerUrl,
   getOtakudesuByGenre,
 } from '../services/animeApi';
@@ -46,19 +48,21 @@ function formatEpisodeName(rawTitle: string | number, fallbackSlug?: string): st
 
 export function AnimeWatchPage() {
   const { provider, episodeId } = useParams<{
-    provider: 'samehadaku' | 'otakudesu';
+    provider: 'samehadaku' | 'otakudesu' | 'nimegami';
     episodeId: string;
   }>();
   const navigate = useNavigate();
 
   const isSame = provider === 'samehadaku';
+  const isNime = provider === 'nimegami';
 
   const { data: episode, isLoading, error } = useQuery({
     queryKey: ['anime', 'episode', provider, episodeId],
-    queryFn: () =>
-      isSame
-        ? getSamehadakuEpisode(episodeId || '')
-        : getOtakudesuEpisode(episodeId || ''),
+    queryFn: () => {
+      if (isNime) return getNimegamiEpisode(episodeId || '');
+      if (isSame) return getSamehadakuEpisode(episodeId || '');
+      return getOtakudesuEpisode(episodeId || '');
+    },
     enabled: Boolean(episodeId),
   });
 
@@ -71,12 +75,18 @@ export function AnimeWatchPage() {
   const autoSelectedEpisodeRef = useRef<string>('');
 
   const { recordHistory, history } = useCategoryHistory('anime');
-  const animeId = episode?.animeId || (episodeId ? episodeId.split('-episode-')[0] : '');
+  const animeId =
+    episode?.animeId ||
+    (episodeId ? (episodeId.includes('__') ? episodeId.split('__')[0] : episodeId.split('-episode-')[0]) : '');
 
   // Query anime detail to get full episode list for quick navigation & drawer
   const { data: animeDetail } = useQuery({
     queryKey: ['anime', 'detail', provider, animeId],
-    queryFn: () => (isSame ? getSamehadakuDetail(animeId) : getOtakudesuDetail(animeId)),
+    queryFn: () => {
+      if (isNime) return getNimegamiDetail(animeId);
+      if (isSame) return getSamehadakuDetail(animeId);
+      return getOtakudesuDetail(animeId);
+    },
     enabled: Boolean(animeId),
   });
 
@@ -404,14 +414,28 @@ export function AnimeWatchPage() {
         )}
 
         {activeStream ? (
-          <iframe
-            key={`${activeStream}-${playerKey}`}
-            src={activeStream}
-            title={episode.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-            allowFullScreen
-            className="w-full h-full border-0"
-          />
+          activeStream.endsWith('.mp4') ||
+          activeStream.includes('.mp4?') ||
+          activeStream.includes('stream-stor') ||
+          activeStream.includes('berkasdrive.com/v/') ? (
+            <video
+              key={`${activeStream}-${playerKey}`}
+              src={activeStream}
+              controls
+              autoPlay
+              playsInline
+              className="w-full h-full object-contain bg-black"
+            />
+          ) : (
+            <iframe
+              key={`${activeStream}-${playerKey}`}
+              src={activeStream}
+              title={episode.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+              allowFullScreen
+              className="w-full h-full border-0"
+            />
+          )
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3">
             <Film className="w-12 h-12 text-slate-600" />
