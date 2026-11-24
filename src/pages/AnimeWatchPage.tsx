@@ -125,7 +125,19 @@ export function AnimeWatchPage() {
     setSwitchingServerName('');
   }, [episodeId]);
 
-  const activeStream = customStreamUrl || (!activeServerId ? episode?.streamUrl : '') || '';
+  const rawActive = customStreamUrl || (!activeServerId ? episode?.streamUrl : '') || '';
+  const activeStream = useMemo(() => {
+    if (!rawActive) return '';
+    let url = rawActive.trim();
+    if (url.startsWith('nimegami::')) {
+      url = url.replace('nimegami::', '').trim();
+    }
+    if (url.startsWith('mega-1080p::')) {
+      const megaRaw = url.replace('mega-1080p::', '').trim();
+      url = megaRaw.includes('mega.nz/file/') ? megaRaw.replace('mega.nz/file/', 'mega.nz/embed/') : megaRaw;
+    }
+    return url;
+  }, [rawActive]);
 
   const handleSelectServer = async (serverId: string, serverTitle: string) => {
     try {
@@ -146,9 +158,33 @@ export function AnimeWatchPage() {
       }
     } catch (err: any) {
       console.error('Server switch error:', err);
-      setSwitchError(`Gagal memuat server ${serverTitle}. Mengalihkan ke stream cadangan.`);
+
+      // Auto-fallback: If current server fails (common for retro anime),
+      // search for an alternative server in filteredServers and switch to it automatically!
+      let fallbackServer: { serverId: string; title: string; quality: string } | null = null;
+      if (filteredServers && filteredServers.length > 0) {
+        for (const q of filteredServers) {
+          const alt = q.serverList.find((s) => s.serverId !== serverId);
+          if (alt) {
+            fallbackServer = {
+              serverId: alt.serverId,
+              title: alt.title,
+              quality: q.quality,
+            };
+            break;
+          }
+        }
+      }
+
+      if (fallbackServer) {
+        setSwitchError(`Server ${serverTitle} sedang offline. Mengalihkan ke ${fallbackServer.title}...`);
+        handleSelectServer(fallbackServer.serverId, `${fallbackServer.quality} - ${fallbackServer.title}`);
+        return;
+      }
+
+      setSwitchError(`Gagal memuat server ${serverTitle}. Silakan coba server lain di bawah.`);
       if (episode?.streamUrl) {
-        setCustomStreamUrl(episode.streamUrl);
+        setCustomStreamUrl(episode.streamUrl.replace('nimegami::', ''));
       }
     } finally {
       setSwitchingServer(false);
@@ -199,17 +235,34 @@ export function AnimeWatchPage() {
       .slice(0, 12);
   }, [relatedAnimeData?.animeList, animeId]);
 
-  // Strict server whitelist: ONLY VidHide, Mega, and FileDon (plus Nimegami direct stream for retro anime)
+  // Server whitelist filter:
+  // For Otakudesu: strictly keep VidHide, FileDon, and Mega
+  // For retro/other providers (Samehadaku, Nimegami, etc.): allow VidHide, FileDon, Mega, plus all working stream alternatives (Kraken, Pixel, Blogger, FastStream, Berkasdrive, Server Video)
   const filteredServers = useMemo(() => {
     if (!episode?.servers) return [];
     const isAllowed = (title: string, serverId: string) => {
       const clean = (title + ' ' + serverId).toLowerCase();
+      if (provider === 'otakudesu') {
+        return clean.includes('vidhide') || clean.includes('mega') || clean.includes('filedon');
+      }
       return (
         clean.includes('vidhide') ||
         clean.includes('mega') ||
         clean.includes('filedon') ||
         clean.includes('nimegami') ||
-        serverId.startsWith('nimegami::')
+        clean.includes('kraken') ||
+        clean.includes('pixel') ||
+        clean.includes('blogger') ||
+        clean.includes('blogspot') ||
+        clean.includes('faststream') ||
+        clean.includes('premium') ||
+        clean.includes('wibufile') ||
+        clean.includes('berkasdrive') ||
+        clean.includes('server') ||
+        clean.includes('stream') ||
+        clean.includes('direct') ||
+        serverId.startsWith('nimegami::') ||
+        serverId.startsWith('http')
       );
     };
 
@@ -219,7 +272,7 @@ export function AnimeWatchPage() {
         serverList: (q.serverList || []).filter((srv) => isAllowed(srv.title, srv.serverId)),
       }))
       .filter((q) => q.serverList.length > 0);
-  }, [episode?.servers]);
+  }, [episode?.servers, provider]);
 
   // Auto-direct to VidHide server (or Mega/FileDon) as soon as user opens an episode
   useEffect(() => {
@@ -443,6 +496,7 @@ export function AnimeWatchPage() {
               controls
               autoPlay
               playsInline
+              {...({ referrerPolicy: 'no-referrer' } as any)}
               className="w-full h-full object-contain bg-black"
             />
           ) : (
@@ -450,6 +504,7 @@ export function AnimeWatchPage() {
               key={`${activeStream}-${playerKey}`}
               src={activeStream}
               title={episode.title}
+              referrerPolicy="no-referrer"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
               allowFullScreen
               className="w-full h-full border-0"

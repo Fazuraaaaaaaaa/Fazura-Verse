@@ -90,8 +90,8 @@ export async function getAnimeServerUrl(
   const json: any = await fetchJson(endpoint);
   const url = json?.data?.url || json?.url || '';
 
-  if (!url) {
-    throw new Error('Server URL tidak ditemukan dalam respon API.');
+  if (!url || (json?.message && json.message.toLowerCase().includes('error'))) {
+    throw new Error(json?.message || 'Server URL tidak ditemukan dalam respon API.');
   }
 
   return url;
@@ -518,10 +518,20 @@ export async function getSamehadakuEpisode(episodeId: string): Promise<AnimeEpis
   );
   const data = json?.data || {};
 
-  // Server whitelist: ONLY Mega, FileDon, and VidHide
+  // Server whitelist: VidHide, Mega, FileDon, PLUS stream alternatives for retro anime (Kraken, Pixel, Blogger, Premium)
   const isAllowedServer = (title: string): boolean => {
     const clean = (title || '').toLowerCase().trim();
-    return clean.includes('vidhide') || clean.includes('mega') || clean.includes('filedon');
+    return (
+      clean.includes('vidhide') ||
+      clean.includes('mega') ||
+      clean.includes('filedon') ||
+      clean.includes('kraken') ||
+      clean.includes('pixel') ||
+      clean.includes('blogspot') ||
+      clean.includes('blogger') ||
+      clean.includes('premium') ||
+      clean.includes('wibufile')
+    );
   };
 
   const formatServerTitle = (title: string) => {
@@ -529,6 +539,10 @@ export async function getSamehadakuEpisode(episodeId: string): Promise<AnimeEpis
     if (clean.includes('vidhide')) return 'VidHide';
     if (clean.includes('filedon')) return 'FileDon';
     if (clean.includes('mega')) return 'Mega';
+    if (clean.includes('kraken')) return 'KrakenFiles (Stream)';
+    if (clean.includes('pixel')) return 'PixelDrain (Stream)';
+    if (clean.includes('blogspot') || clean.includes('blogger')) return 'Blogger (Google Stream)';
+    if (clean.includes('premium') || clean.includes('wibufile')) return 'FastStream HD';
     return title.trim();
   };
 
@@ -551,6 +565,7 @@ export async function getSamehadakuEpisode(episodeId: string): Promise<AnimeEpis
       else if (qTitle.includes('720')) displayQuality = '720p (HD)';
       else if (qTitle.includes('480')) displayQuality = '480p (SD)';
       else if (qTitle.includes('360')) displayQuality = '360p (Hemat Data)';
+      else if (qTitle.toLowerCase().includes('unknown')) displayQuality = 'Multi-Server HD';
 
       const serverList = allowed.map((s: any) => ({
         title: formatServerTitle(s.title),
@@ -558,7 +573,7 @@ export async function getSamehadakuEpisode(episodeId: string): Promise<AnimeEpis
         href: s.href,
       }));
 
-      // Sort: VidHide first, then FileDon, then Mega
+      // Sort: VidHide first, then FileDon, then Mega, then direct streams
       serverList.sort((a: any, b: any) => {
         const aTitle = (a.title || '').toLowerCase();
         const bTitle = (b.title || '').toLowerCase();
@@ -566,7 +581,11 @@ export async function getSamehadakuEpisode(episodeId: string): Promise<AnimeEpis
           if (t.includes('vidhide')) return 1;
           if (t.includes('filedon')) return 2;
           if (t.includes('mega')) return 3;
-          return 4;
+          if (t.includes('faststream') || t.includes('premium')) return 4;
+          if (t.includes('blogger') || t.includes('blogspot')) return 5;
+          if (t.includes('kraken')) return 6;
+          if (t.includes('pixel')) return 7;
+          return 8;
         };
         return getPriority(aTitle) - getPriority(bTitle);
       });
@@ -807,14 +826,20 @@ export async function getSamehadakuByGenre(
 export async function searchNimegami(query: string): Promise<AnimeItem[]> {
   try {
     const cleanQ = encodeURIComponent(query.trim());
-    const [p1Res, p2Res] = await Promise.allSettled([
+    const [p1Res, p2Res, p3Res] = await Promise.allSettled([
       fetchJson(`${ANIME_BASE_URL}/nimegami/search/${cleanQ}?page=1`),
       fetchJson(`${ANIME_BASE_URL}/nimegami/search/${cleanQ}?page=2`),
+      fetchJson(`${ANIME_BASE_URL}/nimegami/search/${cleanQ}?page=3`),
     ]);
 
     const raw1 = p1Res.status === 'fulfilled' ? (p1Res.value as any)?.anime_list || [] : [];
     const raw2 = p2Res.status === 'fulfilled' ? (p2Res.value as any)?.anime_list || [] : [];
-    const combined = [...(Array.isArray(raw1) ? raw1 : []), ...(Array.isArray(raw2) ? raw2 : [])];
+    const raw3 = p3Res.status === 'fulfilled' ? (p3Res.value as any)?.anime_list || [] : [];
+    const combined = [
+      ...(Array.isArray(raw1) ? raw1 : []),
+      ...(Array.isArray(raw2) ? raw2 : []),
+      ...(Array.isArray(raw3) ? raw3 : []),
+    ];
 
     const seenSlugs = new Set<string>();
     const list: AnimeItem[] = [];
@@ -899,9 +924,22 @@ export async function getNimegamiDetail(slug: string): Promise<AnimeDetail> {
     return m ? parseInt(m[1], 10) : 99999;
   };
 
-  const episodeKeys = rawEps
+  let episodeKeys = rawEps
     .filter((k) => !k.toLowerCase().includes('batch'))
     .sort((a, b) => getEpNum(a) - getEpNum(b));
+
+  // FALLBACK: If streams_by_episode has no individual episodes (e.g. Inuyasha with only 'Batch Streams'),
+  // parse episode list from download_groups keys!
+  if (episodeKeys.length === 0 && data.download_groups) {
+    const dlKeys = Object.keys(data.download_groups);
+    episodeKeys = dlKeys
+      .filter((k) => !k.toLowerCase().includes('batch') && /episode\s*\d+/i.test(k))
+      .sort((a, b) => getEpNum(a) - getEpNum(b))
+      .map((k) => {
+        const m = k.match(/Episode\s*(\d+)/i);
+        return m ? `Episode ${m[1]}` : k;
+      });
+  }
 
   const episodeList = episodeKeys.map((key) => ({
     title: key,
@@ -949,6 +987,7 @@ export async function getNimegamiEpisode(episodeId: string): Promise<AnimeEpisod
   const data = json || {};
   const d = data.detail || {};
   const streamsMap = data.streams_by_episode || {};
+  const dlGroups = data.download_groups || {};
 
   // Find stream items matching epKey, or fallback to first key
   let streams = streamsMap[epKey] || [];
@@ -974,6 +1013,23 @@ export async function getNimegamiEpisode(episodeId: string): Promise<AnimeEpisod
     });
   }
 
+  // Also include episode download/stream items from download_groups if available
+  const epDlKey = Object.keys(dlGroups).find((k) => k.toLowerCase().includes(epKey.toLowerCase()));
+  const epDlItems = epDlKey ? dlGroups[epDlKey] : [];
+  if (Array.isArray(epDlItems) && epDlItems.length > 0) {
+    for (const item of epDlItems) {
+      const quality = item.resolution || 'Direct Stream';
+      if (!serversByQuality.has(quality)) {
+        serversByQuality.set(quality, []);
+      }
+      serversByQuality.get(quality)!.push({
+        title: `${item.name || 'Stream / Download'} (${quality})`,
+        serverId: `nimegami::${item.url}`,
+        href: item.url,
+      });
+    }
+  }
+
   const servers = Array.from(serversByQuality.entries()).map(([quality, serverList]) => ({
     quality,
     serverList,
@@ -984,20 +1040,27 @@ export async function getNimegamiEpisode(episodeId: string): Promise<AnimeEpisod
     const m = k.match(/(\d+)/);
     return m ? parseInt(m[1], 10) : 99999;
   };
-  const allEpKeys = Object.keys(streamsMap)
+  let allEpKeys = Object.keys(streamsMap)
     .filter((k) => !k.toLowerCase().includes('batch'))
     .sort((a, b) => getEpNum(a) - getEpNum(b));
+
+  if (allEpKeys.length === 0 && data.download_groups) {
+    allEpKeys = Object.keys(data.download_groups)
+      .filter((k) => !k.toLowerCase().includes('batch') && /episode\s*\d+/i.test(k))
+      .sort((a, b) => getEpNum(a) - getEpNum(b))
+      .map((k) => {
+        const m = k.match(/Episode\s*(\d+)/i);
+        return m ? `Episode ${m[1]}` : k;
+      });
+  }
 
   const currentIdx = allEpKeys.indexOf(epKey);
   const prevEpKey = currentIdx > 0 ? allEpKeys[currentIdx - 1] : null;
   const nextEpKey = currentIdx >= 0 && currentIdx < allEpKeys.length - 1 ? allEpKeys[currentIdx + 1] : null;
 
-  const defaultStream = streams[0]?.url ? `nimegami::${streams[0].url}` : undefined;
+  const firstUrl = streams[0]?.url || (epDlItems[0]?.url) || '';
+  const defaultStream = firstUrl ? `nimegami::${firstUrl}` : undefined;
 
-  // Single episode downloads if present in download_groups
-  const dlGroups = data.download_groups || {};
-  const epDlKey = Object.keys(dlGroups).find((k) => k.toLowerCase().includes(epKey.toLowerCase()));
-  const epDlItems = epDlKey ? dlGroups[epDlKey] : [];
   const downloads = Array.isArray(epDlItems) && epDlItems.length > 0 ? [
     {
       quality: epKey,

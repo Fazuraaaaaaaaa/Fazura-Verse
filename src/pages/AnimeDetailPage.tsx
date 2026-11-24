@@ -339,7 +339,7 @@ export function AnimeDetailPage() {
                 </Link>
               ) : firstEpisode ? (
                 <Link
-                  to={`/anime/watch/${provider || 'otakudesu'}/${firstEpisode.episodeId}`}
+                  to={`/anime/watch/${anime.provider || provider || 'otakudesu'}/${firstEpisode.episodeId}`}
                   className="flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-accent-primary hover:bg-accent-primary/90 text-white font-black text-xs sm:text-sm shadow-lg shadow-accent-primary/25 transition-all transform hover:scale-[1.02] text-center"
                 >
                   <Play className="w-4 h-4 fill-white" />
@@ -521,7 +521,7 @@ export function AnimeDetailPage() {
               return (
                 <Link
                   key={ep.episodeId}
-                  to={`/anime/watch/${provider || 'otakudesu'}/${ep.episodeId}`}
+                  to={`/anime/watch/${anime.provider || provider || 'otakudesu'}/${ep.episodeId}`}
                   className={`flex items-center justify-between p-3.5 rounded-xl border transition-all group ${
                     isWatched
                       ? 'bg-surface/50 border-white/5 hover:border-accent-primary/40 opacity-80 hover:opacity-100'

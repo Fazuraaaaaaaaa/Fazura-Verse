@@ -6,6 +6,19 @@ export default async function handler(req, res) {
       return;
     }
 
+    // If already direct video or stream, return immediately
+    if (
+      targetUrl.endsWith('.mp4') ||
+      targetUrl.includes('.mp4?') ||
+      targetUrl.includes('stream-stor') ||
+      targetUrl.includes('berkasdrive.com/v/')
+    ) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.status(200).json({ success: true, streamUrl: targetUrl });
+      return;
+    }
+
     const upstream = await fetch(targetUrl, {
       headers: {
         'User-Agent':
@@ -16,12 +29,13 @@ export default async function handler(req, res) {
     const text = await upstream.text();
     let streamUrl = targetUrl;
 
-    const part = text.split('data-src=')[1];
-    if (part) {
-      const quote = part[0];
-      const direct = part.slice(1).split(quote)[0];
-      if (direct && direct.startsWith('http')) {
-        streamUrl = direct;
+    const dataSrcMatch = text.match(/data-src=["']([^"']+)["']/i);
+    if (dataSrcMatch && dataSrcMatch[1] && dataSrcMatch[1].startsWith('http')) {
+      streamUrl = dataSrcMatch[1];
+    } else {
+      const iframeMatch = text.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+      if (iframeMatch && iframeMatch[1] && iframeMatch[1].startsWith('http')) {
+        streamUrl = iframeMatch[1];
       }
     }
 
