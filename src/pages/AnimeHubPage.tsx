@@ -56,7 +56,6 @@ export function AnimeHubPage() {
   const [selectedDay, setSelectedDay] = useState<string>('Senin');
   const [searchInput, setSearchInput] = useState(searchParam);
   const [jumpPageInput, setJumpPageInput] = useState('');
-  const [searchFilter, setSearchFilter] = useState<'all' | 'otakudesu' | 'nimegami' | 'kusonime' | 'samehadaku'>('all');
 
   const { bookmarks, removeBookmark } = useCategoryBookmarks('anime');
   const { history, clearHistory, removeHistoryItem } = useCategoryHistory('anime');
@@ -184,13 +183,8 @@ export function AnimeHubPage() {
   }
 
   const displayedSearchResults = React.useMemo(() => {
-    if (!searchResults) return [];
-    if (searchFilter === 'otakudesu') return searchResults.otakudesu;
-    if (searchFilter === 'nimegami') return searchResults.nimegami;
-    if (searchFilter === 'kusonime') return searchResults.kusonime;
-    if (searchFilter === 'samehadaku') return searchResults.samehadaku;
-    return searchResults.all;
-  }, [searchResults, searchFilter]);
+    return searchResults?.all || [];
+  }, [searchResults]);
 
   const topGenreChips = [
     'action',
@@ -414,73 +408,9 @@ export function AnimeHubPage() {
                 Hasil Pencarian: "<span className="text-amber-400">{searchParam}</span>"
               </h2>
               <p className="text-xs text-text-secondary">
-                Ditemukan {searchResults?.all.length || 0} judul dari Otakudesu, Nimegami Klasik, Kusonime Batch, dan Samehadaku
+                Ditemukan {displayedSearchResults.length} judul anime
               </p>
             </div>
-
-            {/* Provider Filter Chips */}
-            {searchResults && searchResults.all.length > 0 && (
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                <button
-                  onClick={() => setSearchFilter('all')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                    searchFilter === 'all'
-                      ? 'bg-amber-500 text-black border-amber-400'
-                      : 'bg-[#111622] hover:bg-slate-800 text-slate-300 border-white/10'
-                  }`}
-                >
-                  Semua ({searchResults.all.length})
-                </button>
-                {searchResults.nimegami.length > 0 && (
-                  <button
-                    onClick={() => setSearchFilter('nimegami')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                      searchFilter === 'nimegami'
-                        ? 'bg-amber-600 text-white border-amber-400 shadow-sm'
-                        : 'bg-[#111622] hover:bg-slate-800 text-amber-300 border-white/10'
-                    }`}
-                  >
-                    Nimegami Klasik ({searchResults.nimegami.length})
-                  </button>
-                )}
-                {searchResults.kusonime.length > 0 && (
-                  <button
-                    onClick={() => setSearchFilter('kusonime')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                      searchFilter === 'kusonime'
-                        ? 'bg-cyan-600 text-white border-cyan-400 shadow-sm'
-                        : 'bg-[#111622] hover:bg-slate-800 text-cyan-300 border-white/10'
-                    }`}
-                  >
-                    Kusonime Batch ({searchResults.kusonime.length})
-                  </button>
-                )}
-                {searchResults.otakudesu.length > 0 && (
-                  <button
-                    onClick={() => setSearchFilter('otakudesu')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                      searchFilter === 'otakudesu'
-                        ? 'bg-purple-600 text-white border-purple-400 shadow-sm'
-                        : 'bg-[#111622] hover:bg-slate-800 text-purple-300 border-white/10'
-                    }`}
-                  >
-                    Otakudesu ({searchResults.otakudesu.length})
-                  </button>
-                )}
-                {searchResults.samehadaku.length > 0 && (
-                  <button
-                    onClick={() => setSearchFilter('samehadaku')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                      searchFilter === 'samehadaku'
-                        ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm'
-                        : 'bg-[#111622] hover:bg-slate-800 text-emerald-300 border-white/10'
-                    }`}
-                  >
-                    Samehadaku ({searchResults.samehadaku.length})
-                  </button>
-                )}
-              </div>
-            )}
           </div>
 
           {searchLoading ? (

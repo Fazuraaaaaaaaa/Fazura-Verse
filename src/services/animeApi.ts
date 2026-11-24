@@ -162,32 +162,24 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
   const json: any = await fetchJson(`${ANIME_BASE_URL}/episode/${encodeURIComponent(episodeId)}`);
   const data = json?.data || {};
 
-  const isExcludedServer = (title: string): boolean => {
-    const clean = (title || '').toLowerCase().replace(/[\s\-_]/g, '');
-    return (
-      clean.includes('odstream') ||
-      clean.includes('ondesu') ||
-      clean.includes('odcdn') ||
-      clean.includes('ocdcn')
-    );
+  // Server whitelist: ONLY Mega, FileDon, and VidHide
+  const isAllowedServer = (title: string): boolean => {
+    const clean = (title || '').toLowerCase().trim();
+    return clean.includes('vidhide') || clean.includes('mega') || clean.includes('filedon');
   };
 
   const formatServerTitle = (title: string) => {
     const clean = (title || '').trim().toLowerCase();
-    if (clean === 'blogs') return 'Blogspot (Google Video)';
-    if (clean === 'mega') return 'Mega.nz';
-    if (clean === 'vidhide') return 'VidHide';
-    if (clean === 'filedon') return 'FileDon';
-    if (clean === 'odstream') return 'ODStream HD';
-    if (clean === 'odcdn') return 'ODCDN';
-    if (clean === 'ondesu2hd') return 'OnDesu HD';
+    if (clean.includes('vidhide')) return 'VidHide';
+    if (clean.includes('filedon')) return 'FileDon';
+    if (clean.includes('mega')) return 'Mega';
     return title.trim();
   };
 
   const rawQualities = data?.server?.qualities || [];
   const servers: { quality: string; serverList: { title: string; serverId: string; href?: string }[] }[] = [];
 
-  // Extract 1080p Mega link from downloadUrl qualities
+  // Extract 1080p Mega link from downloadUrl qualities if present
   const q1080 = (data?.downloadUrl?.qualities || []).find((q: any) =>
     (q.title || '').toLowerCase().includes('1080')
   );
@@ -208,23 +200,6 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
     });
   }
 
-  // Extract blogs / Blogspot server from Otakudesu qualities (Blogger video stream is 360p resolution)
-  let blogspotServer: { title: string; serverId: string; href?: string } | null = null;
-  for (const q of rawQualities) {
-    const found = (q.serverList || []).find((s: any) => {
-      const t = (s.title || '').toLowerCase().trim();
-      return t === 'blogs' || t.includes('blogspot') || t.includes('blogger');
-    });
-    if (found) {
-      blogspotServer = {
-        title: 'Blogspot 360p',
-        serverId: found.serverId,
-        href: found.href,
-      };
-      break;
-    }
-  }
-
   // Sort other qualities descending (720p, 480p, 360p)
   const sortedQualities = [...rawQualities].sort((a: any, b: any) => {
     const numA = parseInt(a.title) || 0;
@@ -239,41 +214,27 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
     else if (qTitle.includes('480')) displayQuality = '480p (SD)';
     else if (qTitle.includes('360')) displayQuality = '360p (Hemat Data)';
 
-    // Filter out 'blogs' from 480p or other qualities because Blogspot is 360p,
-    // and filter out ODStream, ondesuhd/OnDesu, and OCDCN/ODCDN as requested.
-    let serverList = (q.serverList || [])
-      .filter((s: any) => {
-        const t = (s.title || '').toLowerCase().trim();
-        if (t === 'blogs' || t.includes('blogspot') || t.includes('blogger')) {
-          return false;
-        }
-        if (isExcludedServer(s.title)) {
-          return false;
-        }
-        return true;
-      })
+    // Filter serverList to ONLY VidHide, FileDon, and Mega
+    const serverList = (q.serverList || [])
+      .filter((s: any) => isAllowedServer(s.title))
       .map((s: any) => ({
         title: formatServerTitle(s.title),
         serverId: s.serverId,
         href: s.href,
-      }))
-      .filter((s: any) => !isExcludedServer(s.title));
+      }));
 
-    // If this quality is 360p, place Blogspot 360p first!
-    if (qTitle.includes('360') && blogspotServer) {
-      serverList = [blogspotServer, ...serverList];
-    }
-
-    // Prioritize VidHide as the first server in 720p quality
-    if (qTitle.includes('720')) {
-      serverList.sort((a: any, b: any) => {
-        const aVid = (a.title || '').toLowerCase().includes('vidhide');
-        const bVid = (b.title || '').toLowerCase().includes('vidhide');
-        if (aVid && !bVid) return -1;
-        if (!aVid && bVid) return 1;
-        return 0;
-      });
-    }
+    // Prioritize VidHide first, then FileDon, then Mega
+    serverList.sort((a: any, b: any) => {
+      const aTitle = (a.title || '').toLowerCase();
+      const bTitle = (b.title || '').toLowerCase();
+      const getPriority = (t: string) => {
+        if (t.includes('vidhide')) return 1;
+        if (t.includes('filedon')) return 2;
+        if (t.includes('mega')) return 3;
+        return 4;
+      };
+      return getPriority(aTitle) - getPriority(bTitle);
+    });
 
     if (serverList.length > 0) {
       servers.push({
@@ -281,15 +242,6 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
         serverList,
       });
     }
-  }
-
-  // If 360p was not present in raw qualities but blogspotServer exists, append 360p
-  const has360 = servers.some((s) => s.quality.includes('360'));
-  if (!has360 && blogspotServer) {
-    servers.push({
-      quality: '360p (Hemat Data)',
-      serverList: [blogspotServer],
-    });
   }
 
   const downloads = (data?.downloadUrl?.qualities || []).map((d: any) => ({
@@ -566,22 +518,62 @@ export async function getSamehadakuEpisode(episodeId: string): Promise<AnimeEpis
   );
   const data = json?.data || {};
 
-  // Parse Samehadaku server qualities: ONLY KEEP BLOGSPOT (delete all other servers as requested)
+  // Server whitelist: ONLY Mega, FileDon, and VidHide
+  const isAllowedServer = (title: string): boolean => {
+    const clean = (title || '').toLowerCase().trim();
+    return clean.includes('vidhide') || clean.includes('mega') || clean.includes('filedon');
+  };
+
+  const formatServerTitle = (title: string) => {
+    const clean = (title || '').trim().toLowerCase();
+    if (clean.includes('vidhide')) return 'VidHide';
+    if (clean.includes('filedon')) return 'FileDon';
+    if (clean.includes('mega')) return 'Mega';
+    return title.trim();
+  };
+
   const rawServers = data?.server?.qualities || [];
   const servers: { quality: string; serverList: { title: string; serverId: string; href?: string }[] }[] = [];
 
-  for (const q of rawServers) {
-    const blogspotServers = (q.serverList || []).filter((s: any) =>
-      (s.title || '').toLowerCase().includes('blogspot') || (s.title || '').toLowerCase().includes('blogger')
-    );
-    if (blogspotServers.length > 0) {
+  // Sort raw qualities descending
+  const sortedQualities = [...rawServers].sort((a: any, b: any) => {
+    const numA = parseInt(a.title) || 0;
+    const numB = parseInt(b.title) || 0;
+    return numB - numA;
+  });
+
+  for (const q of sortedQualities) {
+    const allowed = (q.serverList || []).filter((s: any) => isAllowedServer(s.title));
+    if (allowed.length > 0) {
+      const qTitle = (q.title || '').trim();
+      let displayQuality = qTitle;
+      if (qTitle.includes('1080')) displayQuality = '1080p (Full HD)';
+      else if (qTitle.includes('720')) displayQuality = '720p (HD)';
+      else if (qTitle.includes('480')) displayQuality = '480p (SD)';
+      else if (qTitle.includes('360')) displayQuality = '360p (Hemat Data)';
+
+      const serverList = allowed.map((s: any) => ({
+        title: formatServerTitle(s.title),
+        serverId: s.serverId,
+        href: s.href,
+      }));
+
+      // Sort: VidHide first, then FileDon, then Mega
+      serverList.sort((a: any, b: any) => {
+        const aTitle = (a.title || '').toLowerCase();
+        const bTitle = (b.title || '').toLowerCase();
+        const getPriority = (t: string) => {
+          if (t.includes('vidhide')) return 1;
+          if (t.includes('filedon')) return 2;
+          if (t.includes('mega')) return 3;
+          return 4;
+        };
+        return getPriority(aTitle) - getPriority(bTitle);
+      });
+
       servers.push({
-        quality: '360p (Hemat Data)',
-        serverList: blogspotServers.map((s: any) => ({
-          title: 'Blogspot 360p',
-          serverId: s.serverId,
-          href: s.href,
-        })),
+        quality: displayQuality,
+        serverList,
       });
     }
   }
@@ -1112,6 +1104,25 @@ export async function getKusonimeDetail(slug: string): Promise<AnimeDetail> {
 
 /* ==================== MULTI-PROVIDER SEARCH ==================== */
 
+/**
+ * Clean & normalize anime title for deduplication comparison
+ */
+export function normalizeTitleForDeduplication(title: string): string {
+  if (!title) return '';
+  return title
+    .toLowerCase()
+    .replace(/\s+(season|s)\s*\d+/gi, '')
+    .replace(/\s+(part|p)\s*\d+/gi, '')
+    .replace(/\s+(episode|eps|ep)\s*\d+.*$/gi, '')
+    .replace(/\s+batch.*$/gi, '')
+    .replace(/\s+movie.*$/gi, '')
+    .replace(/\s+bd.*$/gi, '')
+    .replace(/\s+sub\s*indo.*$/gi, '')
+    .replace(/\s+subtitle\s*indonesia.*$/gi, '')
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+}
+
 export async function searchAllAnime(query: string): Promise<{
   otakudesu: AnimeItem[];
   samehadaku: AnimeItem[];
@@ -1135,16 +1146,30 @@ export async function searchAllAnime(query: string): Promise<{
   const nimegami = nimeRes.status === 'fulfilled' ? nimeRes.value : [];
   const kusonime = kusoRes.status === 'fulfilled' ? kusoRes.value : [];
 
-  // Combine and deduplicate
-  const seen = new Set<string>();
+  // Master Rule: Otakudesu is the primary master database.
+  // 1. Add all Otakudesu items first and track their normalized titles.
+  // 2. For items from other providers (Nimegami, Kusonime, Samehadaku):
+  //    - If already exists in Otakudesu -> DO NOT ADD ("kalau ada di otakudesu langsung jangan ditambahin")
+  //    - If missing in Otakudesu (e.g. classic/retro anime like Slam Dunk, GTO, etc.) -> IMMEDIATELY ADD ("kalau belum ada anime yang ada di otakudesu segera tambahin")
   const all: AnimeItem[] = [];
+  const seenKeys = new Set<string>();
 
-  for (const item of [...nimegami, ...otakudesu, ...samehadaku, ...kusonime]) {
-    const key = `${item.provider}-${item.id}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      all.push(item);
+  for (const item of otakudesu) {
+    const key = normalizeTitleForDeduplication(item.title);
+    if (key) seenKeys.add(key);
+    all.push(item);
+  }
+
+  for (const item of [...nimegami, ...kusonime, ...samehadaku]) {
+    const key = normalizeTitleForDeduplication(item.title);
+    if (key && seenKeys.has(key)) {
+      // Already exists in Otakudesu master or earlier provider -> do not add duplicate
+      continue;
     }
+    if (key) {
+      seenKeys.add(key);
+    }
+    all.push(item);
   }
 
   return {

@@ -199,28 +199,29 @@ export function AnimeWatchPage() {
       .slice(0, 12);
   }, [relatedAnimeData?.animeList, animeId]);
 
-  // Filter out unwanted servers (ODStream HD, ondesuhd/OnDesu, and OCDCN/ODCDN)
+  // Strict server whitelist: ONLY VidHide, Mega, and FileDon (plus Nimegami direct stream for retro anime)
   const filteredServers = useMemo(() => {
     if (!episode?.servers) return [];
-    const isExcluded = (title: string) => {
-      const clean = (title || '').toLowerCase().replace(/[\s\-_]/g, '');
+    const isAllowed = (title: string, serverId: string) => {
+      const clean = (title + ' ' + serverId).toLowerCase();
       return (
-        clean.includes('odstream') ||
-        clean.includes('ondesu') ||
-        clean.includes('odcdn') ||
-        clean.includes('ocdcn')
+        clean.includes('vidhide') ||
+        clean.includes('mega') ||
+        clean.includes('filedon') ||
+        clean.includes('nimegami') ||
+        serverId.startsWith('nimegami::')
       );
     };
 
     return episode.servers
       .map((q) => ({
         ...q,
-        serverList: (q.serverList || []).filter((srv) => !isExcluded(srv.title)),
+        serverList: (q.serverList || []).filter((srv) => isAllowed(srv.title, srv.serverId)),
       }))
       .filter((q) => q.serverList.length > 0);
   }, [episode?.servers]);
 
-  // Auto-direct to VidHide 720p server as soon as user opens an episode
+  // Auto-direct to VidHide server (or Mega/FileDon) as soon as user opens an episode
   useEffect(() => {
     if (!episode || !filteredServers || filteredServers.length === 0 || !episodeId) return;
 
@@ -271,6 +272,15 @@ export function AnimeWatchPage() {
         serverId: q720.serverList[0].serverId,
         title: q720.serverList[0].title,
         quality: q720.quality,
+      };
+    }
+
+    // Priority 4: Fallback to first available server in filteredServers (e.g. Mega, FileDon, Nimegami)
+    if (!targetServer && filteredServers.length > 0 && filteredServers[0].serverList.length > 0) {
+      targetServer = {
+        serverId: filteredServers[0].serverList[0].serverId,
+        title: filteredServers[0].serverList[0].title,
+        quality: filteredServers[0].quality,
       };
     }
 
@@ -465,7 +475,7 @@ export function AnimeWatchPage() {
         ) : (
           <span className="text-text-muted flex items-center gap-1.5">
             <Info className="w-3.5 h-3.5 text-accent-soft shrink-0" />
-            Pilih resolusi dan server di bawah (1080p, 720p HD, 480p SD, 360p).
+            Pilih resolusi dan server resmi: VidHide, Mega, dan FileDon.
           </span>
         )}
 
