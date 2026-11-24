@@ -272,10 +272,12 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
 export function cleanAnimeTitle(rawTitle: string): string {
   if (!rawTitle) return '';
   return rawTitle
+    .replace(/\s*\[?\bBatch\b\]?.*$/gi, '')
     .replace(/\s+(Episode|Eps|Ep\.?)\s+\d+.*$/i, '')
-    .replace(/\s+Batch.*$/i, '')
     .replace(/\s+Subtitle\s+Indonesia.*$/i, '')
     .replace(/\s+Sub\s+Indo.*$/i, '')
+    .replace(/\s*\[\s*END\s*\]/gi, '')
+    .replace(/\s*\[\s*BD\s*\]/gi, '')
     .trim();
 }
 
@@ -1120,8 +1122,8 @@ export async function searchKusonime(query: string): Promise<AnimeItem[]> {
         id: item.slug,
         title: cleanAnimeTitle(item.title || item.slug),
         poster: item.poster || '',
-        status: 'Batch',
-        type: 'Batch Download',
+        status: 'Completed',
+        type: 'Series',
         genres: Array.isArray(item.genres) ? item.genres.map((g: any) => g.name).join(', ') : undefined,
         provider: 'kusonime' as const,
       });
@@ -1145,8 +1147,8 @@ export async function getKusonimeLatest(page = 1): Promise<{
     id: item.slug,
     title: cleanAnimeTitle(item.title || item.slug),
     poster: item.poster || '',
-    status: 'Batch',
-    type: 'Batch Download',
+    status: 'Completed',
+    type: 'Series',
     genres: Array.isArray(item.genres) ? item.genres.map((g: any) => g.name).join(', ') : undefined,
     releasedOn: item.released,
     provider: 'kusonime' as const,
@@ -1195,7 +1197,7 @@ export async function getKusonimeDetail(slug: string): Promise<AnimeDetail> {
     poster: d.poster || '',
     score: info.score || '8.0',
     japanese: info.japanese,
-    type: info.type || 'Batch Download',
+    type: info.type || 'Series',
     status: info.status || 'Completed',
     episodes: info.total_episode || 'Full Season',
     duration: info.duration,

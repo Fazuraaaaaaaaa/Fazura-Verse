@@ -41,24 +41,22 @@ export function AnimeGridCard({ anime }: AnimeGridCardProps) {
         )}
 
         {/* Episode or Status Badge */}
-        {anime.episodes ? (
+        {anime.episodes && !String(anime.episodes).toLowerCase().includes('batch') ? (
           <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider shadow">
             {typeof anime.episodes === 'number' ? `Ep ${anime.episodes}` : anime.episodes}
           </div>
-        ) : anime.status ? (
+        ) : anime.status && !anime.status.toLowerCase().includes('batch') ? (
           <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-black/80 text-slate-200 text-[10px] font-bold border border-white/10 shadow">
             {anime.status}
           </div>
         ) : null}
 
         {/* Provider Tag */}
-        {anime.provider && (
+        {anime.provider && anime.provider !== 'kusonime' && (
           <div
             className={`absolute bottom-2 left-2 z-10 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shadow backdrop-blur-md ${
               anime.provider === 'nimegami'
                 ? 'bg-amber-600/90 text-white border border-amber-400/40'
-                : anime.provider === 'kusonime'
-                ? 'bg-cyan-600/90 text-white border border-cyan-400/40'
                 : anime.provider === 'samehadaku'
                 ? 'bg-emerald-600/90 text-white border border-emerald-400/40'
                 : 'bg-purple-600/80 text-white border border-purple-400/30'
@@ -66,8 +64,6 @@ export function AnimeGridCard({ anime }: AnimeGridCardProps) {
           >
             {anime.provider === 'nimegami'
               ? 'Klasik'
-              : anime.provider === 'kusonime'
-              ? 'Batch'
               : anime.provider === 'samehadaku'
               ? 'Samehada'
               : 'Otaku'}

@@ -877,7 +877,7 @@ function AnimeGridCard({
 
   return (
     <Link
-      to={`/anime/detail/otakudesu/${anime.id}`}
+      to={`/anime/detail/${anime.provider || 'otakudesu'}/${anime.id}`}
       className="group relative flex flex-col rounded-2xl overflow-hidden bg-[#111622] border border-white/5 hover:border-amber-500/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-amber-500/10"
     >
       <div className="relative aspect-[3/4] w-full bg-slate-900 overflow-hidden">
@@ -900,12 +900,12 @@ function AnimeGridCard({
           </div>
         )}
 
-        {/* Episode or Status Badge */}
-        {anime.episodes ? (
+        {/* Episode or Status Badge (Batch text filtered out) */}
+        {anime.episodes && !String(anime.episodes).toLowerCase().includes('batch') ? (
           <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider shadow">
             {typeof anime.episodes === 'number' ? `Ep ${anime.episodes}` : anime.episodes}
           </div>
-        ) : anime.status ? (
+        ) : anime.status && !anime.status.toLowerCase().includes('batch') ? (
           <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-black/80 text-slate-200 text-[10px] font-bold border border-white/10 shadow">
             {anime.status}
           </div>
@@ -928,7 +928,13 @@ function AnimeGridCard({
         </h3>
 
         <div className="flex items-center justify-between text-[11px] text-slate-400">
-          <span>{anime.type || (anime.releaseDay ? `Rilis ${anime.releaseDay}` : 'Otakudesu')}</span>
+          <span>
+            {anime.type && !anime.type.toLowerCase().includes('batch')
+              ? anime.type
+              : anime.releaseDay
+              ? `Rilis ${anime.releaseDay}`
+              : 'Series'}
+          </span>
           {anime.releasedOn && <span>{anime.releasedOn}</span>}
         </div>
       </div>

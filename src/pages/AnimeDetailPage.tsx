@@ -254,7 +254,7 @@ export function AnimeDetailPage() {
                 }`}
               >
                 <Tv className="w-3.5 h-3.5" />
-                Server: {provider === 'nimegami' ? 'NIMEGAMI (KLASIK)' : provider === 'kusonime' ? 'KUSONIME (BATCH)' : (provider || 'samehadaku').toUpperCase()}
+                Server: {provider === 'nimegami' ? 'NIMEGAMI (KLASIK)' : provider === 'kusonime' ? 'KUSONIME' : (provider || 'samehadaku').toUpperCase()}
               </span>
               {anime.type && (
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-surface-elevated text-slate-300 border border-white/8">
