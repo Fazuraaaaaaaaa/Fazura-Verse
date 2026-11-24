@@ -1016,12 +1016,12 @@ export async function getNimegamiEpisode(episodeId: string): Promise<AnimeEpisod
   const streamsMap = data.streams_by_episode || {};
   const dlGroups = data.download_groups || {};
 
-  // Find stream items matching epKey, or fallback to first key
+  // Find stream items matching epKey - strictly ignore batch streams
   let streams = streamsMap[epKey] || [];
-  if ((!streams || streams.length === 0) && Object.keys(streamsMap).length > 0) {
-    const keys = Object.keys(streamsMap);
-    const matchedKey = keys.find((k) => k.toLowerCase() === epKey.toLowerCase()) || keys[0];
-    streams = streamsMap[matchedKey] || [];
+  if (!streams || streams.length === 0) {
+    const keys = Object.keys(streamsMap).filter((k) => !k.toLowerCase().includes('batch'));
+    const matchedKey = keys.find((k) => k.toLowerCase() === epKey.toLowerCase());
+    streams = matchedKey ? streamsMap[matchedKey] || [] : [];
   }
 
   // Build servers list grouped by quality
