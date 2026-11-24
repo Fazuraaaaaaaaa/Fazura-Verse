@@ -334,6 +334,46 @@ export function cleanAnimeSlug(rawSlug: string): string {
     .trim();
 }
 
+/**
+ * Filter list of known anime that do not have playable video streaming servers
+ * (e.g. only 404 batch links or external locker download links).
+ * Rule: "kalau servernya gaada hilangin posternya yaa"
+ */
+const UNSTREAMABLE_ANIME_SLUGS = new Set([
+  'inuyasha-sub-indo-1',
+  'inuyasha-sub-indo',
+  'yu-yu-hakusho-sub-indo',
+  'hunter-x-hunter-1999-sub-indo',
+  'rurouni-kenshin-sub-indo',
+  'great-teacher-onizuka-sub-indo',
+  'ranma-12-sub-indo',
+]);
+
+export function isBatchOrUnstreamableAnime(item: {
+  id?: string;
+  slug?: string;
+  animeId?: string;
+  title?: string;
+  type?: string;
+  status?: string;
+  episodes?: string | number;
+}): boolean {
+  const idStr = String(item.id || item.slug || item.animeId || '').toLowerCase().trim();
+  const titleStr = String(item.title || '').toLowerCase().trim();
+  const typeStr = String(item.type || '').toLowerCase().trim();
+  const statusStr = String(item.status || '').toLowerCase().trim();
+  const epStr = String(item.episodes || '').toLowerCase().trim();
+
+  if (UNSTREAMABLE_ANIME_SLUGS.has(idStr)) return true;
+  if (idStr.includes('-batch') || idStr.includes('batch-') || idStr.endsWith('-bd-batch')) return true;
+  if (/\bbatch\b/i.test(titleStr) || titleStr.includes('[batch]') || titleStr.includes('(batch)')) return true;
+  if (typeStr.includes('batch')) return true;
+  if (statusStr.includes('batch')) return true;
+  if (epStr.includes('batch')) return true;
+
+  return false;
+}
+
 export async function searchOtakudesu(query: string): Promise<AnimeItem[]> {
   try {
     const json: any = await fetchJson(`${ANIME_BASE_URL}/search/${encodeURIComponent(query)}`);
@@ -343,6 +383,9 @@ export async function searchOtakudesu(query: string): Promise<AnimeItem[]> {
     const seriesMap = new Map<string, AnimeItem>();
 
     for (const item of list) {
+      if (isBatchOrUnstreamableAnime({ animeId: item.animeId, title: item.title })) {
+        continue;
+      }
       const cleanTitle = cleanAnimeTitle(item.title || '');
       const key = cleanTitle.toLowerCase();
       if (!seriesMap.has(key)) {
@@ -682,6 +725,17 @@ export async function searchSamehadaku(query: string): Promise<AnimeItem[]> {
       const rawTitle = item.title || '';
       const rawId = item.animeId || '';
 
+      if (
+        isBatchOrUnstreamableAnime({
+          animeId: rawId,
+          title: rawTitle,
+          type: item.type,
+          status: item.status,
+        })
+      ) {
+        continue;
+      }
+
       const cleanTitle = cleanAnimeTitle(rawTitle);
       const cleanId = cleanAnimeSlug(rawId);
 
@@ -893,6 +947,18 @@ export async function searchNimegami(query: string): Promise<AnimeItem[]> {
       if (seenSlugs.has(item.slug)) continue;
       seenSlugs.add(item.slug);
 
+      if (
+        isBatchOrUnstreamableAnime({
+          slug: item.slug,
+          title: item.title,
+          type: item.type,
+          status: item.status,
+          episodes: item.episode,
+        })
+      ) {
+        continue;
+      }
+
       list.push({
         id: item.slug,
         title: cleanAnimeTitle(item.title || item.slug),
@@ -920,6 +986,16 @@ export async function getNimegamiHome(page = 1): Promise<{
 
   const list: AnimeItem[] = (Array.isArray(rawList) ? rawList : [])
     .filter((item: any) => item.slug && !item.slug.startsWith('#') && item.title && !item.title.startsWith('#'))
+    .filter(
+      (item: any) =>
+        !isBatchOrUnstreamableAnime({
+          slug: item.slug,
+          title: item.title,
+          type: item.type,
+          status: item.status,
+          episodes: item.episode,
+        })
+    )
     .map((item: any) => ({
       id: item.slug,
       title: cleanAnimeTitle(item.title || item.slug),
@@ -968,22 +1044,9 @@ export async function getNimegamiDetail(slug: string): Promise<AnimeDetail> {
     return m ? parseInt(m[1], 10) : 99999;
   };
 
-  let episodeKeys = rawEps
+  const episodeKeys = rawEps
     .filter((k) => !k.toLowerCase().includes('batch'))
     .sort((a, b) => getEpNum(a) - getEpNum(b));
-
-  // FALLBACK: If streams_by_episode has no individual episodes (e.g. Inuyasha with only 'Batch Streams'),
-  // parse episode list from download_groups keys!
-  if (episodeKeys.length === 0 && data.download_groups) {
-    const dlKeys = Object.keys(data.download_groups);
-    episodeKeys = dlKeys
-      .filter((k) => !k.toLowerCase().includes('batch') && /episode\s*\d+/i.test(k))
-      .sort((a, b) => getEpNum(a) - getEpNum(b))
-      .map((k) => {
-        const m = k.match(/Episode\s*(\d+)/i);
-        return m ? `Episode ${m[1]}` : k;
-      });
-  }
 
   const episodeList = episodeKeys.map((key) => ({
     title: key,
@@ -1251,24 +1314,29 @@ export async function searchAllAnime(query: string): Promise<{
     return { otakudesu: [], samehadaku: [], nimegami: [], kusonime: [], all: [] };
   }
 
-  const [otkRes, sameRes, nimeRes, kusoRes] = await Promise.allSettled([
+  const [otkRes, sameRes, nimeRes] = await Promise.allSettled([
     searchOtakudesu(query),
     searchSamehadaku(query),
     searchNimegami(query),
-    searchKusonime(query),
   ]);
 
-  const otakudesu = otkRes.status === 'fulfilled' ? otkRes.value : [];
-  const samehadaku = sameRes.status === 'fulfilled' ? sameRes.value : [];
-  const nimegami = nimeRes.status === 'fulfilled' ? nimeRes.value : [];
-  const kusonime = kusoRes.status === 'fulfilled' ? kusoRes.value : [];
+  const otakudesu = (otkRes.status === 'fulfilled' ? otkRes.value : []).filter(
+    (item) => !isBatchOrUnstreamableAnime(item)
+  );
+  const samehadaku = (sameRes.status === 'fulfilled' ? sameRes.value : []).filter(
+    (item) => !isBatchOrUnstreamableAnime(item)
+  );
+  const nimegami = (nimeRes.status === 'fulfilled' ? nimeRes.value : []).filter(
+    (item) => !isBatchOrUnstreamableAnime(item)
+  );
 
   // Master Rule: Otakudesu is the primary master database.
   // 1. Add all Otakudesu items first and track their normalized titles.
   // 2. Add Samehadaku items (high-quality streaming anime with VidHide, Mega, FileDon, Blogspot).
   // 3. Add Nimegami items (classic/retro anime with direct streaming servers).
-  // 4. Do NOT add Kusonime batch archives to 'all': Kusonime has 0 playable video servers.
+  // 4. Do NOT include batch-only or unstreamable anime posters:
   //    "kalo gaada server untuk memutar vid animenya jangan dikasi poster"
+  //    "kalau servernya gaada hilangin posternya yaa"
   const all: AnimeItem[] = [];
   const seenKeys = new Set<string>();
 
@@ -1295,7 +1363,7 @@ export async function searchAllAnime(query: string): Promise<{
     otakudesu,
     samehadaku,
     nimegami,
-    kusonime,
+    kusonime: [],
     all,
   };
 }

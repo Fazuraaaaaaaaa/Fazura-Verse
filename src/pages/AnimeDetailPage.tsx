@@ -65,20 +65,15 @@ export function AnimeDetailPage() {
         if (provider === 'samehadaku') return await getSamehadakuDetail(id || '');
         return await getOtakudesuDetail(id || '');
       } catch (err) {
-        // Smart fallback: If primary provider returns error, attempt Nimegami -> Kusonime -> Samehadaku
-        if (provider !== 'nimegami') {
-          try {
-            return await getNimegamiDetail(id || '');
-          } catch {}
-        }
-        if (provider !== 'kusonime') {
-          try {
-            return await getKusonimeDetail(id || '');
-          } catch {}
-        }
+        // Smart fallback: If primary provider returns error, attempt Samehadaku -> Nimegami
         if (provider !== 'samehadaku') {
           try {
             return await getSamehadakuDetail(id || '');
+          } catch {}
+        }
+        if (provider !== 'nimegami') {
+          try {
+            return await getNimegamiDetail(id || '');
           } catch {}
         }
         throw err;
@@ -494,7 +489,15 @@ export function AnimeDetailPage() {
           </div>
         )}
       </section>
-      ) : null}
+      ) : (
+        <section className="p-8 rounded-2xl bg-[#111622] border border-white/5 text-center space-y-3">
+          <Film className="w-10 h-10 text-slate-500 mx-auto" />
+          <h3 className="text-base font-bold text-white">Server Video Streaming Belum Tersedia</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            Anime ini saat ini belum memiliki server pemutar video streaming langsung di FazuraStream. Silakan tonton serial anime lainnya yang tersedia di katalog.
+          </p>
+        </section>
+      )}
 
       {/* Rekomendasi Terkait Sesuai Genre Anime */}
       {relatedAnimeList.length > 0 && (

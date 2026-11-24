@@ -86,15 +86,22 @@ export function AnimeGridCard({ anime }: AnimeGridCardProps) {
           {anime.title}
         </h3>
 
-        {anime.genres && (
-          <p className="text-[10px] text-slate-400 truncate">
-            {typeof anime.genres === 'string'
-              ? anime.genres
-              : Array.isArray(anime.genres)
-              ? anime.genres.map((g: any) => g.title || g).join(', ')
-              : ''}
-          </p>
-        )}
+        <div className="flex items-center justify-between text-[11px] text-slate-400">
+          <span className="truncate">
+            {anime.type && !anime.type.toLowerCase().includes('batch')
+              ? anime.type
+              : anime.releaseDay
+              ? `Rilis ${anime.releaseDay}`
+              : anime.genres
+              ? typeof anime.genres === 'string'
+                ? anime.genres
+                : Array.isArray(anime.genres)
+                ? anime.genres.map((g: any) => g.title || g).join(', ')
+                : 'Series'
+              : 'Series'}
+          </span>
+          {anime.releasedOn && <span className="shrink-0 ml-1">{anime.releasedOn}</span>}
+        </div>
       </div>
     </Link>
   );
