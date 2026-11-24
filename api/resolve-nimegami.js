@@ -26,8 +26,17 @@ export default async function handler(req, res) {
       },
     });
 
+    if (!upstream.ok) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.status(upstream.status).json({
+        success: false,
+        error: `Server upstream mengembalikan status ${upstream.status} (Halaman streaming tidak ditemukan).`,
+      });
+      return;
+    }
+
     const text = await upstream.text();
-    let streamUrl = targetUrl;
+    let streamUrl = null;
 
     const dataSrcMatch = text.match(/data-src=["']([^"']+)["']/i);
     if (dataSrcMatch && dataSrcMatch[1] && dataSrcMatch[1].startsWith('http')) {
@@ -37,6 +46,20 @@ export default async function handler(req, res) {
       if (iframeMatch && iframeMatch[1] && iframeMatch[1].startsWith('http')) {
         streamUrl = iframeMatch[1];
       }
+    }
+
+    // Prohibit returning nimegami.id URLs because of SAMEORIGIN
+    if (streamUrl && (streamUrl.includes('nimegami.id') || streamUrl.includes('nimegami.com'))) {
+      streamUrl = null;
+    }
+
+    if (!streamUrl) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.status(404).json({
+        success: false,
+        error: 'Tidak ditemukan video stream langsung atau embed player eksternal yang kompatibel.',
+      });
+      return;
     }
 
     res.setHeader('Access-Control-Allow-Origin', '*');

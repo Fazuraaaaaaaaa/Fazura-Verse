@@ -126,16 +126,45 @@ export function AnimeWatchPage() {
     setSwitchingServerName('');
   }, [episodeId]);
 
+  const isIframeableStream = (url?: string): boolean => {
+    if (!url) return false;
+    const u = url.toLowerCase();
+    // nimegami.id, kusonime, etc. NEVER allow iframe embedding due to SAMEORIGIN
+    if (u.includes('nimegami.id') || u.includes('nimegami.com') || u.includes('kusonime')) {
+      return false;
+    }
+    return true;
+  };
+
+  const isDirectVideoStream = (url?: string): boolean => {
+    if (!url) return false;
+    const u = url.toLowerCase();
+    return (
+      u.endsWith('.mp4') ||
+      u.includes('.mp4?') ||
+      u.includes('stream-stor') ||
+      u.includes('berkasdrive.com/v/')
+    );
+  };
+
   const rawActive = customStreamUrl || (!activeServerId ? episode?.streamUrl : '') || '';
   const activeStream = useMemo(() => {
     if (!rawActive) return '';
     let url = rawActive.trim();
     if (url.startsWith('nimegami::')) {
-      url = url.replace('nimegami::', '').trim();
+      const bare = url.replace('nimegami::', '').trim();
+      if (isDirectVideoStream(bare)) {
+        return bare;
+      }
+      return '';
     }
     if (url.startsWith('mega-1080p::')) {
       const megaRaw = url.replace('mega-1080p::', '').trim();
       url = megaRaw.includes('mega.nz/file/') ? megaRaw.replace('mega.nz/file/', 'mega.nz/embed/') : megaRaw;
+    }
+    // Block any nimegami.id web page from being rendered as an iframe
+    if (!isDirectVideoStream(url) && !isIframeableStream(url)) {
+      return '';
     }
     return url;
   }, [rawActive]);
@@ -152,10 +181,10 @@ export function AnimeWatchPage() {
         serverId
       );
 
-      if (realEmbedUrl) {
+      if (realEmbedUrl && (isDirectVideoStream(realEmbedUrl) || isIframeableStream(realEmbedUrl))) {
         setCustomStreamUrl(realEmbedUrl);
       } else {
-        throw new Error('URL stream tidak ditemukan');
+        throw new Error('Server video ini tidak dapat disematkan langsung (SAMEORIGIN / Offline).');
       }
     } catch (err: any) {
       console.error('Server switch error:', err);
@@ -165,7 +194,7 @@ export function AnimeWatchPage() {
       let fallbackServer: { serverId: string; title: string; quality: string } | null = null;
       if (filteredServers && filteredServers.length > 0) {
         for (const q of filteredServers) {
-          const alt = q.serverList.find((s) => s.serverId !== serverId);
+          const alt = q.serverList.find((s) => s.serverId !== serverId && !s.serverId.includes('24cc680f41c3842cd179'));
           if (alt) {
             fallbackServer = {
               serverId: alt.serverId,
@@ -183,10 +212,11 @@ export function AnimeWatchPage() {
         return;
       }
 
-      setSwitchError(`Gagal memuat server ${serverTitle}. Silakan coba server lain di bawah.`);
-      if (episode?.streamUrl) {
-        setCustomStreamUrl(episode.streamUrl.replace('nimegami::', ''));
-      }
+      setSwitchError(
+        err?.message ||
+        `Gagal memuat server ${serverTitle}. Silakan coba server lain di bawah.`
+      );
+      setCustomStreamUrl('');
     } finally {
       setSwitchingServer(false);
       setSwitchingServerName('');
@@ -476,50 +506,103 @@ export function AnimeWatchPage() {
       </div>
 
       {/* Video Player Frame */}
-      <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl">
-        {switchingServer && (
-          <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center space-y-2">
-            <Loader2 className="w-8 h-8 text-accent-primary animate-spin" />
-            <p className="text-xs text-text-primary font-medium">
-              {switchingServerName ? `Menghubungkan ke ${switchingServerName}...` : 'Beralih server video...'}
+      {filteredServers.length === 0 && !activeStream ? (
+        <div className="w-full rounded-2xl overflow-hidden bg-[#0d121d] border border-white/10 shadow-2xl p-8 sm:p-12 text-center space-y-4">
+          <AlertCircle className="w-12 h-12 text-amber-400 mx-auto" />
+          <div className="space-y-1.5 max-w-md mx-auto">
+            <h2 className="text-base sm:text-lg font-bold text-white font-heading">
+              Server Pemutar Belum Tersedia untuk Episode Ini
+            </h2>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              Episode ini saat ini belum memiliki server video langsung yang dapat diputar di browser.
+              {episode.downloads && episode.downloads.length > 0
+                ? ' Anda dapat mengunduh video melalui daftar tautan unduhan di bawah.'
+                : ' Silakan pilih episode lain atau periksa provider lain.'}
             </p>
           </div>
-        )}
+          {episode.downloads && episode.downloads.length > 0 && (
+            <div className="pt-2">
+              <a
+                href="#downloads"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-primary hover:bg-accent-primary/90 text-white font-bold text-xs transition-all shadow-md shadow-accent-primary/20"
+              >
+                <Download className="w-4 h-4" />
+                Lihat Tautan Unduhan Episode
+              </a>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl">
+          {switchingServer && (
+            <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center space-y-2">
+              <Loader2 className="w-8 h-8 text-accent-primary animate-spin" />
+              <p className="text-xs text-text-primary font-medium">
+                {switchingServerName ? `Menghubungkan ke ${switchingServerName}...` : 'Beralih server video...'}
+              </p>
+            </div>
+          )}
 
-        {activeStream ? (
-          activeStream.endsWith('.mp4') ||
-          activeStream.includes('.mp4?') ||
-          activeStream.includes('stream-stor') ||
-          activeStream.includes('berkasdrive.com/v/') ? (
-            <video
-              key={`${activeStream}-${playerKey}`}
-              src={activeStream}
-              controls
-              autoPlay
-              playsInline
-              {...({ referrerPolicy: 'no-referrer' } as any)}
-              className="w-full h-full object-contain bg-black"
-            />
+          {activeStream ? (
+            isDirectVideoStream(activeStream) ? (
+              <video
+                key={`${activeStream}-${playerKey}`}
+                src={activeStream}
+                controls
+                autoPlay
+                playsInline
+                {...({ referrerPolicy: 'no-referrer' } as any)}
+                className="w-full h-full object-contain bg-black"
+              />
+            ) : isIframeableStream(activeStream) ? (
+              <iframe
+                key={`${activeStream}-${playerKey}`}
+                src={activeStream}
+                title={episode.title}
+                referrerPolicy="no-referrer"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                allowFullScreen
+                className="w-full h-full border-0"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3 bg-[#0d121d]">
+                <AlertCircle className="w-10 h-10 text-amber-400" />
+                <div className="space-y-1 max-w-md">
+                  <p className="text-sm font-bold text-white">
+                    Server Memerlukan Pembukaan di Tab Baru
+                  </p>
+                  <p className="text-xs text-text-secondary leading-relaxed">
+                    Server video upstream menerapkan proteksi SAMEORIGIN sehingga tidak dapat disematkan langsung di dalam frame website. Anda dapat membukanya langsung di tab baru.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                  <a
+                    href={activeStream}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent-primary hover:bg-accent-primary/90 text-white font-bold text-xs shadow-md shadow-accent-primary/20"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Buka Video di Tab Baru
+                  </a>
+                </div>
+              </div>
+            )
           ) : (
-            <iframe
-              key={`${activeStream}-${playerKey}`}
-              src={activeStream}
-              title={episode.title}
-              referrerPolicy="no-referrer"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-              allowFullScreen
-              className="w-full h-full border-0"
-            />
-          )
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3">
-            <Film className="w-12 h-12 text-slate-600" />
-            <p className="text-sm text-text-secondary">
-              Pilih salah satu server atau kualitas di bawah untuk mulai menonton.
-            </p>
-          </div>
-        )}
-      </div>
+            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3 bg-[#0d121d]">
+              <Film className="w-12 h-12 text-slate-600" />
+              <div className="space-y-1 max-w-md mx-auto">
+                <p className="text-sm font-semibold text-text-primary">
+                  {switchError || 'Pilih salah satu server atau kualitas di bawah untuk mulai menonton.'}
+                </p>
+                <p className="text-xs text-text-muted">
+                  Server streaming resmi FazuraStream: VidHide, Mega, FileDon, dan Video HD.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* External Player link fallback & errors */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">

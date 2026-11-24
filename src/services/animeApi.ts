@@ -41,24 +41,66 @@ export async function getAnimeServerUrl(
   // Handle direct URLs or Nimegami synthetic server
   if (serverId.startsWith('nimegami::')) {
     const rawUrl = serverId.replace('nimegami::', '').trim();
-    if (rawUrl.endsWith('.mp4') || rawUrl.includes('stream-stor') || rawUrl.includes('berkasdrive.com/v/')) {
+    if (
+      rawUrl.endsWith('.mp4') ||
+      rawUrl.includes('.mp4?') ||
+      rawUrl.includes('stream-stor') ||
+      rawUrl.includes('berkasdrive.com/v/')
+    ) {
       return rawUrl;
     }
     try {
       const res = await fetch(`/api/resolve-nimegami?url=${encodeURIComponent(rawUrl)}`);
       if (res.ok) {
         const json = await res.json();
-        if (json.success && json.streamUrl) {
+        if (
+          json.success &&
+          json.streamUrl &&
+          !json.streamUrl.includes('nimegami.id') &&
+          !json.streamUrl.includes('nimegami.com')
+        ) {
           return json.streamUrl;
         }
       }
     } catch (e) {
       console.warn('Nimegami resolver proxy warning:', e);
     }
-    return rawUrl;
+    throw new Error(
+      'Server Nimegami tidak dapat disematkan langsung (SAMEORIGIN / Offline). Silakan coba server lain atau gunakan unduhan.'
+    );
   }
   if (serverId.startsWith('http://') || serverId.startsWith('https://')) {
-    return serverId.trim();
+    const trimmed = serverId.trim();
+    if (trimmed.includes('nimegami.id') || trimmed.includes('nimegami.com')) {
+      if (
+        trimmed.endsWith('.mp4') ||
+        trimmed.includes('.mp4?') ||
+        trimmed.includes('stream-stor') ||
+        trimmed.includes('berkasdrive.com/v/')
+      ) {
+        return trimmed;
+      }
+      try {
+        const res = await fetch(`/api/resolve-nimegami?url=${encodeURIComponent(trimmed)}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (
+            json.success &&
+            json.streamUrl &&
+            !json.streamUrl.includes('nimegami.id') &&
+            !json.streamUrl.includes('nimegami.com')
+          ) {
+            return json.streamUrl;
+          }
+        }
+      } catch (e) {
+        console.warn('Nimegami direct resolver proxy warning:', e);
+      }
+      throw new Error(
+        'Server Nimegami tidak dapat disematkan langsung (SAMEORIGIN / Offline). Silakan coba server lain.'
+      );
+    }
+    return trimmed;
   }
 
   // Handle synthetic Mega 1080p server
@@ -1253,9 +1295,10 @@ export async function searchAllAnime(query: string): Promise<{
 
   // Master Rule: Otakudesu is the primary master database.
   // 1. Add all Otakudesu items first and track their normalized titles.
-  // 2. For items from other providers (Nimegami, Kusonime, Samehadaku):
-  //    - If already exists in Otakudesu -> DO NOT ADD ("kalau ada di otakudesu langsung jangan ditambahin")
-  //    - If missing in Otakudesu (e.g. classic/retro anime like Slam Dunk, GTO, etc.) -> IMMEDIATELY ADD ("kalau belum ada anime yang ada di otakudesu segera tambahin")
+  // 2. Add Samehadaku items (high-quality streaming anime with VidHide, Mega, FileDon, Blogspot).
+  // 3. Add Nimegami items (classic/retro anime with direct streaming servers).
+  // 4. Do NOT add Kusonime batch archives to 'all': Kusonime has 0 playable video servers.
+  //    "kalo gaada server untuk memutar vid animenya jangan dikasi poster"
   const all: AnimeItem[] = [];
   const seenKeys = new Set<string>();
 
@@ -1265,7 +1308,8 @@ export async function searchAllAnime(query: string): Promise<{
     all.push(item);
   }
 
-  for (const item of [...nimegami, ...kusonime, ...samehadaku]) {
+  // Prioritize Samehadaku before Nimegami for working streams and deduplication
+  for (const item of [...samehadaku, ...nimegami]) {
     const key = normalizeTitleForDeduplication(item.title);
     if (key && seenKeys.has(key)) {
       // Already exists in Otakudesu master or earlier provider -> do not add duplicate

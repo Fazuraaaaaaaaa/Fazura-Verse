@@ -215,7 +215,7 @@ export function AnimeHubPage() {
               FAZURASTREAM <span className="text-amber-400">ANIME</span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-              Koleksi ribuan serial anime Ongoing, Tamat (67 halaman), dan 36 genre, diperkaya arsip Anime Klasik/Jadul (Nimegami) dan Batch Download (Kusonime). Streaming multi-server kualitas HD dan unduhan batch instan.
+              Koleksi ribuan serial anime Ongoing, Tamat (67 halaman), dan 36 genre, diperkaya arsip Anime Klasik/Jadul (Nimegami) dan Samehadaku. Streaming multi-server kualitas HD (VidHide, Mega, FileDon).
             </p>
           </div>
 
@@ -233,7 +233,7 @@ export function AnimeHubPage() {
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Cari anime modern, jadul/klasik, atau batch (e.g. Slam Dunk, Dragon Ball, GTO)..."
+              placeholder="Cari anime modern atau jadul/klasik (e.g. Slam Dunk, Dragon Ball, One Piece)..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="w-full pl-10 pr-24 py-3 text-xs sm:text-sm bg-[#0b0e14] border border-white/10 focus:border-amber-500 rounded-xl text-white placeholder-slate-400 focus:outline-none shadow-inner"
