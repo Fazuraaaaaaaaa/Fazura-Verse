@@ -19,8 +19,6 @@ import {
   Sparkles,
   Share2,
   Layers,
-  Download,
-  ExternalLink,
 } from 'lucide-react';
 import {
   getOtakudesuDetail,
@@ -345,14 +343,6 @@ export function AnimeDetailPage() {
                   <Play className="w-4 h-4 fill-white" />
                   Mulai Nonton {formatEpisodeName(firstEpisode.title, firstEpisode.episodeId)}
                 </Link>
-              ) : anime.batchDownloads && anime.batchDownloads.length > 0 ? (
-                <a
-                  href="#batch-downloads"
-                  className="flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-black text-xs sm:text-sm shadow-lg shadow-cyan-500/25 transition-all transform hover:scale-[1.02] text-center"
-                >
-                  <Download className="w-4 h-4" />
-                  Unduh Full Season Batch
-                </a>
               ) : null}
 
               {/* Bookmark Toggle */}
@@ -413,61 +403,6 @@ export function AnimeDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* Batch Downloads Section (Kusonime & Nimegami) */}
-      {anime.batchDownloads && anime.batchDownloads.length > 0 && (
-        <section id="batch-downloads" className="space-y-4 pt-2">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-black text-white font-heading flex items-center gap-2">
-                <Download className="w-5 h-5 text-cyan-400" />
-                <span>Unduh Batch Full Season</span>
-              </h2>
-              <p className="text-xs text-text-secondary mt-0.5">
-                Download langsung paket full series via Google Drive, Mega, Acefile, dan server lainnya.
-              </p>
-            </div>
-            <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 self-start sm:self-auto">
-              {anime.batchDownloads.length} Opsi Paket
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            {anime.batchDownloads.map((group, idx) => (
-              <div
-                key={idx}
-                className="p-4 sm:p-5 rounded-2xl bg-surface border border-white/10 hover:border-cyan-500/30 transition-all space-y-3"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                    {group.resolution}
-                  </h3>
-                  <span className="text-[11px] text-text-muted">
-                    {group.links.length} Server Host
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  {group.links.map((link, lIdx) => (
-                    <a
-                      key={lIdx}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-surface-elevated hover:bg-cyan-500 hover:text-black text-slate-200 border border-white/10 hover:border-cyan-400 transition-all shadow-sm hover:scale-[1.02]"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>{link.host}</span>
-                      <ExternalLink className="w-3 h-3 opacity-60" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Episode Directory */}
       {anime.episodeList && anime.episodeList.length > 0 ? (

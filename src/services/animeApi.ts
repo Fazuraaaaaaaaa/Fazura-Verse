@@ -990,22 +990,6 @@ export async function getNimegamiDetail(slug: string): Promise<AnimeDetail> {
     episodeId: `${slug}__${encodeURIComponent(key)}`,
   }));
 
-  // Parse batch download groups
-  const batchDownloads: { resolution: string; links: { host: string; url: string }[] }[] = [];
-  const rawDownloadGroups = data.download_groups || {};
-
-  for (const [groupTitle, groupItems] of Object.entries(rawDownloadGroups)) {
-    if (Array.isArray(groupItems) && groupItems.length > 0) {
-      batchDownloads.push({
-        resolution: groupTitle,
-        links: (groupItems as any[]).map((item: any) => ({
-          host: `${item.name || 'Download'} (${item.resolution || 'Direct'})`,
-          url: item.url,
-        })),
-      });
-    }
-  }
-
   return {
     id: slug,
     title: d.title || slug,
@@ -1018,7 +1002,6 @@ export async function getNimegamiDetail(slug: string): Promise<AnimeDetail> {
     synopsis: d.synopsis || 'Tidak ada sinopsis.',
     genres,
     episodeList,
-    batchDownloads: batchDownloads.length > 0 ? batchDownloads : undefined,
     provider: 'nimegami',
   };
 }
