@@ -60,11 +60,31 @@ export function AnimeDetailPage() {
 
   const { data: anime, isLoading, error } = useQuery({
     queryKey: ['anime', 'detail', provider, id],
-    queryFn: () => {
-      if (provider === 'nimegami') return getNimegamiDetail(id || '');
-      if (provider === 'kusonime') return getKusonimeDetail(id || '');
-      if (provider === 'samehadaku') return getSamehadakuDetail(id || '');
-      return getOtakudesuDetail(id || '');
+    queryFn: async () => {
+      try {
+        if (provider === 'nimegami') return await getNimegamiDetail(id || '');
+        if (provider === 'kusonime') return await getKusonimeDetail(id || '');
+        if (provider === 'samehadaku') return await getSamehadakuDetail(id || '');
+        return await getOtakudesuDetail(id || '');
+      } catch (err) {
+        // Smart fallback: If primary provider returns error, attempt Nimegami -> Kusonime -> Samehadaku
+        if (provider !== 'nimegami') {
+          try {
+            return await getNimegamiDetail(id || '');
+          } catch {}
+        }
+        if (provider !== 'kusonime') {
+          try {
+            return await getKusonimeDetail(id || '');
+          } catch {}
+        }
+        if (provider !== 'samehadaku') {
+          try {
+            return await getSamehadakuDetail(id || '');
+          } catch {}
+        }
+        throw err;
+      }
     },
     enabled: Boolean(id),
   });

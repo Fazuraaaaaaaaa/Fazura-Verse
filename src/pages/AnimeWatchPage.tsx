@@ -58,10 +58,19 @@ export function AnimeWatchPage() {
 
   const { data: episode, isLoading, error } = useQuery({
     queryKey: ['anime', 'episode', provider, episodeId],
-    queryFn: () => {
-      if (isNime) return getNimegamiEpisode(episodeId || '');
-      if (isSame) return getSamehadakuEpisode(episodeId || '');
-      return getOtakudesuEpisode(episodeId || '');
+    queryFn: async () => {
+      try {
+        if (isNime || episodeId?.includes('__')) return await getNimegamiEpisode(episodeId || '');
+        if (isSame) return await getSamehadakuEpisode(episodeId || '');
+        return await getOtakudesuEpisode(episodeId || '');
+      } catch (err) {
+        if (!isNime && episodeId?.includes('__')) {
+          try {
+            return await getNimegamiEpisode(episodeId || '');
+          } catch {}
+        }
+        throw err;
+      }
     },
     enabled: Boolean(episodeId),
   });
