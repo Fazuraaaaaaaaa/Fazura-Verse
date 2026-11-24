@@ -233,7 +233,7 @@ export function AnimeHubPage() {
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Cari anime modern, jadul/klasik, atau batch (e.g. Slam Dunk, GTO, Naruto)..."
+              placeholder="Cari anime modern, jadul/klasik, atau batch (e.g. Slam Dunk, Dragon Ball, GTO)..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="w-full pl-10 pr-24 py-3 text-xs sm:text-sm bg-[#0b0e14] border border-white/10 focus:border-amber-500 rounded-xl text-white placeholder-slate-400 focus:outline-none shadow-inner"
@@ -246,6 +246,43 @@ export function AnimeHubPage() {
             </button>
           </div>
         </form>
+
+        {/* Quick Retro Anime Suggestions */}
+        <div className="mt-4 flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="text-amber-400 font-bold flex items-center gap-1 shrink-0 mr-1 text-[11px] uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5" />
+            Anime Lawas / Klasik:
+          </span>
+          {[
+            'Dragon Ball',
+            'Slam Dunk',
+            'Naruto Kecil',
+            'Inuyasha',
+            'Yu Yu Hakusho',
+            'Hunter x Hunter',
+            'Detective Conan',
+            'Digimon',
+            'Gundam',
+            'Sailor Moon',
+            'Initial D',
+            'Captain Tsubasa',
+            'Saint Seiya',
+            'Cowboy Bebop',
+            'Evangelion',
+          ].map((title) => (
+            <button
+              key={title}
+              type="button"
+              onClick={() => {
+                setSearchInput(title);
+                setSearchParams({ search: title });
+              }}
+              className="px-2.5 py-1 rounded-lg bg-[#0b0e14]/80 hover:bg-amber-500 hover:text-black text-slate-300 font-semibold transition-all text-[11px] border border-white/10 hover:border-amber-400 shadow-sm"
+            >
+              {title}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 2. Quick Genre Filter Chips */}
@@ -273,6 +310,17 @@ export function AnimeHubPage() {
             }`}
           >
             Semua Anime
+          </button>
+
+          <button
+            onClick={() => {
+              setSearchInput('Dragon Ball');
+              setSearchParams({ search: 'Dragon Ball' });
+            }}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all border bg-gradient-to-r from-amber-600/30 to-amber-500/20 hover:from-amber-600/50 hover:to-amber-500/40 text-amber-300 border-amber-500/40 shadow-sm flex items-center gap-1.5"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            🔥 Koleksi Anime Lawas & Klasik
           </button>
 
           {topGenreChips.map((chip) => {

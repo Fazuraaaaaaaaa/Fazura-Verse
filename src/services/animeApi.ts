@@ -806,13 +806,25 @@ export async function getSamehadakuByGenre(
 
 export async function searchNimegami(query: string): Promise<AnimeItem[]> {
   try {
-    const json: any = await fetchJson(`${ANIME_BASE_URL}/nimegami/search/${encodeURIComponent(query)}`);
-    const list = json?.anime_list || [];
-    if (!Array.isArray(list)) return [];
+    const cleanQ = encodeURIComponent(query.trim());
+    const [p1Res, p2Res] = await Promise.allSettled([
+      fetchJson(`${ANIME_BASE_URL}/nimegami/search/${cleanQ}?page=1`),
+      fetchJson(`${ANIME_BASE_URL}/nimegami/search/${cleanQ}?page=2`),
+    ]);
 
-    return list
-      .filter((item: any) => item.slug && !item.slug.startsWith('#') && item.title && !item.title.startsWith('#'))
-      .map((item: any) => ({
+    const raw1 = p1Res.status === 'fulfilled' ? (p1Res.value as any)?.anime_list || [] : [];
+    const raw2 = p2Res.status === 'fulfilled' ? (p2Res.value as any)?.anime_list || [] : [];
+    const combined = [...(Array.isArray(raw1) ? raw1 : []), ...(Array.isArray(raw2) ? raw2 : [])];
+
+    const seenSlugs = new Set<string>();
+    const list: AnimeItem[] = [];
+
+    for (const item of combined) {
+      if (!item.slug || item.slug.startsWith('#') || !item.title || item.title.startsWith('#')) continue;
+      if (seenSlugs.has(item.slug)) continue;
+      seenSlugs.add(item.slug);
+
+      list.push({
         id: item.slug,
         title: cleanAnimeTitle(item.title || item.slug),
         poster: item.poster || '',
@@ -820,7 +832,10 @@ export async function searchNimegami(query: string): Promise<AnimeItem[]> {
         type: item.type || 'Retro Anime',
         episodes: item.episode || undefined,
         provider: 'nimegami' as const,
-      }));
+      });
+    }
+
+    return list;
   } catch (err) {
     console.warn('Nimegami search warning:', err);
     return [];
@@ -1008,21 +1023,48 @@ export async function getNimegamiEpisode(episodeId: string): Promise<AnimeEpisod
 
 /* ==================== KUSONIME (FULL BATCH DOWNLOADS) ==================== */
 
-export async function searchKusonime(query: string, page = 1): Promise<AnimeItem[]> {
+export async function searchKusonime(query: string): Promise<AnimeItem[]> {
   try {
-    const json: any = await fetchJson(`${ANIME_BASE_URL}/kusonime/search/${encodeURIComponent(query)}?page=${page}`);
-    const list = json?.anime_list || [];
-    if (!Array.isArray(list)) return [];
+    const cleanQ = encodeURIComponent(query.trim());
+    const [p1Res, p2Res, p3Res] = await Promise.allSettled([
+      fetchJson(`${ANIME_BASE_URL}/kusonime/search/${cleanQ}?page=1`),
+      fetchJson(`${ANIME_BASE_URL}/kusonime/search/${cleanQ}?page=2`),
+      fetchJson(`${ANIME_BASE_URL}/kusonime/search/${cleanQ}?page=3`),
+    ]);
 
-    return list.map((item: any) => ({
-      id: item.slug,
-      title: cleanAnimeTitle(item.title || item.slug),
-      poster: item.poster || '',
-      status: 'Batch',
-      type: 'Batch Download',
-      genres: Array.isArray(item.genres) ? item.genres.map((g: any) => g.name).join(', ') : undefined,
-      provider: 'kusonime' as const,
-    }));
+    const raw1 = p1Res.status === 'fulfilled' ? (p1Res.value as any)?.anime_list || [] : [];
+    const raw2 = p2Res.status === 'fulfilled' ? (p2Res.value as any)?.anime_list || [] : [];
+    const raw3 = p3Res.status === 'fulfilled' ? (p3Res.value as any)?.anime_list || [] : [];
+    const combined = [
+      ...(Array.isArray(raw1) ? raw1 : []),
+      ...(Array.isArray(raw2) ? raw2 : []),
+      ...(Array.isArray(raw3) ? raw3 : []),
+    ];
+
+    const qWords = query.toLowerCase().split(/\s+/).filter(Boolean);
+    const seenSlugs = new Set<string>();
+    const list: AnimeItem[] = [];
+
+    for (const item of combined) {
+      if (!item.slug || seenSlugs.has(item.slug)) continue;
+      const t = (item.title || item.slug || '').toLowerCase();
+      // Ensure the title or slug actually matches query terms if multiple pages returned
+      const matches = qWords.some((w) => t.includes(w));
+      if (!matches && combined.length > 8) continue;
+
+      seenSlugs.add(item.slug);
+      list.push({
+        id: item.slug,
+        title: cleanAnimeTitle(item.title || item.slug),
+        poster: item.poster || '',
+        status: 'Batch',
+        type: 'Batch Download',
+        genres: Array.isArray(item.genres) ? item.genres.map((g: any) => g.name).join(', ') : undefined,
+        provider: 'kusonime' as const,
+      });
+    }
+
+    return list;
   } catch (err) {
     console.warn('Kusonime search warning:', err);
     return [];
@@ -1105,20 +1147,18 @@ export async function getKusonimeDetail(slug: string): Promise<AnimeDetail> {
 /* ==================== MULTI-PROVIDER SEARCH ==================== */
 
 /**
- * Clean & normalize anime title for deduplication comparison
+ * Clean & normalize anime title for deduplication comparison.
+ * Keeps season numbers, movie titles, and distinctive sub-series (Z, GT, Kai, etc.)
+ * while removing provider fluff like 'sub indo', 'batch', and 'bd'.
  */
 export function normalizeTitleForDeduplication(title: string): string {
   if (!title) return '';
   return title
     .toLowerCase()
-    .replace(/\s+(season|s)\s*\d+/gi, '')
-    .replace(/\s+(part|p)\s*\d+/gi, '')
-    .replace(/\s+(episode|eps|ep)\s*\d+.*$/gi, '')
+    .replace(/\s+sub(title)?\s*(indonesia|indo).*$/gi, '')
     .replace(/\s+batch.*$/gi, '')
-    .replace(/\s+movie.*$/gi, '')
-    .replace(/\s+bd.*$/gi, '')
-    .replace(/\s+sub\s*indo.*$/gi, '')
-    .replace(/\s+subtitle\s*indonesia.*$/gi, '')
+    .replace(/\s+bd\b/gi, '')
+    .replace(/\s+(episode|eps)\s+\d+.*$/gi, '')
     .replace(/[^a-z0-9]/g, '')
     .trim();
 }
