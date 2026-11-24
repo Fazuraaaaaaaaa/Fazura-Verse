@@ -511,23 +511,20 @@ export function AnimeWatchPage() {
           <AlertCircle className="w-12 h-12 text-amber-400 mx-auto" />
           <div className="space-y-1.5 max-w-md mx-auto">
             <h2 className="text-base sm:text-lg font-bold text-white font-heading">
-              Server Pemutar Belum Tersedia untuk Episode Ini
+              Server Video Streaming Tidak Tersedia
             </h2>
             <p className="text-xs text-text-secondary leading-relaxed">
-              Episode ini saat ini belum memiliki server video langsung yang dapat diputar di browser.
-              {episode.downloads && episode.downloads.length > 0
-                ? ' Anda dapat mengunduh video melalui daftar tautan unduhan di bawah.'
-                : ' Silakan pilih episode lain atau periksa provider lain.'}
+              Episode ini saat ini tidak memiliki server pemutar video streaming langsung di penyedia upstream. Video hanya dapat diunduh melalui tautan file hosting eksternal.
             </p>
           </div>
           {episode.downloads && episode.downloads.length > 0 && (
-            <div className="pt-2">
+            <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
               <a
                 href="#downloads"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-primary hover:bg-accent-primary/90 text-white font-bold text-xs transition-all shadow-md shadow-accent-primary/20"
               >
                 <Download className="w-4 h-4" />
-                Lihat Tautan Unduhan Episode
+                Lihat Tautan Unduhan ({episode.downloads[0]?.urls?.length || 1} Link)
               </a>
             </div>
           )}
@@ -741,7 +738,7 @@ export function AnimeWatchPage() {
 
       {/* Download Mirrors Section */}
       {episode.downloads && episode.downloads.length > 0 && (
-        <div className="p-5 rounded-2xl bg-surface border border-white/10 shadow-xl space-y-4">
+        <div id="downloads" className="p-5 rounded-2xl bg-surface border border-white/10 shadow-xl space-y-4">
           <div className="flex items-center justify-between border-b border-white/5 pb-3">
             <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 font-heading">
               <Download className="w-4 h-4 text-emerald-400" />

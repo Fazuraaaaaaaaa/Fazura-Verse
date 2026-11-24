@@ -256,19 +256,16 @@ export function AnimeHubPage() {
           {[
             'Dragon Ball',
             'Slam Dunk',
-            'Naruto Kecil',
-            'Inuyasha',
-            'Yu Yu Hakusho',
+            'Naruto',
+            'One Piece',
             'Hunter x Hunter',
             'Detective Conan',
             'Digimon',
             'Gundam',
-            'Sailor Moon',
-            'Initial D',
             'Captain Tsubasa',
-            'Saint Seiya',
-            'Cowboy Bebop',
-            'Evangelion',
+            'Bleach',
+            'Death Note',
+            'Attack on Titan',
           ].map((title) => (
             <button
               key={title}

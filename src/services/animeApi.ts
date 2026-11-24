@@ -1040,22 +1040,9 @@ export async function getNimegamiEpisode(episodeId: string): Promise<AnimeEpisod
     });
   }
 
-  // Also include episode download/stream items from download_groups if available
+  // Parse episode download items strictly for downloads, NOT for video player servers
   const epDlKey = Object.keys(dlGroups).find((k) => k.toLowerCase().includes(epKey.toLowerCase()));
   const epDlItems = epDlKey ? dlGroups[epDlKey] : [];
-  if (Array.isArray(epDlItems) && epDlItems.length > 0) {
-    for (const item of epDlItems) {
-      const quality = item.resolution || 'Direct Stream';
-      if (!serversByQuality.has(quality)) {
-        serversByQuality.set(quality, []);
-      }
-      serversByQuality.get(quality)!.push({
-        title: `${item.name || 'Stream / Download'} (${quality})`,
-        serverId: `nimegami::${item.url}`,
-        href: item.url,
-      });
-    }
-  }
 
   const servers = Array.from(serversByQuality.entries()).map(([quality, serverList]) => ({
     quality,
@@ -1085,7 +1072,7 @@ export async function getNimegamiEpisode(episodeId: string): Promise<AnimeEpisod
   const prevEpKey = currentIdx > 0 ? allEpKeys[currentIdx - 1] : null;
   const nextEpKey = currentIdx >= 0 && currentIdx < allEpKeys.length - 1 ? allEpKeys[currentIdx + 1] : null;
 
-  const firstUrl = streams[0]?.url || (epDlItems[0]?.url) || '';
+  const firstUrl = streams[0]?.url || '';
   const defaultStream = firstUrl ? `nimegami::${firstUrl}` : undefined;
 
   const downloads = Array.isArray(epDlItems) && epDlItems.length > 0 ? [
