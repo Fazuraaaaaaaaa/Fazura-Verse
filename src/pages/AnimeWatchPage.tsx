@@ -53,11 +53,12 @@ export function AnimeWatchPage() {
   }>();
   const navigate = useNavigate();
 
-  const isSame = provider === 'samehadaku';
-  const isNime = provider === 'nimegami';
+  const effectiveProvider = (episodeId?.includes('__') ? 'nimegami' : provider) || 'otakudesu';
+  const isSame = effectiveProvider === 'samehadaku';
+  const isNime = effectiveProvider === 'nimegami';
 
   const { data: episode, isLoading, error } = useQuery({
-    queryKey: ['anime', 'episode', provider, episodeId],
+    queryKey: ['anime', 'episode', effectiveProvider, episodeId],
     queryFn: async () => {
       try {
         if (isNime || episodeId?.includes('__')) return await getNimegamiEpisode(episodeId || '');
@@ -90,7 +91,7 @@ export function AnimeWatchPage() {
 
   // Query anime detail to get full episode list for quick navigation & drawer
   const { data: animeDetail } = useQuery({
-    queryKey: ['anime', 'detail', provider, animeId],
+    queryKey: ['anime', 'detail', effectiveProvider, animeId],
     queryFn: () => {
       if (isNime) return getNimegamiDetail(animeId);
       if (isSame) return getSamehadakuDetail(animeId);
@@ -111,11 +112,11 @@ export function AnimeWatchPage() {
         title: animeDetail?.title || episode.title || 'Anime',
         cover: animeDetail?.poster || '',
         lastItemTitle: episode.title || `Episode ${episodeId}`,
-        lastItemLink: `/anime/watch/${provider || 'otakudesu'}/${episodeId}`,
+        lastItemLink: `/anime/watch/${effectiveProvider}/${episodeId}`,
         watchedAt: Date.now(),
       });
     }
-  }, [episode, episodeId, provider, animeId, animeDetail, recordHistory]);
+  }, [episode, episodeId, effectiveProvider, animeId, animeDetail, recordHistory]);
 
   // Reset custom server when route changes
   useEffect(() => {
@@ -147,7 +148,7 @@ export function AnimeWatchPage() {
       setActiveServerId(serverId);
 
       const realEmbedUrl = await getAnimeServerUrl(
-        provider || 'otakudesu',
+        effectiveProvider,
         serverId
       );
 
@@ -242,7 +243,7 @@ export function AnimeWatchPage() {
     if (!episode?.servers) return [];
     const isAllowed = (title: string, serverId: string) => {
       const clean = (title + ' ' + serverId).toLowerCase();
-      if (provider === 'otakudesu') {
+      if (effectiveProvider === 'otakudesu') {
         return clean.includes('vidhide') || clean.includes('mega') || clean.includes('filedon');
       }
       return (
@@ -272,7 +273,7 @@ export function AnimeWatchPage() {
         serverList: (q.serverList || []).filter((srv) => isAllowed(srv.title, srv.serverId)),
       }))
       .filter((q) => q.serverList.length > 0);
-  }, [episode?.servers, provider]);
+  }, [episode?.servers, effectiveProvider]);
 
   // Auto-direct to VidHide server (or Mega/FileDon) as soon as user opens an episode
   useEffect(() => {
@@ -375,7 +376,7 @@ export function AnimeWatchPage() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-white/5 pb-4">
         <div className="flex items-center gap-3 min-w-0">
           <Link
-            to={episode.animeId ? `/anime/detail/${provider}/${episode.animeId}` : '/anime'}
+            to={episode.animeId ? `/anime/detail/${effectiveProvider}/${episode.animeId}` : '/anime'}
             className="p-2.5 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white border border-white/10 shrink-0 transition-colors"
             title="Kembali ke Detail Anime"
           >
@@ -386,7 +387,7 @@ export function AnimeWatchPage() {
               {episode.title}
             </h1>
             <p className="text-[11px] text-accent-soft font-semibold flex items-center gap-2">
-              <span>Server: {(provider || 'otakudesu').toUpperCase()}</span>
+              <span>Server: {effectiveProvider.toUpperCase()}</span>
               {animeDetail?.title && (
                 <span className="hidden sm:inline text-text-muted">• {animeDetail.title}</span>
               )}
@@ -405,7 +406,7 @@ export function AnimeWatchPage() {
                   category: 'anime',
                   title: animeDetail?.title || episode.title || 'Anime',
                   cover: animeDetail?.poster || '',
-                  link: `/anime/detail/${provider || 'otakudesu'}/${animeId}`,
+                  link: `/anime/detail/${effectiveProvider}/${animeId}`,
                   subtitle: `Episode ${episodeId}`,
                   type: 'Anime',
                   addedAt: Date.now(),
@@ -432,7 +433,7 @@ export function AnimeWatchPage() {
             <div className="relative">
               <select
                 value={episodeId}
-                onChange={(e) => navigate(`/anime/watch/${provider}/${e.target.value}`)}
+                onChange={(e) => navigate(`/anime/watch/${effectiveProvider}/${e.target.value}`)}
                 className="bg-surface text-xs text-slate-200 border border-white/10 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-accent-primary cursor-pointer max-w-[150px] sm:max-w-[200px] truncate"
               >
                 {sortedEpisodes.map((ep) => (
@@ -448,7 +449,7 @@ export function AnimeWatchPage() {
           <button
             onClick={() => {
               if (episode.prevEpisodeId) {
-                navigate(`/anime/watch/${provider}/${episode.prevEpisodeId}`);
+                navigate(`/anime/watch/${effectiveProvider}/${episode.prevEpisodeId}`);
               }
             }}
             disabled={!episode.hasPrev || !episode.prevEpisodeId}
@@ -462,7 +463,7 @@ export function AnimeWatchPage() {
           <button
             onClick={() => {
               if (episode.nextEpisodeId) {
-                navigate(`/anime/watch/${provider}/${episode.nextEpisodeId}`);
+                navigate(`/anime/watch/${effectiveProvider}/${episode.nextEpisodeId}`);
               }
             }}
             disabled={!episode.hasNext || !episode.nextEpisodeId}
@@ -633,7 +634,7 @@ export function AnimeWatchPage() {
               return (
                 <Link
                   key={ep.episodeId}
-                  to={`/anime/watch/${provider}/${ep.episodeId}`}
+                  to={`/anime/watch/${effectiveProvider}/${ep.episodeId}`}
                   className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-bold transition-all border ${
                     isCurrent
                       ? 'bg-accent-primary text-white border-accent-soft shadow-md shadow-accent-primary/25'
