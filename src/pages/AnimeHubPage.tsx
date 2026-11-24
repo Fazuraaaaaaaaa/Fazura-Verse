@@ -23,8 +23,6 @@ import {
 import {
   getOtakudesuOngoing,
   getOtakudesuCompleted,
-  getNimegamiHome,
-  getKusonimeLatest,
   getOtakudesuSchedule,
   getOtakudesuGenres,
   getOtakudesuByGenre,
@@ -34,7 +32,7 @@ import type { AnimeItem, AnimeScheduleDay } from '../types/media';
 import { HubHistoryShelf } from '../components/library/HubHistoryShelf';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 
-type TabType = 'ongoing' | 'completed' | 'retro' | 'batch' | 'genres' | 'schedule' | 'bookmarks' | 'history';
+type TabType = 'ongoing' | 'completed' | 'genres' | 'schedule' | 'bookmarks' | 'history';
 
 export function AnimeHubPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -47,8 +45,6 @@ export function AnimeHubPage() {
   const [activeTab, setActiveTab] = useState<TabType>(
     tabParam === 'schedule' ||
       tabParam === 'completed' ||
-      tabParam === 'retro' ||
-      tabParam === 'batch' ||
       tabParam === 'genres' ||
       tabParam === 'bookmarks' ||
       tabParam === 'history'
@@ -104,20 +100,6 @@ export function AnimeHubPage() {
     queryKey: ['anime', 'completed', 'otakudesu', page],
     queryFn: () => getOtakudesuCompleted(page),
     enabled: activeTab === 'completed' && !searchParam,
-  });
-
-  // Query: Retro & Classic Anime (Nimegami - 80s/90s/00s classics)
-  const { data: retroData, isLoading: retroLoading } = useQuery({
-    queryKey: ['anime', 'retro', 'nimegami', page],
-    queryFn: () => getNimegamiHome(page),
-    enabled: activeTab === 'retro' && !searchParam,
-  });
-
-  // Query: Full Season Batch Downloads (Kusonime - batch downloads)
-  const { data: batchData, isLoading: batchLoading } = useQuery({
-    queryKey: ['anime', 'batch', 'kusonime', page],
-    queryFn: () => getKusonimeLatest(page),
-    enabled: activeTab === 'batch' && !searchParam,
   });
 
   // Query: Genre Filter (Otakudesu - up to 48+ pages per genre)
@@ -195,14 +177,6 @@ export function AnimeHubPage() {
     activeAnimeList = completedData?.animeList || [];
     currentPagination = completedData?.pagination || currentPagination;
     isLoading = completedLoading;
-  } else if (activeTab === 'retro') {
-    activeAnimeList = retroData?.animeList || [];
-    currentPagination = retroData?.pagination || currentPagination;
-    isLoading = retroLoading;
-  } else if (activeTab === 'batch') {
-    activeAnimeList = batchData?.animeList || [];
-    currentPagination = batchData?.pagination || currentPagination;
-    isLoading = batchLoading;
   } else if (activeTab === 'genres') {
     activeAnimeList = genreData?.animeList || [];
     currentPagination = genreData?.pagination || currentPagination;
@@ -247,14 +221,14 @@ export function AnimeHubPage() {
               FAZURASTREAM <span className="text-amber-400">ANIME</span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-              Koleksi lengkap ribuan anime Ongoing, Tamat (67 halaman), dan 36 kategori genre dari Otakudesu. Streaming multi-server dengan kualitas 1080p Full HD (Mega 1080p), 720p HD, 480p SD, dan 360p Blogspot.
+              Koleksi ribuan serial anime Ongoing, Tamat (67 halaman), dan 36 genre, diperkaya arsip Anime Klasik/Jadul (Nimegami) dan Batch Download (Kusonime). Streaming multi-server kualitas HD dan unduhan batch instan.
             </p>
           </div>
 
           <div className="flex items-center gap-2 p-2 rounded-2xl bg-[#0b0e14] border border-white/10 shadow-lg shrink-0">
             <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-500 text-black shadow-md shadow-amber-500/30">
               <Sparkles className="w-4 h-4" />
-              Otakudesu Provider
+              Anime Super-Hub
             </div>
           </div>
         </div>
@@ -265,7 +239,7 @@ export function AnimeHubPage() {
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Cari judul anime di Otakudesu (e.g. Bleach, Naruto, Jujutsu, Frieren)..."
+              placeholder="Cari anime modern, jadul/klasik, atau batch (e.g. Slam Dunk, GTO, Naruto)..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="w-full pl-10 pr-24 py-3 text-xs sm:text-sm bg-[#0b0e14] border border-white/10 focus:border-amber-500 rounded-xl text-white placeholder-slate-400 focus:outline-none shadow-inner"
@@ -354,30 +328,6 @@ export function AnimeHubPage() {
           >
             <CheckCircle className="w-4 h-4" />
             Tamat (Completed • 67 Hal)
-          </button>
-
-          <button
-            onClick={() => handleTabChange('retro')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
-              activeTab === 'retro' && !searchParam
-                ? 'bg-amber-500 text-black font-bold shadow-md shadow-amber-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            Anime Klasik (Nimegami)
-          </button>
-
-          <button
-            onClick={() => handleTabChange('batch')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
-              activeTab === 'batch' && !searchParam
-                ? 'bg-cyan-500 text-black font-bold shadow-md shadow-cyan-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Download className="w-4 h-4 text-cyan-400" />
-            Batch Download (Kusonime)
           </button>
 
           <button
@@ -793,35 +743,21 @@ export function AnimeHubPage() {
           </div>
         </div>
       ) : (
-        /* SECTION D: Paginated Anime Grids (Ongoing, Completed, Retro Nimegami, Batch Kusonime, or Genre Filter) */
+        /* SECTION D: Paginated Anime Grids (Ongoing, Completed, or Genre Filter) */
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-3">
             <div>
               <h2 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
                 {activeTab === 'ongoing' && <Clock className="w-4 h-4 text-amber-400" />}
                 {activeTab === 'completed' && <CheckCircle className="w-4 h-4 text-emerald-400" />}
-                {activeTab === 'retro' && <Sparkles className="w-4 h-4 text-amber-400" />}
-                {activeTab === 'batch' && <Download className="w-4 h-4 text-cyan-400" />}
                 {activeTab === 'genres' && <Tag className="w-4 h-4 text-amber-400" />}
 
                 <span>
-                  {activeTab === 'ongoing' && 'Anime Sedang Tayang (Otakudesu)'}
-                  {activeTab === 'completed' && 'Daftar Anime Tamat (Otakudesu)'}
-                  {activeTab === 'retro' && 'Katalog Anime Klasik & Retro (Nimegami)'}
-                  {activeTab === 'batch' && 'Batch Download Full Season (Kusonime)'}
-                  {activeTab === 'genres' && `Koleksi Genre: ${selectedGenre.toUpperCase()} (Otakudesu)`}
+                  {activeTab === 'ongoing' && 'Anime Sedang Tayang (Ongoing)'}
+                  {activeTab === 'completed' && 'Daftar Anime Tamat (Completed)'}
+                  {activeTab === 'genres' && `Koleksi Genre: ${selectedGenre.toUpperCase()}`}
                 </span>
               </h2>
-              {activeTab === 'retro' && (
-                <p className="text-xs text-text-secondary mt-0.5">
-                  Arsip serial anime legendaris era 80-an, 90-an & 2000-an dengan streaming per episode & download lengkap.
-                </p>
-              )}
-              {activeTab === 'batch' && (
-                <p className="text-xs text-text-secondary mt-0.5">
-                  Koleksi anime full season dalam format arsip .zip/.rar via Google Drive, Mega, dan Acefile.
-                </p>
-              )}
             </div>
 
             <span className="text-xs text-slate-400">
