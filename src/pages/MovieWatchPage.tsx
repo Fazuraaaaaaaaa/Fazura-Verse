@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -18,6 +18,7 @@ import {
   Info,
   Layers,
   MessageSquare,
+  FastForward,
 } from 'lucide-react';
 import {
   getMovieDetail,
@@ -41,6 +42,23 @@ export function MovieWatchPage() {
   const [activeServerName, setActiveServerName] = useState<string>('');
   const [isTheaterMode, setIsTheaterMode] = useState<boolean>(false);
   const [reloadKey, setReloadKey] = useState<number>(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const SKIP_OP_SECONDS = 85;
+
+  const isDirectVideoStream = (url?: string): boolean => {
+    if (!url) return false;
+    const u = url.toLowerCase();
+    return u.endsWith('.mp4') || u.includes('.mp4?');
+  };
+
+  const skipOpening = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.min(
+        videoRef.current.currentTime + SKIP_OP_SECONDS,
+        videoRef.current.duration || Infinity
+      );
+    }
+  };
 
   // 1. Fetch Movie Detail
   const { data: detailResponse, isLoading: detailLoading } = useQuery({
@@ -166,6 +184,15 @@ export function MovieWatchPage() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              disabled={!isDirectVideoStream(activeServerUrl)}
+              onClick={skipOpening}
+              className="p-2 rounded-[10px] bg-[#232633] text-[#A2A4B1] border border-[#343744] text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:bg-[#343744] hover:enabled:text-[#F0A15B]"
+              title={isDirectVideoStream(activeServerUrl) ? 'Skip Opening +85 detik' : 'Skip OP hanya tersedia untuk stream langsung MP4'}
+            >
+              <FastForward className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Skip OP</span>
+            </button>
             <button
               onClick={() => setReloadKey((k) => k + 1)}
               className="p-2 rounded-[10px] bg-[#232633] hover:bg-[#343744] text-[#A2A4B1] hover:text-[#F2F0EC] border border-[#343744] text-xs font-semibold flex items-center gap-1.5 transition-colors"
