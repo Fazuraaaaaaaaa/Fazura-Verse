@@ -168,22 +168,23 @@ export function ReaderControls({
             </div>
           </div>
 
-          {/* Quick Chapter Selector Dropdown */}
-          {allChapters.length > 0 && currentChapterSlug && (
-            <div className="relative shrink min-w-0">
-              <select
-                value={currentChapterSlug}
-                onChange={(e) => onNavigateChapter(e.target.value)}
-                className="bg-surface text-xs text-slate-200 border border-white/10 rounded-xl px-2.5 py-2.5 min-h-[44px] focus:outline-none focus:border-accent-primary cursor-pointer max-w-[110px] xs:max-w-[140px] sm:max-w-[180px] md:max-w-[220px] truncate"
-              >
-                {allChapters.map((ch) => (
-                  <option key={ch.slug} value={ch.slug}>
-                    {ch.title || ch.slug}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+              {/* Chapter Selector Dropdown */}
+              {allChapters.length > 0 && currentChapterSlug && (
+                <div className="relative shrink min-w-0 hidden min-[360px]:block">
+                  <select
+                    value={currentChapterSlug}
+                    onChange={(e) => onNavigateChapter(e.target.value)}
+                    aria-label="Pilih Chapter"
+                    className="bg-surface text-xs text-slate-200 border border-white/10 rounded-xl px-2.5 py-2.5 min-h-[44px] focus:outline-none focus:border-accent-primary cursor-pointer max-w-[100px] sm:max-w-[180px] md:max-w-[220px] truncate"
+                  >
+                    {allChapters.map((ch) => (
+                      <option key={ch.slug} value={ch.slug}>
+                        {ch.title || ch.slug}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
           {/* Action Icons (All >= 44x44px Touch Targets) */}
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
@@ -452,6 +453,36 @@ export function ReaderControls({
                 ))}
               </div>
             </div>
+
+            {/* Webtoon Panel Spacing */}
+            {settings.mode === 'vertical' && (
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-300">
+                  Jarak Antar Panel Webtoon
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { value: 0, label: 'Rapat' },
+                    { value: 8, label: 'Kecil' },
+                    { value: 12, label: 'Normal' },
+                    { value: 24, label: 'Lebar' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => onUpdateSettings({ gap: opt.value })}
+                      className={`min-h-[40px] py-1.5 px-2 rounded-xl text-xs font-medium border transition-all ${
+                        settings.gap === opt.value
+                          ? 'bg-accent-primary/20 border-accent-primary text-accent-soft'
+                          : 'bg-surface-elevated border-white/5 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Direction */}
             <div className="space-y-2">

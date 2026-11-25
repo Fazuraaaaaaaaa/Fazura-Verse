@@ -18,6 +18,8 @@ import {
   Compass,
   Flame,
   Mic,
+  AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
 import { search as searchManga } from '../services/api';
 import { searchOtakudesu } from '../services/animeApi';
@@ -26,6 +28,7 @@ import { getMovies } from '../services/movieApi';
 import { searchMusic } from '../services/musicApi';
 import { MangaCard } from '../components/MangaCard';
 import { useMusic } from '../context/MusicContext';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 const RECENT_SEARCHES_KEY = 'fazura_recent_searches';
 
@@ -44,6 +47,11 @@ const TRENDING_KEYWORDS = [
 export function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const qParam = searchParams.get('q') || '';
+  usePageMeta({
+    title: qParam ? `Cari "${qParam}" - Pencarian Terpadu` : 'Pencarian Terpadu Multi-Kategori',
+    description:
+      'Cari manga, anime sub Indo, donghua, film & serial TV, serta musik favorit dalam satu pencarian cepat di FazuraStream.',
+  });
   const [inputVal, setInputVal] = useState(qParam);
   const [activeTab, setActiveTab] = useState<'all' | 'manga' | 'anime' | 'donghua' | 'movie' | 'music'>('all');
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
@@ -172,35 +180,60 @@ export function SearchPage() {
   }, [inputVal, qParam, setSearchParams, addRecentSearch]);
 
   // Query 1: Manga (BacaKomik)
-  const { data: mangaResults, isLoading: mangaLoading } = useQuery({
+  const {
+    data: mangaResults,
+    isLoading: mangaLoading,
+    isError: mangaError,
+    refetch: refetchManga,
+  } = useQuery({
     queryKey: ['search', 'manga', qParam],
     queryFn: () => searchManga(qParam),
     enabled: Boolean(qParam && qParam.trim().length > 0),
   });
 
   // Query 2: Anime (Otakudesu)
-  const { data: otakudesuResults, isLoading: otakuLoading } = useQuery({
+  const {
+    data: otakudesuResults,
+    isLoading: otakuLoading,
+    isError: otakuError,
+    refetch: refetchAnime,
+  } = useQuery({
     queryKey: ['search', 'otakudesu', qParam],
     queryFn: () => searchOtakudesu(qParam),
     enabled: Boolean(qParam && qParam.trim().length > 0),
   });
 
   // Query 3: Donghua (Anichin)
-  const { data: donghuaResults, isLoading: donghuaLoading } = useQuery({
+  const {
+    data: donghuaResults,
+    isLoading: donghuaLoading,
+    isError: donghuaError,
+    refetch: refetchDonghua,
+  } = useQuery({
     queryKey: ['search', 'donghua', qParam],
     queryFn: () => searchDonghua(qParam),
     enabled: Boolean(qParam && qParam.trim().length > 0),
   });
 
-  // Query 4: Movie & Series (FazuraDex Movie)
-  const { data: movieResults, isLoading: movieLoading } = useQuery({
+  // Query 4: Movie & Series (Live TMDB)
+  const {
+    data: movieResults,
+    isLoading: movieLoading,
+    isError: movieError,
+    refetch: refetchMovies,
+  } = useQuery({
     queryKey: ['search', 'movie', qParam],
     queryFn: () => getMovies({ q: qParam, perPage: 24 }),
     enabled: Boolean(qParam && qParam.trim().length > 0),
   });
 
   // Query 5: Music (YouTube Music & Catalog)
-  const { data: musicResults, isLoading: musicLoading } = useQuery({
+  const {
+    data: musicResults,
+    isLoading: musicLoading,
+    isError: musicError,
+    refetch: refetchMusic,
+  } = useQuery({
     queryKey: ['search', 'music', qParam],
     queryFn: () => searchMusic(qParam),
     enabled: Boolean(qParam && qParam.trim().length > 0),
@@ -208,6 +241,17 @@ export function SearchPage() {
 
   const isGlobalLoading =
     Boolean(qParam) && (mangaLoading || otakuLoading || donghuaLoading || movieLoading || musicLoading);
+
+  const hasAnyError =
+    Boolean(qParam) && (mangaError || otakuError || donghuaError || movieError || musicError);
+
+  const handleRetryFailed = () => {
+    if (mangaError) refetchManga();
+    if (otakuError) refetchAnime();
+    if (donghuaError) refetchDonghua();
+    if (movieError) refetchMovies();
+    if (musicError) refetchMusic();
+  };
 
   const mangaList = mangaResults?.komikList || [];
   const animeList = otakudesuResults || [];
@@ -277,7 +321,7 @@ export function SearchPage() {
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full pl-12 pr-40 py-3.5 text-sm sm:text-base bg-[#181827]/90 border border-white/10 focus:border-[#8B5CF6] rounded-2xl text-white placeholder-slate-400 focus:outline-none shadow-2xl transition-all"
+            className="w-full pl-10 sm:pl-12 pr-32 sm:pr-40 py-3.5 text-sm sm:text-base bg-surface/90 border border-border-subtle focus:border-accent-primary rounded-2xl text-white placeholder-text-muted focus:outline-none shadow-2xl transition-all"
             aria-label="Pencarian Multi-Kategori"
           />
 
@@ -473,6 +517,24 @@ export function SearchPage() {
               </button>
             </div>
           </div>
+
+          {/* Partial / Provider Error Recovery Banner */}
+          {hasAnyError && !isGlobalLoading && (
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-3 text-xs text-amber-200">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>Sebagian penyedia pencarian gagal merespons. Hasil dari sumber lain tetap ditampilkan.</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleRetryFailed}
+                className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 rounded-xl bg-amber-500 text-black font-bold hover:bg-amber-400 transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Coba Lagi</span>
+              </button>
+            </div>
+          )}
 
           {/* Visual Empty State with Anime Icon and Recommended Suggestions */}
           {!isGlobalLoading && totalResults === 0 && (

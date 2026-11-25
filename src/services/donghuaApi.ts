@@ -74,13 +74,13 @@ export async function getDonghuaDetail(slug: string): Promise<DonghuaDetail> {
   // 1. Try exact slug with /detail
   try {
     json = await fetchJson(`${DONGHUA_BASE_URL}/detail/${encodeURIComponent(slug)}`);
-  } catch (err1) {
+  } catch {
     // 2. Try cleaned slug (without episode parts)
     const cleanSlug = slug.replace(/-episode-\d+.*$/i, '').replace(/episode-\d+.*$/i, '').trim();
     if (cleanSlug && cleanSlug !== slug) {
       try {
         json = await fetchJson(`${DONGHUA_BASE_URL}/detail/${encodeURIComponent(cleanSlug)}`);
-      } catch (err2) {
+      } catch {
         // Continue to fallback 3
       }
     }
@@ -107,7 +107,7 @@ export async function getDonghuaDetail(slug: string): Promise<DonghuaDetail> {
             episodesList: epList,
           };
         }
-      } catch (err3) {
+      } catch {
         throw new Error(`Gagal memuat serial donghua: ${slug}`);
       }
     }

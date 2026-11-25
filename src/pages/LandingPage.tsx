@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { LazyMotion, domAnimation, MotionConfig, m } from 'framer-motion';
 import {
   BookOpen,
   Film,
@@ -17,6 +18,7 @@ import {
   Headphones,
   Star,
   RotateCcw,
+  RefreshCw,
 } from 'lucide-react';
 import { getLatest, getPopular } from '../services/api';
 import { getOtakudesuHome } from '../services/animeApi';
@@ -25,6 +27,10 @@ import { getMovies } from '../services/movieApi';
 import { FAZURA_MUSIC_CATALOG } from '../services/musicApi';
 import { useAllCategoryHistory } from '../services/categoryStorage';
 import { useMusic } from '../context/MusicContext';
+import { usePageMeta } from '../hooks/usePageMeta';
+
+const POSTER_FALLBACK_SVG =
+  "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22400%22%20viewBox%3D%220%200%20300%20400%22%3E%3Crect%20fill%3D%22%23181827%22%20width%3D%22300%22%20height%3D%22400%22%2F%3E%3Ctext%20fill%3D%22%238B5CF6%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3EFAZURASTREAM%3C%2Ftext%3E%3C%2Fsvg%3E";
 
 function formatRelativeTime(timestamp: number): string {
   const diffSec = Math.floor((Date.now() - timestamp) / 1000);
@@ -40,13 +46,29 @@ function formatRelativeTime(timestamp: number): string {
 }
 
 export function LandingPage() {
+  usePageMeta({
+    title: 'FazuraStream - Digital Entertainment Super-Hub',
+    description:
+      'FazuraStream - Portal hiburan digital terlengkap: baca komik manga/manhwa/manhua, streaming anime sub Indo, donghua 3D, movie HD, dan musik online.',
+    jsonLd: {
+      '@type': 'WebSite',
+      name: 'FazuraStream',
+      url: 'https://fazurastream.web.id/',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: 'https://fazurastream.web.id/search?q={search_term_string}',
+        'query-input': 'required name=search_term_string',
+      },
+    },
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMediaTab, setActiveMediaTab] = useState<'all' | 'manga' | 'anime' | 'donghua' | 'movie' | 'music'>('all');
   const [spotlightChannel, setSpotlightChannel] = useState<'anime' | 'manga' | 'donghua' | 'movie' | 'music'>('anime');
   const { allItems: allHistoryItems } = useAllCategoryHistory();
   const activeHistory = useMemo(() => allHistoryItems.slice(0, 12), [allHistoryItems]);
   const navigate = useNavigate();
-  const { playTrack } = useMusic();
+  const { playTrack, currentTrack, isPlaying, togglePlay } = useMusic();
 
   // Smooth scroll handler for horizontal carousels
   const scrollCarousel = (id: string, direction: 'left' | 'right') => {
@@ -58,7 +80,7 @@ export function LandingPage() {
   };
 
   // Queries for live content feeds from platform APIs
-  const { data: mangaData, isLoading: mangaLoading } = useQuery({
+  const { data: mangaData, isLoading: mangaLoading, isError: mangaError, refetch: refetchManga } = useQuery({
     queryKey: ['landing', 'manga'],
     queryFn: () => getLatest(1),
   });
@@ -68,19 +90,19 @@ export function LandingPage() {
     queryFn: getPopular,
   });
 
-  const { data: animeData, isLoading: animeLoading } = useQuery({
+  const { data: animeData, isLoading: animeLoading, isError: animeError, refetch: refetchAnime } = useQuery({
     queryKey: ['landing', 'anime'],
     queryFn: getOtakudesuHome,
   });
 
-  const { data: donghuaData, isLoading: donghuaLoading } = useQuery({
+  const { data: donghuaData, isLoading: donghuaLoading, isError: donghuaError, refetch: refetchDonghua } = useQuery({
     queryKey: ['landing', 'donghua'],
     queryFn: getDonghuaHome,
   });
 
-  const { data: moviesData, isLoading: moviesLoading } = useQuery({
+  const { data: moviesData, isLoading: moviesLoading, isError: moviesError, refetch: refetchMovies } = useQuery({
     queryKey: ['landing', 'movies'],
-    queryFn: () => getMovies({ collection: 'trending', perPage: 12 }),
+    queryFn: () => getMovies({ collection: 'trending', perPage: 10 }),
   });
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -89,11 +111,11 @@ export function LandingPage() {
     navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
-  const latestManga = mangaData?.komikList?.slice(0, 12) || [];
-  const latestAnime = animeData?.ongoing?.slice(0, 12) || [];
-  const latestDonghua = donghuaData?.latestRelease?.slice(0, 12) || [];
-  const latestMovies = moviesData?.data?.slice(0, 12) || [];
-  const trendingMusicList = FAZURA_MUSIC_CATALOG.slice(0, 12);
+  const latestManga = mangaData?.komikList?.slice(0, 10) || [];
+  const latestAnime = animeData?.ongoing?.slice(0, 10) || [];
+  const latestDonghua = donghuaData?.latestRelease?.slice(0, 10) || [];
+  const latestMovies = moviesData?.data?.slice(0, 10) || [];
+  const trendingMusicList = FAZURA_MUSIC_CATALOG.slice(0, 10);
 
   // Dynamic Live Spotlight based on active channel
   const topAnime = animeData?.ongoing?.[0];
@@ -217,9 +239,11 @@ export function LandingPage() {
   }, [spotlightChannel, topAnime, topManga, topDonghua, topMovie]);
 
   return (
-    <div className="min-h-screen bg-[#090912] text-text-primary pb-24 w-full overflow-x-hidden min-w-0 font-sans selection:bg-[#8B5CF6] selection:text-white">
-      {/* 1. Grand High-Impact Cinematic Hero Spotlight */}
-      <section className="relative w-full min-h-[500px] sm:min-h-[580px] lg:min-h-[640px] flex items-end overflow-hidden border-b border-white/5 bg-[#090912]">
+    <LazyMotion features={domAnimation}>
+      <MotionConfig reducedMotion="user">
+        <div className="min-h-screen bg-bg-primary text-text-primary pb-24 w-full overflow-x-hidden min-w-0 font-sans selection:bg-accent-primary selection:text-white">
+          {/* 1. Grand High-Impact Cinematic Hero Spotlight */}
+          <section className="relative w-full min-h-[500px] sm:min-h-[580px] lg:min-h-[640px] flex items-end overflow-hidden border-b border-white/5 bg-bg-primary">
         {/* Ambient Glow Spheres */}
         <div
           className="absolute -top-32 -left-32 w-[550px] h-[550px] rounded-full bg-[#8B5CF6]/15 blur-[140px] pointer-events-none transform-gpu animate-pulse"
@@ -252,7 +276,13 @@ export function LandingPage() {
         {/* Foreground Content Container */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 w-full flex flex-col lg:flex-row lg:items-end justify-between gap-8 sm:gap-12">
           {/* Left Column: Spotlight details */}
-          <div className="max-w-2xl space-y-4 sm:space-y-5">
+          <m.div
+            key={spotlightChannel}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="max-w-2xl space-y-4 sm:space-y-5"
+          >
             {/* Spotlight Channel Switcher Pills */}
             <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#11111D]/80 backdrop-blur-xl border border-white/10 w-fit overflow-x-auto max-w-full scrollbar-none shadow-2xl">
               <button
@@ -371,7 +401,7 @@ export function LandingPage() {
                 <ArrowRight className="w-4 h-4 text-accent-secondary transform group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
-          </div>
+          </m.div>
 
           {/* Right Column: Floating 3D Artwork Showcase (Desktop only) */}
           <div className="hidden lg:block relative flex-shrink-0">
@@ -380,6 +410,9 @@ export function LandingPage() {
                 src={featuredItem.poster}
                 alt={featuredItem.title}
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = POSTER_FALLBACK_SVG;
+                }}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#090912] via-transparent to-transparent opacity-85" />
@@ -821,8 +854,19 @@ export function LandingPage() {
               {mangaLoading ? (
                 <div className="flex gap-3 overflow-hidden py-1">
                   {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="w-40 sm:w-48 h-64 rounded-2xl bg-[#181827] animate-pulse shrink-0" />
+                    <div key={i} className="w-36 sm:w-44 h-60 rounded-2xl bg-surface animate-pulse shrink-0" />
                   ))}
+                </div>
+              ) : mangaError || latestManga.length === 0 ? (
+                <div className="p-6 rounded-2xl bg-surface/60 border border-border-subtle flex items-center justify-between gap-4 text-xs text-text-secondary">
+                  <span>Feed komik terbaru sedang tidak dapat dijangkau.</span>
+                  <button
+                    type="button"
+                    onClick={() => refetchManga()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent-primary text-white font-bold"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Muat Ulang
+                  </button>
                 </div>
               ) : (
                 <div
@@ -833,14 +877,17 @@ export function LandingPage() {
                     <Link
                       key={manga.slug}
                       to={`/manga/${manga.slug}`}
-                      className="w-36 sm:w-44 shrink-0 snap-start flex flex-col rounded-2xl overflow-hidden bg-[#181827]/90 border border-white/5 hover:border-[#8B5CF6]/40 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-[#8B5CF6]/15 group"
+                      className="w-36 sm:w-44 shrink-0 snap-start flex flex-col rounded-2xl overflow-hidden bg-surface/90 border border-white/5 hover:border-[#8B5CF6]/40 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-[#8B5CF6]/15 group"
                     >
-                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#11111D]">
+                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-surface-base">
                         <img
-                          src={manga.cover}
+                          src={manga.cover || POSTER_FALLBACK_SVG}
                           alt={manga.title}
                           loading="lazy"
                           referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = POSTER_FALLBACK_SVG;
+                          }}
                           className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                         />
                         <div className="absolute top-1.5 left-1.5 z-10">
@@ -906,8 +953,19 @@ export function LandingPage() {
               {animeLoading ? (
                 <div className="flex gap-3 overflow-hidden py-1">
                   {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="w-40 sm:w-48 h-64 rounded-2xl bg-[#181827] animate-pulse shrink-0" />
+                    <div key={i} className="w-36 sm:w-44 h-60 rounded-2xl bg-surface animate-pulse shrink-0" />
                   ))}
+                </div>
+              ) : animeError || latestAnime.length === 0 ? (
+                <div className="p-6 rounded-2xl bg-surface/60 border border-border-subtle flex items-center justify-between gap-4 text-xs text-text-secondary">
+                  <span>Feed anime terbaru sedang tidak dapat dijangkau.</span>
+                  <button
+                    type="button"
+                    onClick={() => refetchAnime()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 text-black font-bold"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Muat Ulang
+                  </button>
                 </div>
               ) : (
                 <div
@@ -918,14 +976,17 @@ export function LandingPage() {
                     <Link
                       key={anime.id}
                       to={`/anime/detail/otakudesu/${anime.id}`}
-                      className="w-36 sm:w-44 shrink-0 snap-start flex flex-col rounded-2xl overflow-hidden bg-[#181827]/90 border border-white/5 hover:border-amber-500/40 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-amber-500/10 group"
+                      className="w-36 sm:w-44 shrink-0 snap-start flex flex-col rounded-2xl overflow-hidden bg-surface/90 border border-white/5 hover:border-amber-500/40 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-amber-500/10 group"
                     >
-                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#11111D]">
+                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-surface-base">
                         <img
-                          src={anime.poster}
+                          src={anime.poster || POSTER_FALLBACK_SVG}
                           alt={anime.title}
                           loading="lazy"
                           referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = POSTER_FALLBACK_SVG;
+                          }}
                           className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                         />
                         <div className="absolute top-1.5 left-1.5 z-10">
@@ -989,8 +1050,19 @@ export function LandingPage() {
               {donghuaLoading ? (
                 <div className="flex gap-3 overflow-hidden py-1">
                   {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="w-40 sm:w-48 h-64 rounded-2xl bg-[#181827] animate-pulse shrink-0" />
+                    <div key={i} className="w-36 sm:w-44 h-60 rounded-2xl bg-surface animate-pulse shrink-0" />
                   ))}
+                </div>
+              ) : donghuaError || latestDonghua.length === 0 ? (
+                <div className="p-6 rounded-2xl bg-surface/60 border border-border-subtle flex items-center justify-between gap-4 text-xs text-text-secondary">
+                  <span>Feed donghua terbaru sedang tidak dapat dijangkau.</span>
+                  <button
+                    type="button"
+                    onClick={() => refetchDonghua()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 text-black font-bold"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Muat Ulang
+                  </button>
                 </div>
               ) : (
                 <div
@@ -1077,8 +1149,19 @@ export function LandingPage() {
               {moviesLoading ? (
                 <div className="flex gap-3 overflow-hidden py-1">
                   {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="w-40 sm:w-48 h-64 rounded-2xl bg-[#181827] animate-pulse shrink-0" />
+                    <div key={i} className="w-36 sm:w-44 h-60 rounded-2xl bg-surface animate-pulse shrink-0" />
                   ))}
+                </div>
+              ) : moviesError || latestMovies.length === 0 ? (
+                <div className="p-6 rounded-2xl bg-surface/60 border border-border-subtle flex items-center justify-between gap-4 text-xs text-text-secondary">
+                  <span>Feed movie terbaru sedang tidak dapat dijangkau.</span>
+                  <button
+                    type="button"
+                    onClick={() => refetchMovies()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500 text-white font-bold"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Muat Ulang
+                  </button>
                 </div>
               ) : (
                 <div
@@ -1089,13 +1172,16 @@ export function LandingPage() {
                     <Link
                       key={movie.id}
                       to={`/movies/${movie.id}`}
-                      className="w-36 sm:w-44 shrink-0 snap-start flex flex-col rounded-2xl overflow-hidden bg-[#181827]/90 border border-white/5 hover:border-rose-500/40 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-rose-500/10 group"
+                      className="w-36 sm:w-44 shrink-0 snap-start flex flex-col rounded-2xl overflow-hidden bg-surface/90 border border-white/5 hover:border-rose-500/40 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-rose-500/10 group"
                     >
-                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#11111D]">
+                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-surface-base">
                         <img
-                          src={movie.posterUrl}
+                          src={movie.posterUrl || POSTER_FALLBACK_SVG}
                           alt={movie.title}
                           loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = POSTER_FALLBACK_SVG;
+                          }}
                           className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                         />
                         <div className="absolute top-1.5 left-1.5 z-10">
@@ -1170,47 +1256,81 @@ export function LandingPage() {
                 id="music-row"
                 className="flex items-stretch gap-3.5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 scroll-smooth"
               >
-                {trendingMusicList.map((track) => (
-                  <div
-                    key={track.id}
-                    onClick={() => playTrack(track, trendingMusicList)}
-                    className="w-36 sm:w-44 shrink-0 snap-start flex flex-col rounded-2xl overflow-hidden bg-[#181827]/90 border border-white/5 hover:border-[#1DB954]/40 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-[#1DB954]/15 group cursor-pointer"
-                  >
-                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#11111D]">
-                      <img
-                        src={track.thumbnail}
-                        alt={track.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                      />
-                      <div className="absolute top-1.5 left-1.5 z-10">
-                        <span className="px-1.5 py-0.2 text-[9px] font-black uppercase rounded bg-[#1DB954]/90 text-black border border-[#1ed760]/30">
-                          Lagu
+                {trendingMusicList.map((track) => {
+                  const isActiveTrack = currentTrack?.id === track.id;
+                  const isThisPlaying = isActiveTrack && isPlaying;
+                  return (
+                    <button
+                      type="button"
+                      key={track.id}
+                      onClick={() => {
+                        if (isActiveTrack) {
+                          togglePlay();
+                        } else {
+                          playTrack(track, trendingMusicList);
+                        }
+                      }}
+                      className={`w-36 sm:w-44 shrink-0 snap-start flex flex-col text-left rounded-2xl overflow-hidden bg-surface/90 border transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl group cursor-pointer ${
+                        isActiveTrack
+                          ? 'border-[#1DB954] shadow-lg shadow-[#1DB954]/20'
+                          : 'border-white/5 hover:border-[#1DB954]/40 hover:shadow-[#1DB954]/15'
+                      }`}
+                    >
+                      <div className="relative aspect-square w-full overflow-hidden bg-surface-base">
+                        <img
+                          src={track.thumbnail || POSTER_FALLBACK_SVG}
+                          alt={track.title}
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = POSTER_FALLBACK_SVG;
+                          }}
+                          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                        />
+                        <div className="absolute top-1.5 left-1.5 z-10">
+                          <span className="px-1.5 py-0.2 text-[9px] font-black uppercase rounded bg-[#1DB954]/90 text-black border border-[#1ed760]/30">
+                            {isThisPlaying ? 'Playing' : 'Lagu'}
+                          </span>
+                        </div>
+                        <div
+                          className={`absolute inset-0 bg-black/40 transition-opacity flex items-center justify-center ${
+                            isActiveTrack ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                          }`}
+                        >
+                          <div className="w-9 h-9 rounded-full bg-[#1DB954] text-black flex items-center justify-center shadow-lg">
+                            {isThisPlaying ? (
+                              <span className="w-2.5 h-2.5 bg-black rounded-sm" />
+                            ) : (
+                              <Play className="w-4 h-4 fill-black ml-0.5" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/90 via-transparent to-transparent opacity-80" />
+                      </div>
+                      <div className="p-2.5 flex-1 flex flex-col justify-between gap-1 w-full">
+                        <div>
+                          <h4
+                            className={`text-xs font-bold line-clamp-1 transition-colors ${
+                              isActiveTrack ? 'text-[#1DB954]' : 'text-slate-100 group-hover:text-[#1DB954]'
+                            }`}
+                          >
+                            {track.title}
+                          </h4>
+                          <p className="text-[11px] text-text-secondary truncate mt-0.5">{track.artist}</p>
+                        </div>
+                        <span className="text-[10px] text-[#1DB954] font-semibold">
+                          {track.durationFormatted || 'Audio'}
                         </span>
                       </div>
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="w-9 h-9 rounded-full bg-[#1DB954] text-black flex items-center justify-center shadow-lg">
-                          <Play className="w-4 h-4 fill-black ml-0.5" />
-                        </div>
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#090912] via-transparent to-transparent opacity-80" />
-                    </div>
-                    <div className="p-2.5 flex-1 flex flex-col justify-between gap-1">
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-100 group-hover:text-[#1DB954] line-clamp-1 transition-colors">
-                          {track.title}
-                        </h4>
-                        <p className="text-[11px] text-slate-400 truncate mt-0.5">{track.artist}</p>
-                      </div>
-                      <span className="text-[10px] text-[#1DB954] font-semibold">{track.durationFormatted || 'Audio'}</span>
-                    </div>
-                  </div>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
       </div>
-    </div>
+        </div>
+      </MotionConfig>
+    </LazyMotion>
   );
 }

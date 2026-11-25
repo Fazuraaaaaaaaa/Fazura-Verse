@@ -26,6 +26,7 @@ import { useBookmarks } from '../hooks/useBookmarks';
 import { useReadingHistory } from '../hooks/useReadingHistory';
 import { DetailSkeleton } from '../components/SkeletonLoader';
 import { MangaCard } from '../components/MangaCard';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 export function MangaDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -51,6 +52,22 @@ export function MangaDetailPage() {
 
   const bookmarked = slug ? isBookmarked(slug) : false;
   const lastRead = slug ? getLastRead(slug) : undefined;
+
+  usePageMeta({
+    title: manga?.title ? `${manga.title} - Baca Komik Sub Indo` : 'Detail Komik',
+    description: manga?.synopsis?.slice(0, 155) || 'Baca komik manga, manhwa, dan manhua sub Indo lengkap di FazuraStream.',
+    image: manga?.cover,
+    type: 'article',
+    jsonLd: manga?.title
+      ? {
+          '@type': 'Book',
+          name: manga.title,
+          image: manga.cover,
+          author: manga.author,
+          description: manga.synopsis?.slice(0, 200),
+        }
+      : undefined,
+  });
 
   // Query Rekomendasi Terkait sesuai Genre Manga
   const primaryGenre = useMemo(() => {

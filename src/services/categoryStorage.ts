@@ -580,42 +580,58 @@ export function applyBackupData(
   backup: BackupData,
   mode: 'merge' | 'overwrite' = 'merge'
 ): { bookmarksImported: number; historyImported: number } {
+  // Snapshot existing state so failed writes never erase user's previous library
+  const snapshotBookmarks = getAllCategoryBookmarks();
+  const snapshotHistory = getAllCategoryHistory();
+
   let bookmarksImported = 0;
   let historyImported = 0;
 
-  for (const cat of ALL_CATEGORIES) {
-    const newBookmarks = backup.bookmarks[cat] || [];
-    if (mode === 'overwrite') {
-      saveCategoryBookmarks(cat, newBookmarks);
-      bookmarksImported += newBookmarks.length;
-    } else {
-      const current = getCategoryBookmarks(cat);
-      const currentIds = new Set(current.map((b) => String(b.id)));
-      const itemsToAdd = newBookmarks.filter((b) => !currentIds.has(String(b.id)));
-      const merged = [...itemsToAdd, ...current];
-      saveCategoryBookmarks(cat, merged);
-      bookmarksImported += itemsToAdd.length;
+  try {
+    for (const cat of ALL_CATEGORIES) {
+      const newBookmarks = backup.bookmarks[cat] || [];
+      if (mode === 'overwrite') {
+        localStorage.setItem(getBookmarkKey(cat), JSON.stringify(newBookmarks));
+        bookmarksImported += newBookmarks.length;
+      } else {
+        const current = getCategoryBookmarks(cat);
+        const currentIds = new Set(current.map((b) => String(b.id)));
+        const itemsToAdd = newBookmarks.filter((b) => !currentIds.has(String(b.id)));
+        const merged = [...itemsToAdd, ...current];
+        localStorage.setItem(getBookmarkKey(cat), JSON.stringify(merged));
+        bookmarksImported += itemsToAdd.length;
+      }
+
+      const newHistory = backup.history[cat] || [];
+      if (mode === 'overwrite') {
+        localStorage.setItem(getHistoryKey(cat), JSON.stringify(newHistory));
+        historyImported += newHistory.length;
+      } else {
+        const current = getCategoryHistory(cat);
+        const currentIds = new Set(current.map((h) => String(h.id)));
+        const itemsToAdd = newHistory.filter((h) => !currentIds.has(String(h.id)));
+        const merged = [...itemsToAdd, ...current].slice(0, 100);
+        localStorage.setItem(getHistoryKey(cat), JSON.stringify(merged));
+        historyImported += itemsToAdd.length;
+      }
     }
 
-    const newHistory = backup.history[cat] || [];
-    if (mode === 'overwrite') {
-      saveCategoryHistory(cat, newHistory);
-      historyImported += newHistory.length;
-    } else {
-      const current = getCategoryHistory(cat);
-      const currentIds = new Set(current.map((h) => String(h.id)));
-      const itemsToAdd = newHistory.filter((h) => !currentIds.has(String(h.id)));
-      const merged = [...itemsToAdd, ...current].slice(0, 100);
-      saveCategoryHistory(cat, merged);
-      historyImported += itemsToAdd.length;
+    window.dispatchEvent(new CustomEvent(BOOKMARK_EVENT, { detail: { category: undefined } }));
+    window.dispatchEvent(new CustomEvent(HISTORY_EVENT, { detail: { category: undefined } }));
+
+    return { bookmarksImported, historyImported };
+  } catch (err) {
+    // Rollback to pre-import snapshot on storage error
+    try {
+      for (const cat of ALL_CATEGORIES) {
+        localStorage.setItem(getBookmarkKey(cat), JSON.stringify(snapshotBookmarks[cat] || []));
+        localStorage.setItem(getHistoryKey(cat), JSON.stringify(snapshotHistory[cat] || []));
+      }
+    } catch {
+      // ignore secondary rollback failure
     }
+    throw err;
   }
-
-  // Notify listeners across the application
-  window.dispatchEvent(new CustomEvent(BOOKMARK_EVENT, { detail: { category: undefined } }));
-  window.dispatchEvent(new CustomEvent(HISTORY_EVENT, { detail: { category: undefined } }));
-
-  return { bookmarksImported, historyImported };
 }
 
 export function downloadBackupFile() {

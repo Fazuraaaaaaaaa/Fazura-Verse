@@ -18,6 +18,11 @@ import {
   type CategoryHistoryItem,
 } from '../../services/categoryStorage';
 import { useMusic } from '../../context/MusicContext';
+import {
+  MUSIC_FALLBACK_SVG,
+  handleMusicImageError,
+  handleMusicImageLoad,
+} from '../../utils/musicThumbnail';
 
 interface HubHistoryShelfProps {
   category: CategoryType;
@@ -239,10 +244,19 @@ export function HubHistoryShelf({
                   {/* Poster Thumbnail */}
                   <div className="relative w-16 h-20 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-white/10 shadow-md">
                     <img
-                      src={item.cover}
+                      src={item.cover || (item.category === 'music' ? MUSIC_FALLBACK_SVG : '')}
                       alt={item.title}
                       referrerPolicy="no-referrer"
+                      onLoad={(e) => {
+                        if (item.category === 'music') {
+                          handleMusicImageLoad(e);
+                        }
+                      }}
                       onError={(e) => {
+                        if (item.category === 'music') {
+                          handleMusicImageError(e);
+                          return;
+                        }
                         (e.target as HTMLImageElement).src =
                           "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22140%22%20viewBox%3D%220%200%20100%20140%22%3E%3Crect%20fill%3D%22%23141824%22%20width%3D%22100%22%20height%3D%22140%22%2F%3E%3C/svg%3E";
                       }}

@@ -214,9 +214,9 @@ export function LyricsModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl max-h-[90vh] bg-[#121620] border border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-2xl max-h-[90vh] bg-surface border border-border-subtle rounded-3xl shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/10 bg-[#161b29]/90 z-20">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-border-subtle bg-surface-elevated/90 z-20">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-2xl bg-[#1DB954]/20 border border-[#1DB954]/40 flex items-center justify-center text-[#1DB954] shrink-0 shadow-lg shadow-[#1DB954]/20">
               <Mic2 className="w-5 h-5" />
@@ -275,7 +275,7 @@ export function LyricsModal() {
 
         {/* Sync Controls Toolbar (Expandable) */}
         {showSyncControls && (
-          <div className="px-6 py-2.5 bg-[#0e121a] border-b border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs z-20">
+          <div className="px-6 py-2.5 bg-surface-base border-b border-border-subtle flex flex-wrap items-center justify-between gap-3 text-xs z-20">
             <div className="flex items-center gap-2">
               <span className="text-slate-400 font-semibold flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5 text-[#1DB954]" /> Kalibrasi Delay:

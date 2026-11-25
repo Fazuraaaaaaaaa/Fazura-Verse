@@ -36,6 +36,7 @@ import {
 import type { Movie, MovieQueryParams } from '../types/movie';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 import { HubHistoryShelf } from '../components/library/HubHistoryShelf';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 const COLLECTION_TABS = [
   { id: 'trending', label: 'Trending', icon: Flame },
@@ -57,6 +58,10 @@ const SORT_OPTIONS = [
 ];
 
 export function MovieHubPage() {
+  usePageMeta({
+    title: 'Cinema & Movie Hub - Film Box Office & Serial TV HD',
+    description: 'Jelajahi film bioskop box office terbaru, top rated, dan serial TV internasional multi-server HD di FazuraStream.',
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 

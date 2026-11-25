@@ -8,27 +8,29 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Design System Phase 2 Tokens
+        // Design System Standardized Tokens
         'bg-primary': '#090912',
         'bg-secondary': '#11111D',
-        'surface': '#181827',
-        'surface-elevated': '#202033',
+        'surface-base': '#11111D',
+        'surface-secondary': '#202033',
         'accent-primary': '#8B5CF6',
         'accent-secondary': '#A78BFA',
         'accent-soft': '#C4B5FD',
-        'text-primary': '#F8FAFC',
+        'text-primary': '#FFFFFF',
         'text-secondary': '#A1A1B5',
         'text-muted': '#717187',
         'border-subtle': 'rgba(255, 255, 255, 0.08)',
 
-        // Nested structure for both utility forms (e.g. bg-bg-primary and bg-primary)
+        // Nested structure for both utility forms
         bg: {
           primary: '#090912',
           secondary: '#11111D',
         },
         surface: {
           DEFAULT: '#181827',
+          base: '#11111D',
           elevated: '#202033',
+          secondary: '#202033',
         },
         accent: {
           DEFAULT: '#8B5CF6',
@@ -40,7 +42,7 @@ export default {
           cyan: '#06b6d4',
         },
         text: {
-          primary: '#F8FAFC',
+          primary: '#FFFFFF',
           secondary: '#A1A1B5',
           muted: '#717187',
         },

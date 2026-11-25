@@ -17,9 +17,51 @@ export const LOCAL_API_URL = 'http://localhost:4000';
 
 const STORAGE_KEY_API_URL = 'fazura_movie_api_base_url';
 
-// Public TMDB key for full catalog resilience
-const TMDB_API_KEY = '1cf50e6248dc270629e802686245c2c8';
+// TMDB API configuration (supports optional env override)
+const TMDB_API_KEY =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TMDB_API_KEY) ||
+  '1cf50e6248dc270629e802686245c2c8';
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+
+// In-memory TTL cache & concurrent request deduplication for zero-latency repeat loads
+const MOVIE_CACHE_TTL_MS = 5 * 60 * 1000;
+const MOVIE_RESPONSE_CACHE = new Map<string, { data: unknown; expiresAt: number }>();
+const MOVIE_IN_FLIGHT = new Map<string, Promise<unknown>>();
+
+function getCachedMovieData<T>(key: string): T | null {
+  const entry = MOVIE_RESPONSE_CACHE.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    MOVIE_RESPONSE_CACHE.delete(key);
+    return null;
+  }
+  return entry.data as T;
+}
+
+function setCachedMovieData(key: string, data: unknown): void {
+  if (MOVIE_RESPONSE_CACHE.size >= 100) {
+    const oldestKey = MOVIE_RESPONSE_CACHE.keys().next().value;
+    if (oldestKey) MOVIE_RESPONSE_CACHE.delete(oldestKey);
+  }
+  MOVIE_RESPONSE_CACHE.set(key, {
+    data,
+    expiresAt: Date.now() + MOVIE_CACHE_TTL_MS,
+  });
+}
+
+async function fetchTmdbJson<T = any>(url: string, timeoutMs = 7000): Promise<T | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    clearTimeout(timer);
+    return null;
+  }
+}
 
 export function getMovieApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
@@ -253,117 +295,133 @@ function generateMultiServerStreams(
 export async function getMovies(params: MovieQueryParams = {}): Promise<MoviesResponse> {
   const page = params.page || 1;
   const isTvCollection = params.collection === 'tv';
+  const cacheKey = `movies:${JSON.stringify({
+    page,
+    q: params.q || '',
+    genre: params.genre || '',
+    collection: params.collection || 'trending',
+    minRating: params.minRating || 0,
+    sort: params.sort || '',
+  })}`;
 
-  // Optional: check if developer has configured a local custom backend
-  const localRes = await fetchFromLocalCustomApi<MoviesResponse>(
-    `/api/movies?page=${page}&perPage=${params.perPage || 24}`
-  );
-  if (localRes && Array.isArray(localRes.data) && localRes.data.length > 0) {
-    return localRes;
+  const cached = getCachedMovieData<MoviesResponse>(cacheKey);
+  if (cached) return cached;
+
+  const existingRequest = MOVIE_IN_FLIGHT.get(cacheKey);
+  if (existingRequest) {
+    return existingRequest as Promise<MoviesResponse>;
   }
 
-  // Live TMDB API: Query directly with zero latency bottleneck
-  try {
-    let tmdbUrl = '';
-
-    if (params.q) {
-      // Live search TMDB
-      tmdbUrl = `${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&language=en-US&query=${encodeURIComponent(
-        params.q
-      )}&page=${page}&include_adult=false`;
-    } else if (params.genre && params.genre !== 'All') {
-      const genreId = TMDB_GENRE_MAP[params.genre] || 28;
-      const endpoint = isTvCollection ? 'discover/tv' : 'discover/movie';
-      tmdbUrl = `${TMDB_BASE_URL}/${endpoint}?api_key=${TMDB_API_KEY}&language=en-US&with_genres=${genreId}&page=${page}&include_adult=false&sort_by=popularity.desc`;
-    } else if (params.collection === 'top_rated') {
-      tmdbUrl = `${TMDB_BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
-    } else if (params.collection === 'now_playing') {
-      tmdbUrl = `${TMDB_BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
-    } else if (params.collection === 'upcoming') {
-      tmdbUrl = `${TMDB_BASE_URL}/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
-    } else if (params.collection === 'tv') {
-      tmdbUrl = `${TMDB_BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
-    } else if (params.collection === 'popular') {
-      tmdbUrl = `${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
-    } else {
-      // Default: Trending Hari Ini (Movie & TV campuran)
-      tmdbUrl = `${TMDB_BASE_URL}/trending/all/day?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
-    }
-
-    if (params.minRating && tmdbUrl.includes('discover')) {
-      tmdbUrl += `&vote_average.gte=${params.minRating}`;
-    }
-
-    const tmdbRes = await fetch(tmdbUrl);
-    if (!tmdbRes.ok) throw new Error(`TMDB responded ${tmdbRes.status}`);
-
-    const tmdbJson = await tmdbRes.json();
-    let rawItems: any[] = tmdbJson.results || [];
-
-    // Filter out person results from search/multi
-    rawItems = rawItems.filter((item) => item.media_type !== 'person');
-
-    // Filter by minRating if applied client-side
-    if (params.minRating) {
-      rawItems = rawItems.filter((item) => (item.vote_average || 0) >= params.minRating!);
-    }
-
-    // Sort client-side if needed
-    if (params.sort === 'rating_desc') {
-      rawItems.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
-    } else if (params.sort === 'date_desc') {
-      rawItems.sort((a, b) => {
-        const dateA = a.release_date || a.first_air_date || '';
-        const dateB = b.release_date || b.first_air_date || '';
-        return dateB.localeCompare(dateA);
-      });
-    } else if (params.sort === 'title_asc') {
-      rawItems.sort((a, b) => {
-        const titleA = a.title || a.name || '';
-        const titleB = b.title || b.name || '';
-        return titleA.localeCompare(titleB);
-      });
-    }
-
-    const movies: Movie[] = rawItems.map((item) =>
-      mapTmdbItemToMovie(item, isTvCollection ? 'tv' : undefined)
+  const requestPromise = (async (): Promise<MoviesResponse> => {
+    // Optional: check if developer has configured a local custom backend
+    const localRes = await fetchFromLocalCustomApi<MoviesResponse>(
+      `/api/movies?page=${page}&perPage=${params.perPage || 24}`
     );
+    if (localRes && Array.isArray(localRes.data) && localRes.data.length > 0) {
+      setCachedMovieData(cacheKey, localRes);
+      return localRes;
+    }
 
-    const total = tmdbJson.total_results || movies.length;
-    const totalPages = Math.min(tmdbJson.total_pages || 1, 500);
+    // Live TMDB API: Query directly with bounded timeout & zero 6s custom-backend bottleneck
+    try {
+      let tmdbUrl = '';
 
-    return {
-      total,
-      page,
-      perPage: movies.length,
-      totalPages,
-      data: movies,
-    };
-  } catch (tmdbErr) {
-    console.warn('[MovieApi] TMDB fetch failed, falling back to emergency cache:', tmdbErr);
-    // Emergency static list if offline
-    return {
-      total: 12,
-      page: 1,
-      perPage: 12,
-      totalPages: 1,
-      data: [
-        {
-          id: '693134',
-          title: 'Dune: Part Two',
-          description: 'Paul Atreides bersatu kembali dengan Chani dan Fremen untuk membalas dendam.',
-          posterUrl: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
-          backdropUrl: 'https://image.tmdb.org/t/p/original/xOMo8BRK7PfcJv9JCnx7s5200bm.jpg',
-          releaseDate: '2024-02-27',
-          genres: ['Sci-Fi', 'Adventure', 'Action'],
-          ratingValue: 8.5,
-          ratingCount: 5420,
-          duration: '2h 46m',
-          mediaType: 'movie',
-        },
-      ],
-    };
-  }
+      if (params.q) {
+        tmdbUrl = `${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&language=en-US&query=${encodeURIComponent(
+          params.q
+        )}&page=${page}&include_adult=false`;
+      } else if (params.genre && params.genre !== 'All') {
+        const genreId = TMDB_GENRE_MAP[params.genre] || 28;
+        const endpoint = isTvCollection ? 'discover/tv' : 'discover/movie';
+        tmdbUrl = `${TMDB_BASE_URL}/${endpoint}?api_key=${TMDB_API_KEY}&language=en-US&with_genres=${genreId}&page=${page}&include_adult=false&sort_by=popularity.desc`;
+      } else if (params.collection === 'top_rated') {
+        tmdbUrl = `${TMDB_BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+      } else if (params.collection === 'now_playing') {
+        tmdbUrl = `${TMDB_BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+      } else if (params.collection === 'upcoming') {
+        tmdbUrl = `${TMDB_BASE_URL}/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+      } else if (params.collection === 'tv') {
+        tmdbUrl = `${TMDB_BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+      } else if (params.collection === 'popular') {
+        tmdbUrl = `${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+      } else {
+        tmdbUrl = `${TMDB_BASE_URL}/trending/all/day?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+      }
+
+      if (params.minRating && tmdbUrl.includes('discover')) {
+        tmdbUrl += `&vote_average.gte=${params.minRating}`;
+      }
+
+      const tmdbJson = await fetchTmdbJson<any>(tmdbUrl, 7000);
+      if (!tmdbJson) throw new Error('TMDB request failed or timed out');
+
+      let rawItems: any[] = tmdbJson.results || [];
+      rawItems = rawItems.filter((item) => item.media_type !== 'person');
+
+      if (params.minRating) {
+        rawItems = rawItems.filter((item) => (item.vote_average || 0) >= params.minRating!);
+      }
+
+      if (params.sort === 'rating_desc') {
+        rawItems.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+      } else if (params.sort === 'date_desc') {
+        rawItems.sort((a, b) => {
+          const dateA = a.release_date || a.first_air_date || '';
+          const dateB = b.release_date || b.first_air_date || '';
+          return dateB.localeCompare(dateA);
+        });
+      } else if (params.sort === 'title_asc') {
+        rawItems.sort((a, b) => {
+          const titleA = a.title || a.name || '';
+          const titleB = b.title || b.name || '';
+          return titleA.localeCompare(titleB);
+        });
+      }
+
+      const movies: Movie[] = rawItems.map((item) =>
+        mapTmdbItemToMovie(item, isTvCollection ? 'tv' : undefined)
+      );
+
+      const response: MoviesResponse = {
+        total: tmdbJson.total_results || movies.length,
+        page,
+        perPage: movies.length,
+        totalPages: Math.min(tmdbJson.total_pages || 1, 500),
+        data: movies,
+      };
+
+      setCachedMovieData(cacheKey, response);
+      return response;
+    } catch (tmdbErr) {
+      console.warn('[MovieApi] TMDB fetch failed, falling back to emergency cache:', tmdbErr);
+      return {
+        total: 1,
+        page: 1,
+        perPage: 1,
+        totalPages: 1,
+        data: [
+          {
+            id: '693134',
+            title: 'Dune: Part Two',
+            description: 'Paul Atreides bersatu kembali dengan Chani dan Fremen untuk membalas dendam.',
+            posterUrl: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
+            backdropUrl: 'https://image.tmdb.org/t/p/original/xOMo8BRK7PfcJv9JCnx7s5200bm.jpg',
+            releaseDate: '2024-02-27',
+            genres: ['Sci-Fi', 'Adventure', 'Action'],
+            ratingValue: 8.5,
+            ratingCount: 5420,
+            duration: '2h 46m',
+            mediaType: 'movie',
+          },
+        ],
+      };
+    } finally {
+      MOVIE_IN_FLIGHT.delete(cacheKey);
+    }
+  })();
+
+  MOVIE_IN_FLIGHT.set(cacheKey, requestPromise);
+  return requestPromise;
 }
 
 /**
@@ -371,97 +429,98 @@ export async function getMovies(params: MovieQueryParams = {}): Promise<MoviesRe
  * Detail Lengkap Film / Serial langsung via live TMDB (< 500ms)
  */
 export async function getMovieDetail(id: string): Promise<MovieDetailResponse> {
-  // Live TMDB Detail
-  try {
-    let tmdbData: any = null;
-    let isTv = false;
+  const cacheKey = `movie_detail:${id}`;
+  const cached = getCachedMovieData<MovieDetailResponse>(cacheKey);
+  if (cached) return cached;
 
-    // Coba /movie/:id dulu
-    const movieRes = await fetch(
-      `${TMDB_BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=credits,videos,recommendations,similar`
-    );
+  const existing = MOVIE_IN_FLIGHT.get(cacheKey);
+  if (existing) return existing as Promise<MovieDetailResponse>;
 
-    if (movieRes.ok) {
-      tmdbData = await movieRes.json();
-    } else {
-      // Coba /tv/:id
-      const tvRes = await fetch(
-        `${TMDB_BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=credits,videos,recommendations,similar`
+  const requestPromise = (async (): Promise<MovieDetailResponse> => {
+    try {
+      let tmdbData: any = await fetchTmdbJson<any>(
+        `${TMDB_BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=credits,videos,recommendations,similar`,
+        7000
       );
-      if (tvRes.ok) {
-        tmdbData = await tvRes.json();
-        isTv = true;
+      let isTv = false;
+
+      if (!tmdbData) {
+        tmdbData = await fetchTmdbJson<any>(
+          `${TMDB_BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=credits,videos,recommendations,similar`,
+          7000
+        );
+        if (tmdbData) isTv = true;
       }
+
+      if (tmdbData) {
+        const baseMovie = mapTmdbItemToMovie(tmdbData, isTv ? 'tv' : 'movie');
+
+        const videos: any[] = tmdbData.videos?.results || [];
+        const trailer =
+          videos.find((v) => v.type === 'Trailer' && v.site === 'YouTube') ||
+          videos.find((v) => v.site === 'YouTube');
+
+        const castList: any[] = tmdbData.credits?.cast || [];
+        const cast = castList.slice(0, 8).map((c) => ({
+          id: c.id,
+          name: c.name,
+          character: c.character,
+          profileUrl: c.profile_path
+            ? `https://image.tmdb.org/t/p/w185${c.profile_path}`
+            : undefined,
+        }));
+
+        const recs: any[] =
+          tmdbData.recommendations?.results || tmdbData.similar?.results || [];
+        const related = recs.slice(0, 6).map((item) => mapTmdbItemToMovie(item));
+
+        const movieDetail: MovieDetail = {
+          ...baseMovie,
+          tagline: tmdbData.tagline || undefined,
+          trailerUrl: trailer ? `https://www.youtube.com/embed/${trailer.key}` : undefined,
+          trailerKey: trailer?.key,
+          cast,
+          status: tmdbData.status,
+          budget: tmdbData.budget,
+          revenue: tmdbData.revenue,
+          runtime: tmdbData.runtime,
+          spokenLanguages: tmdbData.spoken_languages?.map((l: any) => l.english_name || l.name) || [],
+          productionCompanies: tmdbData.production_companies?.map((c: any) => c.name) || [],
+          numberOfSeasons: tmdbData.number_of_seasons,
+          numberOfEpisodes: tmdbData.number_of_episodes,
+        };
+
+        const detailRes: MovieDetailResponse = { data: movieDetail, related };
+        setCachedMovieData(cacheKey, detailRes);
+        return detailRes;
+      }
+    } catch (tmdbErr) {
+      console.warn('[MovieApi] TMDB movie detail failed:', tmdbErr);
+    } finally {
+      MOVIE_IN_FLIGHT.delete(cacheKey);
     }
 
-    if (tmdbData) {
-      const baseMovie = mapTmdbItemToMovie(tmdbData, isTv ? 'tv' : 'movie');
+    const fallback = {
+      id,
+      title: 'Movie Title #' + id,
+      description: 'Sinopsis film memukau dengan alur cerita menarik dan pengalaman visual definisi tinggi.',
+      posterUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500',
+      mediaType: 'movie' as const,
+      ratingValue: 8.0,
+      ratingCount: 1000,
+      releaseDate: '2024-01-01',
+      genres: ['Action', 'Sci-Fi'],
+      trailerUrl: 'https://www.youtube.com/embed/Way9Dexny3w',
+    };
 
-      // Cari trailer YouTube
-      const videos: any[] = tmdbData.videos?.results || [];
-      const trailer =
-        videos.find((v) => v.type === 'Trailer' && v.site === 'YouTube') ||
-        videos.find((v) => v.site === 'YouTube');
+    return {
+      data: fallback,
+      related: [],
+    };
+  })();
 
-      // Ambil top 8 pemeran utama
-      const castList: any[] = tmdbData.credits?.cast || [];
-      const cast = castList.slice(0, 8).map((c) => ({
-        id: c.id,
-        name: c.name,
-        character: c.character,
-        profileUrl: c.profile_path
-          ? `https://image.tmdb.org/t/p/w185${c.profile_path}`
-          : undefined,
-      }));
-
-      // Rekomendasi terkait
-      const recs: any[] =
-        tmdbData.recommendations?.results || tmdbData.similar?.results || [];
-      const related = recs.slice(0, 6).map((item) => mapTmdbItemToMovie(item));
-
-      const movieDetail: MovieDetail = {
-        ...baseMovie,
-        tagline: tmdbData.tagline || undefined,
-        trailerUrl: trailer ? `https://www.youtube.com/embed/${trailer.key}` : undefined,
-        trailerKey: trailer?.key,
-        cast,
-        status: tmdbData.status,
-        budget: tmdbData.budget,
-        revenue: tmdbData.revenue,
-        runtime: tmdbData.runtime,
-        spokenLanguages: tmdbData.spoken_languages?.map((l: any) => l.english_name || l.name) || [],
-        productionCompanies: tmdbData.production_companies?.map((c: any) => c.name) || [],
-        numberOfSeasons: tmdbData.number_of_seasons,
-        numberOfEpisodes: tmdbData.number_of_episodes,
-      };
-
-      return {
-        data: movieDetail,
-        related,
-      };
-    }
-  } catch (tmdbErr) {
-    console.warn('[MovieApi] TMDB movie detail failed:', tmdbErr);
-  }
-
-  // Fallback data
-  const fallback = {
-    id,
-    title: 'Movie Title #' + id,
-    description: 'Sinopsis film memukau dengan alur cerita menarik dan pengalaman visual definisi tinggi.',
-    posterUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500',
-    mediaType: 'movie' as const,
-    ratingValue: 8.0,
-    ratingCount: 1000,
-    releaseDate: '2024-01-01',
-    genres: ['Action', 'Sci-Fi'],
-    trailerUrl: 'https://www.youtube.com/embed/Way9Dexny3w',
-  };
-
-  return {
-    data: fallback,
-    related: [],
-  };
+  MOVIE_IN_FLIGHT.set(cacheKey, requestPromise);
+  return requestPromise;
 }
 
 /**
@@ -499,10 +558,16 @@ export async function getMovieStream(
  * Daftar Season untuk Serial TV langsung via TMDB
  */
 export async function getMovieSeasons(id: string): Promise<SeasonItem[]> {
+  const cacheKey = `movie_seasons:${id}`;
+  const cached = getCachedMovieData<SeasonItem[]>(cacheKey);
+  if (cached) return cached;
+
   try {
-    const tvRes = await fetch(`${TMDB_BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=en-US`);
-    if (tvRes.ok) {
-      const tvJson = await tvRes.json();
+    const tvJson = await fetchTmdbJson<any>(
+      `${TMDB_BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=en-US`,
+      7000
+    );
+    if (tvJson) {
       const rawSeasons: any[] = tvJson.seasons || [];
       const seasons = rawSeasons
         .filter((s) => s.season_number > 0)
@@ -515,7 +580,10 @@ export async function getMovieSeasons(id: string): Promise<SeasonItem[]> {
           airDate: s.air_date,
           overview: s.overview,
         }));
-      if (seasons.length > 0) return seasons;
+      if (seasons.length > 0) {
+        setCachedMovieData(cacheKey, seasons);
+        return seasons;
+      }
     }
   } catch (tmdbErr) {
     console.warn('[MovieApi] TMDB seasons failed:', tmdbErr);
@@ -537,15 +605,19 @@ export async function getMovieSeasons(id: string): Promise<SeasonItem[]> {
  * Daftar Episode dalam Season Terpilih langsung via TMDB
  */
 export async function getMovieEpisodes(id: string, season = 1): Promise<EpisodeItem[]> {
+  const cacheKey = `movie_episodes:${id}:s${season}`;
+  const cached = getCachedMovieData<EpisodeItem[]>(cacheKey);
+  if (cached) return cached;
+
   try {
-    const epRes = await fetch(
-      `${TMDB_BASE_URL}/tv/${id}/season/${season}?api_key=${TMDB_API_KEY}&language=en-US`
+    const epJson = await fetchTmdbJson<any>(
+      `${TMDB_BASE_URL}/tv/${id}/season/${season}?api_key=${TMDB_API_KEY}&language=en-US`,
+      7000
     );
-    if (epRes.ok) {
-      const epJson = await epRes.json();
+    if (epJson) {
       const rawEpisodes: any[] = epJson.episodes || [];
       if (rawEpisodes.length > 0) {
-        return rawEpisodes.map((ep) => ({
+        const episodes = rawEpisodes.map((ep) => ({
           id: ep.id,
           episodeNumber: ep.episode_number,
           seasonNumber: season,
@@ -559,6 +631,8 @@ export async function getMovieEpisodes(id: string, season = 1): Promise<EpisodeI
           duration: ep.runtime ? `${ep.runtime}m` : undefined,
           ratingValue: ep.vote_average ? Math.round(ep.vote_average * 10) / 10 : undefined,
         }));
+        setCachedMovieData(cacheKey, episodes);
+        return episodes;
       }
     }
   } catch (tmdbErr) {

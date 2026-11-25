@@ -2154,7 +2154,7 @@ export async function resolveTrackYouTubeId(track: MusicTrackItem): Promise<stri
         return data.videoId;
       }
     }
-  } catch (err) {
+  } catch {
     // ignore
   }
 
@@ -2298,7 +2298,7 @@ export async function searchMusic(query: string): Promise<MusicTrackItem[]> {
         return combined;
       }
     }
-  } catch (err) {
+  } catch {
     // If online search fails or timeouts, safely return local matches
   }
 

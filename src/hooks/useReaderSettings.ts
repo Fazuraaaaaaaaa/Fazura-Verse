@@ -11,6 +11,7 @@ export const DEFAULT_READER_SETTINGS: ReaderSettings = {
   fit: 'width',
   gap: 12,
   background: 'black',
+  direction: 'ltr',
   invertColors: false,
 };
 
@@ -28,6 +29,7 @@ function getStoredSettings(): ReaderSettings {
       fit: parsed.fit || DEFAULT_READER_SETTINGS.fit,
       gap: typeof parsed.gap === 'number' ? parsed.gap : DEFAULT_READER_SETTINGS.gap,
       background: parsed.background || DEFAULT_READER_SETTINGS.background,
+      direction: parsed.direction === 'rtl' ? 'rtl' : 'ltr',
       invertColors: Boolean(parsed.invertColors),
     };
   } catch (e) {

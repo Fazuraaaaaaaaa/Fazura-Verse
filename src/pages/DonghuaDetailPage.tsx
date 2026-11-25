@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { getDonghuaDetail } from '../services/donghuaApi';
 import { useCategoryBookmarks } from '../services/categoryStorage';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 function formatEpisodeName(rawTitle: string | number, fallbackSlug?: string): string {
   const str = String(rawTitle || '').trim();
@@ -48,6 +49,13 @@ export function DonghuaDetailPage() {
     queryKey: ['donghua', 'detail', slug],
     queryFn: () => getDonghuaDetail(slug || ''),
     enabled: Boolean(slug),
+  });
+
+  usePageMeta({
+    title: donghua?.title ? `${donghua.title} - Streaming Donghua Sub Indo` : 'Detail Donghua',
+    description: donghua?.synopsis?.slice(0, 155) || 'Tonton donghua sub Indo lengkap di FazuraStream.',
+    image: donghua?.poster,
+    type: 'video.episode',
   });
 
   const filteredEpisodes = useMemo(() => {

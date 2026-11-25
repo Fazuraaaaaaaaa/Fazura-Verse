@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { type MusicTrackItem, FAZURA_MUSIC_CATALOG, resolveTrackYouTubeId } from '../services/musicApi';
+import type { MusicTrackItem } from '../services/musicApi';
 import { recordCategoryHistory } from '../services/categoryStorage';
 
 // YouTube Iframe API types declaration
@@ -10,7 +10,28 @@ declare global {
   }
 }
 
+export interface MusicPlaylist {
+  id: string;
+  name: string;
+  createdAt: number;
+  tracks: MusicTrackItem[];
+}
+
 const VOLUME_STORAGE_KEY = 'fazura_player_volume';
+const PLAYER_STATE_KEY = 'fazura_player_state_v1';
+const PLAYLISTS_STORAGE_KEY = 'fazura_music_playlists';
+
+const DEFAULT_FALLBACK_TRACK: MusicTrackItem = {
+  id: 't-diewithasmile',
+  youtubeId: 'kPa7bsKwL-c',
+  title: 'Die With A Smile',
+  artist: 'Lady Gaga, Bruno Mars',
+  album: 'Die With A Smile',
+  thumbnail: 'https://i.ytimg.com/vi/kPa7bsKwL-c/hqdefault.jpg',
+  durationFormatted: '4:11',
+  tag: 'Global #1',
+  genre: 'pop',
+};
 
 const getInitialVolume = (): number => {
   if (typeof window === 'undefined') return 80;
@@ -28,9 +49,71 @@ const getInitialVolume = (): number => {
   return 80;
 };
 
+interface PersistedPlayerState {
+  currentTrack: MusicTrackItem | null;
+  queue: MusicTrackItem[];
+  isShuffle: boolean;
+  repeatMode: 'off' | 'all' | 'one';
+  currentTime: number;
+  isPlayerDismissed: boolean;
+}
+
+function getInitialPlayerState(): PersistedPlayerState {
+  if (typeof window === 'undefined') {
+    return {
+      currentTrack: null,
+      queue: [],
+      isShuffle: false,
+      repeatMode: 'all',
+      currentTime: 0,
+      isPlayerDismissed: false,
+    };
+  }
+  try {
+    const raw = localStorage.getItem(PLAYER_STATE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        currentTrack: parsed.currentTrack || null,
+        queue: Array.isArray(parsed.queue) ? parsed.queue : [],
+        isShuffle: Boolean(parsed.isShuffle),
+        repeatMode:
+          parsed.repeatMode === 'off' || parsed.repeatMode === 'one' || parsed.repeatMode === 'all'
+            ? parsed.repeatMode
+            : 'all',
+        currentTime: typeof parsed.currentTime === 'number' ? parsed.currentTime : 0,
+        isPlayerDismissed: Boolean(parsed.isPlayerDismissed),
+      };
+    }
+  } catch {
+    // fallback
+  }
+  return {
+    currentTrack: null,
+    queue: [],
+    isShuffle: false,
+    repeatMode: 'all',
+    currentTime: 0,
+    isPlayerDismissed: false,
+  };
+}
+
+function getInitialPlaylists(): MusicPlaylist[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(PLAYLISTS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 interface MusicContextType {
   currentTrack: MusicTrackItem | null;
   isPlaying: boolean;
+  isLoadingTrack: boolean;
+  playerError: string | null;
   currentTime: number;
   duration: number;
   volume: number;
@@ -38,7 +121,9 @@ interface MusicContextType {
   isShuffle: boolean;
   repeatMode: 'off' | 'all' | 'one';
   queue: MusicTrackItem[];
+  playlists: MusicPlaylist[];
   showLyrics: boolean;
+  showQueue: boolean;
   isPlayerDismissed: boolean;
   playTrack: (track: MusicTrackItem, newQueue?: MusicTrackItem[]) => void;
   togglePlay: () => void;
@@ -52,24 +137,45 @@ interface MusicContextType {
   toggleShuffle: () => void;
   toggleRepeat: () => void;
   setShowLyrics: (show: boolean | ((prev: boolean) => boolean)) => void;
+  setShowQueue: (show: boolean | ((prev: boolean) => boolean)) => void;
   dismissPlayer: () => void;
+  clearPlayerError: () => void;
+  // Queue management
+  addToQueue: (track: MusicTrackItem) => void;
+  removeFromQueue: (trackId: string) => void;
+  moveQueueItem: (fromIndex: number, toIndex: number) => void;
+  clearQueue: () => void;
+  // Playlist management
+  createPlaylist: (name: string) => MusicPlaylist | null;
+  deletePlaylist: (playlistId: string) => void;
+  addTrackToPlaylist: (playlistId: string, track: MusicTrackItem) => void;
+  removeTrackFromPlaylist: (playlistId: string, trackId: string) => void;
 }
 
 const MusicContext = createContext<MusicContextType | null>(null);
 
 export function MusicProvider({ children }: { children: React.ReactNode }) {
-  // Start with null so that player bar does NOT overlap or show until user initiates playback
-  const [currentTrack, setCurrentTrack] = useState<MusicTrackItem | null>(null);
-  const [queue, setQueue] = useState<MusicTrackItem[]>(() => FAZURA_MUSIC_CATALOG);
+  const initialStateRef = useRef<PersistedPlayerState | null>(null);
+  if (!initialStateRef.current) {
+    initialStateRef.current = getInitialPlayerState();
+  }
+  const initialState = initialStateRef.current;
+
+  const [currentTrack, setCurrentTrack] = useState<MusicTrackItem | null>(initialState.currentTrack);
+  const [queue, setQueue] = useState<MusicTrackItem[]>(initialState.queue);
+  const [playlists, setPlaylists] = useState<MusicPlaylist[]>(getInitialPlaylists);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [isLoadingTrack, setIsLoadingTrack] = useState<boolean>(false);
+  const [playerError, setPlayerError] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState<number>(initialState.currentTime);
   const [duration, setDuration] = useState<number>(0);
   const [volume, setVolumeState] = useState<number>(getInitialVolume);
   const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [isShuffle, setIsShuffle] = useState<boolean>(false);
-  const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('all');
+  const [isShuffle, setIsShuffle] = useState<boolean>(initialState.isShuffle);
+  const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>(initialState.repeatMode);
   const [showLyrics, setShowLyrics] = useState<boolean>(false);
-  const [isPlayerDismissed, setIsPlayerDismissed] = useState<boolean>(false);
+  const [showQueue, setShowQueue] = useState<boolean>(false);
+  const [isPlayerDismissed, setIsPlayerDismissed] = useState<boolean>(initialState.isPlayerDismissed);
 
   const playerRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -79,11 +185,43 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   const isShuffleRef = useRef(isShuffle);
   const handleTrackEndRef = useRef<() => void>(() => {});
   const consecutiveErrorsRef = useRef<number>(0);
+  const loadedYtTrackIdRef = useRef<string | null>(null);
 
   currentTrackRef.current = currentTrack;
   queueRef.current = queue;
   repeatModeRef.current = repeatMode;
   isShuffleRef.current = isShuffle;
+
+  // Persist player state safely (throttled on time changes, immediate on track/mode changes)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const timer = setTimeout(() => {
+      try {
+        const stateToSave: PersistedPlayerState = {
+          currentTrack,
+          queue: queue.slice(0, 60),
+          isShuffle,
+          repeatMode,
+          currentTime: Math.floor(currentTime),
+          isPlayerDismissed,
+        };
+        localStorage.setItem(PLAYER_STATE_KEY, JSON.stringify(stateToSave));
+      } catch {
+        // ignore quota errors
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [currentTrack, queue, isShuffle, repeatMode, isPlayerDismissed, Math.floor(currentTime / 5)]);
+
+  // Persist custom playlists
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(PLAYLISTS_STORAGE_KEY, JSON.stringify(playlists));
+    } catch {
+      // ignore quota errors
+    }
+  }, [playlists]);
 
   // Initialize HTML5 Audio instance for preview streams
   useEffect(() => {
@@ -94,15 +232,19 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
 
     const onPlay = () => {
       setIsPlaying(true);
+      setIsLoadingTrack(false);
+      setPlayerError(null);
       consecutiveErrorsRef.current = 0;
     };
     const onPause = () => setIsPlaying(false);
+    const onWaiting = () => setIsLoadingTrack(true);
+    const onCanPlay = () => setIsLoadingTrack(false);
     const onEnded = () => {
-      // If preview ended and track now has a resolved YouTube ID, switch seamlessly to full YouTube playback!
       const current = currentTrackRef.current;
       if (current?.youtubeId && current.youtubeId.length === 11 && playerRef.current) {
         if (audioRef.current) audioRef.current.pause();
         try {
+          loadedYtTrackIdRef.current = current.youtubeId;
           playerRef.current.loadVideoById(current.youtubeId);
           playerRef.current.playVideo();
           return;
@@ -114,14 +256,14 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     };
     const onError = (e: Event) => {
       console.warn('[AudioPreview] HTML5 audio error on track:', currentTrackRef.current?.title, e);
+      setIsLoadingTrack(false);
       consecutiveErrorsRef.current += 1;
       if (consecutiveErrorsRef.current >= 4) {
-        console.warn('[AudioPreview] Too many consecutive audio errors. Halting to protect UI.');
         setIsPlaying(false);
+        setPlayerError('Gagal memutar audio. Silakan pilih lagu lain atau coba lagi.');
         consecutiveErrorsRef.current = 0;
         return;
       }
-      // Attempt safe transition to next track
       setTimeout(() => {
         handleTrackEndRef.current();
       }, 250);
@@ -137,6 +279,8 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
 
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
+    audio.addEventListener('waiting', onWaiting);
+    audio.addEventListener('canplay', onCanPlay);
     audio.addEventListener('ended', onEnded);
     audio.addEventListener('error', onError);
     audio.addEventListener('timeupdate', onTimeUpdate);
@@ -145,25 +289,28 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       audio.pause();
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('waiting', onWaiting);
+      audio.removeEventListener('canplay', onCanPlay);
       audio.removeEventListener('ended', onEnded);
       audio.removeEventListener('error', onError);
       audio.removeEventListener('timeupdate', onTimeUpdate);
     };
   }, []);
 
-  // Initialize YouTube Iframe API
-  useEffect(() => {
+  // Initialize YouTube Iframe API lazily when track exists or playback starts
+  const ensureYouTubeEngine = useCallback(() => {
     if (typeof window === 'undefined') return;
+    if (playerRef.current) return;
 
     function initPlayer() {
-      if (!window.YT || !window.YT.Player) return;
-      if (playerRef.current) return;
+      if (!window.YT || !window.YT.Player || playerRef.current) return;
 
+      const initialVideoId = currentTrackRef.current?.youtubeId || 'kPa7bsKwL-c';
       try {
         playerRef.current = new window.YT.Player('yt-music-audio-engine', {
           height: '1',
           width: '1',
-          videoId: 'kPa7bsKwL-c',
+          videoId: initialVideoId,
           playerVars: {
             autoplay: 0,
             controls: 0,
@@ -178,6 +325,9 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
               try {
                 const currentVol = getInitialVolume();
                 event.target.setVolume(currentVol);
+                if (currentTrackRef.current?.youtubeId && loadedYtTrackIdRef.current === null) {
+                  loadedYtTrackIdRef.current = initialVideoId;
+                }
               } catch {
                 // ignore
               }
@@ -186,33 +336,33 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
               // 1 = PLAYING, 2 = PAUSED, 0 = ENDED, 3 = BUFFERING
               if (event.data === 1) {
                 setIsPlaying(true);
+                setIsLoadingTrack(false);
+                setPlayerError(null);
                 consecutiveErrorsRef.current = 0;
               } else if (event.data === 2) {
                 setIsPlaying(false);
+                setIsLoadingTrack(false);
+              } else if (event.data === 3) {
+                setIsLoadingTrack(true);
               } else if (event.data === 0) {
+                setIsLoadingTrack(false);
                 handleTrackEndRef.current();
               }
             },
             onError: (event: any) => {
-              // YouTube Iframe error codes:
-              // 2: Invalid video ID parameter
-              // 5: HTML5 player error
-              // 100: Video not found, removed, or private
-              // 101, 150: Video owner prohibits embedded playback
+              setIsLoadingTrack(false);
               consecutiveErrorsRef.current += 1;
               console.warn(
                 `[YouTubePlayer] Error code ${event.data} on track: ${currentTrackRef.current?.title} (consecutive: ${consecutiveErrorsRef.current})`
               );
 
-              // Guard against infinite skipping loops that freeze the UI
               if (consecutiveErrorsRef.current >= 4) {
-                console.warn('[YouTubePlayer] Exceeded error threshold. Pausing playback to avoid UI lockup.');
                 setIsPlaying(false);
+                setPlayerError('Server audio sedang bermasalah untuk lagu ini. Coba putar lagu lainnya.');
                 consecutiveErrorsRef.current = 0;
                 return;
               }
 
-              // Check if track has previewUrl fallback
               const current = currentTrackRef.current;
               if (current?.previewUrl && audioRef.current && (!audioRef.current.src || audioRef.current.paused)) {
                 try {
@@ -222,6 +372,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
                     .play()
                     .then(() => {
                       setIsPlaying(true);
+                      setPlayerError(null);
                       consecutiveErrorsRef.current = 0;
                     })
                     .catch(() => {
@@ -233,7 +384,6 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
                 }
               }
 
-              // Auto-advance safely to next track
               setTimeout(() => {
                 handleTrackEndRef.current();
               }, 300);
@@ -264,10 +414,18 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Sync current time & duration timer for YouTube Player with ultra-low latency (100ms)
+  // Load YT engine automatically if restored session already has a currentTrack
   useEffect(() => {
+    if (currentTrack && !isPlayerDismissed) {
+      ensureYouTubeEngine();
+    }
+  }, [currentTrack, isPlayerDismissed, ensureYouTubeEngine]);
+
+  // Sync current time & duration timer for YouTube Player
+  useEffect(() => {
+    if (!isPlaying) return;
     const timer = setInterval(() => {
-      if (playerRef.current && isPlaying && currentTrackRef.current?.youtubeId) {
+      if (playerRef.current && currentTrackRef.current?.youtubeId) {
         try {
           if (typeof playerRef.current.getCurrentTime === 'function') {
             const cur = playerRef.current.getCurrentTime() || 0;
@@ -279,48 +437,19 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
           // ignore transient errors
         }
       }
-    }, 100);
+    }, 200);
 
     return () => clearInterval(timer);
   }, [isPlaying]);
 
-  // Handler for track end
-  const handleTrackEnd = useCallback(() => {
-    if (repeatModeRef.current === 'one') {
-      seekTo(0);
-      resume();
-      return;
-    }
-
-    // Play next track
-    const currentQ = queueRef.current;
-    if (currentQ.length === 0) return;
-
-    if (isShuffleRef.current && currentQ.length > 1) {
-      const randomIndex = Math.floor(Math.random() * currentQ.length);
-      playTrackInternal(currentQ[randomIndex]);
-      return;
-    }
-
-    const currentIndex = currentQ.findIndex(
-      (t) => t.id === currentTrackRef.current?.id || t.youtubeId === currentTrackRef.current?.youtubeId
-    );
-
-    if (currentIndex >= 0 && currentIndex < currentQ.length - 1) {
-      playTrackInternal(currentQ[currentIndex + 1]);
-    } else if (repeatModeRef.current === 'all' && currentQ.length > 0) {
-      playTrackInternal(currentQ[0]);
-    } else {
-      setIsPlaying(false);
-    }
-  }, []);
-  handleTrackEndRef.current = handleTrackEnd;
-
-  const playTrackInternal = (track: MusicTrackItem) => {
+  const playTrackInternal = useCallback((track: MusicTrackItem) => {
+    ensureYouTubeEngine();
     setCurrentTrack(track);
     setCurrentTime(0);
     setIsPlaying(true);
-    setIsPlayerDismissed(false); // Un-dismiss when user plays a song
+    setIsLoadingTrack(true);
+    setPlayerError(null);
+    setIsPlayerDismissed(false);
 
     // Save to Music History
     recordCategoryHistory('music', {
@@ -339,7 +468,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       },
     });
 
-    // 1. If track already has full-length YouTube ID (11 chars), play FULL track immediately on YouTube engine!
+    // 1. Direct 11-char YouTube ID
     if (track.youtubeId && track.youtubeId.length === 11) {
       if (audioRef.current) {
         try {
@@ -350,6 +479,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       }
       if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
         try {
+          loadedYtTrackIdRef.current = track.youtubeId;
           playerRef.current.loadVideoById(track.youtubeId);
           playerRef.current.playVideo();
         } catch (err) {
@@ -359,8 +489,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // 2. If track does NOT yet have a YouTube ID (e.g. newly searched online track):
-    // Start preview audio instantly if available so user gets instant sound in 0ms without waiting
+    // 2. Instant preview stream while resolving full track ID
     if (track.previewUrl && audioRef.current) {
       try {
         audioRef.current.src = track.previewUrl;
@@ -371,70 +500,85 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // 3. Concurrently resolve the official FULL YouTube video ID for complete full-length song playback!
-    resolveTrackYouTubeId(track).then((resolvedId) => {
-      // Only switch if this track is still the currently active track
-      if (resolvedId && currentTrackRef.current?.id === track.id) {
-        track.youtubeId = resolvedId;
-        // Pause preview and switch to full YouTube video player
-        if (audioRef.current) {
-          try {
-            audioRef.current.pause();
-          } catch {
-            // ignore
+    // 3. Lazy-load musicApi resolver to keep initial bundle minimal
+    import('../services/musicApi')
+      .then(({ resolveTrackYouTubeId }) => resolveTrackYouTubeId(track))
+      .then((resolvedId) => {
+        if (resolvedId && currentTrackRef.current?.id === track.id) {
+          track.youtubeId = resolvedId;
+          if (audioRef.current) {
+            try {
+              audioRef.current.pause();
+            } catch {
+              // ignore
+            }
           }
-        }
-        if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
-          try {
-            playerRef.current.loadVideoById(resolvedId);
-            playerRef.current.playVideo();
-          } catch (err) {
-            console.warn('Failed to switch to full YouTube video:', err);
+          if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
+            try {
+              loadedYtTrackIdRef.current = resolvedId;
+              playerRef.current.loadVideoById(resolvedId);
+              playerRef.current.playVideo();
+            } catch (err) {
+              console.warn('Failed to switch to full YouTube video:', err);
+            }
           }
+        } else if (!resolvedId && !track.previewUrl && currentTrackRef.current?.id === track.id) {
+          setIsLoadingTrack(false);
+          setIsPlaying(false);
+          setPlayerError('Sumber audio untuk lagu ini tidak tersedia.');
         }
-      }
-    });
-  };
+      })
+      .catch(() => {
+        if (!track.previewUrl && currentTrackRef.current?.id === track.id) {
+          setIsLoadingTrack(false);
+          setPlayerError('Gagal memuat pemutar musik.');
+        }
+      });
+  }, [ensureYouTubeEngine]);
 
-  const playTrack = useCallback((track: MusicTrackItem, newQueue?: MusicTrackItem[]) => {
-    if (newQueue && newQueue.length > 0) {
-      setQueue(newQueue);
-      queueRef.current = newQueue;
+  const seekTo = useCallback((seconds: number) => {
+    const track = currentTrackRef.current;
+    if (track?.previewUrl && !track?.youtubeId && audioRef.current) {
+      audioRef.current.currentTime = seconds;
+      setCurrentTime(seconds);
+      return;
     }
-    playTrackInternal(track);
+
+    if (playerRef.current?.seekTo) {
+      try {
+        playerRef.current.seekTo(seconds, true);
+        setCurrentTime(seconds);
+      } catch (err) {
+        console.warn('Seek error:', err);
+      }
+    }
   }, []);
 
-  const togglePlay = useCallback(() => {
+  const resume = useCallback(() => {
+    ensureYouTubeEngine();
     const track = currentTrackRef.current;
-    if (!track) {
-      // Default to first track if clicked
-      const first = FAZURA_MUSIC_CATALOG[0];
-      playTrackInternal(first);
-      return;
-    }
+    if (!track) return;
 
     if (track.previewUrl && !track.youtubeId && audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
+      try {
+        if (!audioRef.current.src) audioRef.current.src = track.previewUrl;
         audioRef.current.play().catch((err) => console.warn('Audio play error:', err));
+      } catch {
+        // ignore
       }
-      return;
-    }
-
-    if (!playerRef.current) return;
-    try {
-      if (isPlaying) {
-        playerRef.current.pauseVideo();
-        setIsPlaying(false);
-      } else {
+    } else if (playerRef.current?.playVideo) {
+      try {
+        if (track.youtubeId && loadedYtTrackIdRef.current !== track.youtubeId && playerRef.current.loadVideoById) {
+          loadedYtTrackIdRef.current = track.youtubeId;
+          playerRef.current.loadVideoById(track.youtubeId, currentTime > 2 ? currentTime : 0);
+        }
         playerRef.current.playVideo();
-        setIsPlaying(true);
+      } catch {
+        // ignore
       }
-    } catch (err) {
-      console.warn('Toggle play error:', err);
     }
-  }, [isPlaying]);
+    setIsPlaying(true);
+  }, [ensureYouTubeEngine, currentTime]);
 
   const pause = useCallback(() => {
     const track = currentTrackRef.current;
@@ -454,23 +598,75 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     setIsPlaying(false);
   }, []);
 
-  const resume = useCallback(() => {
-    const track = currentTrackRef.current;
-    if (track?.previewUrl && !track?.youtubeId && audioRef.current) {
-      try {
-        audioRef.current.play().catch((err) => console.warn('Audio play error:', err));
-      } catch {
-        // ignore
-      }
-    } else if (playerRef.current?.playVideo) {
-      try {
-        playerRef.current.playVideo();
-      } catch {
-        // ignore
-      }
+  // Handler for track end
+  const handleTrackEnd = useCallback(() => {
+    if (repeatModeRef.current === 'one') {
+      seekTo(0);
+      resume();
+      return;
     }
-    setIsPlaying(true);
-  }, []);
+
+    const currentQ = queueRef.current;
+    if (currentQ.length === 0) {
+      setIsPlaying(false);
+      return;
+    }
+
+    if (isShuffleRef.current && currentQ.length > 1) {
+      const randomIndex = Math.floor(Math.random() * currentQ.length);
+      playTrackInternal(currentQ[randomIndex]);
+      return;
+    }
+
+    const currentIndex = currentQ.findIndex(
+      (t) => t.id === currentTrackRef.current?.id || t.youtubeId === currentTrackRef.current?.youtubeId
+    );
+
+    if (currentIndex >= 0 && currentIndex < currentQ.length - 1) {
+      playTrackInternal(currentQ[currentIndex + 1]);
+    } else if (repeatModeRef.current === 'all' && currentQ.length > 0) {
+      playTrackInternal(currentQ[0]);
+    } else {
+      setIsPlaying(false);
+    }
+  }, [playTrackInternal, resume, seekTo]);
+  handleTrackEndRef.current = handleTrackEnd;
+
+  const playTrack = useCallback(
+    (track: MusicTrackItem, newQueue?: MusicTrackItem[]) => {
+      if (newQueue && newQueue.length > 0) {
+        setQueue(newQueue);
+        queueRef.current = newQueue;
+      } else if (queueRef.current.length === 0) {
+        setQueue([track]);
+        queueRef.current = [track];
+      }
+      playTrackInternal(track);
+    },
+    [playTrackInternal]
+  );
+
+  const togglePlay = useCallback(() => {
+    const track = currentTrackRef.current;
+    if (!track) {
+      // Lazy-load built-in catalog on first explicit play if queue is empty
+      import('../services/musicApi')
+        .then(({ FAZURA_MUSIC_CATALOG }) => {
+          const starterQueue = FAZURA_MUSIC_CATALOG.length > 0 ? FAZURA_MUSIC_CATALOG : [DEFAULT_FALLBACK_TRACK];
+          playTrack(starterQueue[0], starterQueue);
+        })
+        .catch(() => {
+          playTrack(DEFAULT_FALLBACK_TRACK, [DEFAULT_FALLBACK_TRACK]);
+        });
+      return;
+    }
+
+    if (isPlaying) {
+      pause();
+    } else {
+      resume();
+    }
+  }, [isPlaying, pause, resume, playTrack]);
 
   const nextTrack = useCallback(() => {
     const currentQ = queueRef.current;
@@ -491,7 +687,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     } else if (currentQ.length > 0) {
       playTrackInternal(currentQ[0]);
     }
-  }, []);
+  }, [playTrackInternal]);
 
   const prevTrack = useCallback(() => {
     const currentQ = queueRef.current;
@@ -511,56 +707,40 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     } else if (currentQ.length > 0) {
       playTrackInternal(currentQ[currentQ.length - 1]);
     }
-  }, [currentTime]);
+  }, [currentTime, playTrackInternal, seekTo]);
 
-  const seekTo = useCallback((seconds: number) => {
-    const track = currentTrackRef.current;
-    if (track?.previewUrl && !track?.youtubeId && audioRef.current) {
-      audioRef.current.currentTime = seconds;
-      setCurrentTime(seconds);
-      return;
-    }
+  const setVolume = useCallback(
+    (vol: number) => {
+      const clamped = Math.max(0, Math.min(100, Math.round(vol)));
+      setVolumeState(clamped);
 
-    if (playerRef.current?.seekTo) {
       try {
-        playerRef.current.seekTo(seconds, true);
-        setCurrentTime(seconds);
-      } catch (err) {
-        console.warn('Seek error:', err);
-      }
-    }
-  }, []);
-
-  const setVolume = useCallback((vol: number) => {
-    const clamped = Math.max(0, Math.min(100, Math.round(vol)));
-    setVolumeState(clamped);
-
-    // Save volume to localStorage for persistent memory
-    try {
-      localStorage.setItem(VOLUME_STORAGE_KEY, clamped.toString());
-    } catch {
-      // ignore
-    }
-
-    if (audioRef.current) {
-      audioRef.current.volume = Math.max(0, Math.min(1, clamped / 100));
-      if (clamped > 0 && isMuted) {
-        audioRef.current.muted = false;
-      }
-    }
-
-    if (playerRef.current?.setVolume) {
-      try {
-        playerRef.current.setVolume(clamped);
-        if (clamped > 0 && isMuted) {
-          playerRef.current.unMute();
-          setIsMuted(false);
-        }
+        localStorage.setItem(VOLUME_STORAGE_KEY, clamped.toString());
       } catch {
         // ignore
       }
-    }
-  }, [isMuted]);
+
+      if (audioRef.current) {
+        audioRef.current.volume = Math.max(0, Math.min(1, clamped / 100));
+        if (clamped > 0 && isMuted) {
+          audioRef.current.muted = false;
+        }
+      }
+
+      if (playerRef.current?.setVolume) {
+        try {
+          playerRef.current.setVolume(clamped);
+          if (clamped > 0 && isMuted) {
+            playerRef.current.unMute();
+            setIsMuted(false);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    },
+    [isMuted]
+  );
 
   const toggleMute = useCallback(() => {
     if (isMuted) {
@@ -600,10 +780,81 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
 
   const dismissPlayer = useCallback(() => {
     pause();
+    setShowQueue(false);
+    setShowLyrics(false);
     setIsPlayerDismissed(true);
   }, [pause]);
 
-  // MediaSession API Integration: Metadata updates on track change
+  const clearPlayerError = useCallback(() => {
+    setPlayerError(null);
+  }, []);
+
+  // Queue Management Functions
+  const addToQueue = useCallback((track: MusicTrackItem) => {
+    setQueue((prev) => {
+      if (prev.some((t) => t.id === track.id)) return prev;
+      return [...prev, track];
+    });
+  }, []);
+
+  const removeFromQueue = useCallback((trackId: string) => {
+    setQueue((prev) => prev.filter((t) => t.id !== trackId));
+  }, []);
+
+  const moveQueueItem = useCallback((fromIndex: number, toIndex: number) => {
+    setQueue((prev) => {
+      if (fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex >= prev.length) {
+        return prev;
+      }
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }, []);
+
+  const clearQueue = useCallback(() => {
+    const active = currentTrackRef.current;
+    setQueue(active ? [active] : []);
+  }, []);
+
+  // Custom Playlist Management Functions
+  const createPlaylist = useCallback((name: string): MusicPlaylist | null => {
+    const cleanName = name.trim();
+    if (!cleanName) return null;
+    const newPlaylist: MusicPlaylist = {
+      id: `pl_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      name: cleanName,
+      createdAt: Date.now(),
+      tracks: [],
+    };
+    setPlaylists((prev) => [newPlaylist, ...prev]);
+    return newPlaylist;
+  }, []);
+
+  const deletePlaylist = useCallback((playlistId: string) => {
+    setPlaylists((prev) => prev.filter((p) => p.id !== playlistId));
+  }, []);
+
+  const addTrackToPlaylist = useCallback((playlistId: string, track: MusicTrackItem) => {
+    setPlaylists((prev) =>
+      prev.map((p) => {
+        if (p.id !== playlistId) return p;
+        if (p.tracks.some((t) => t.id === track.id)) return p;
+        return { ...p, tracks: [...p.tracks, track] };
+      })
+    );
+  }, []);
+
+  const removeTrackFromPlaylist = useCallback((playlistId: string, trackId: string) => {
+    setPlaylists((prev) =>
+      prev.map((p) =>
+        p.id === playlistId ? { ...p, tracks: p.tracks.filter((t) => t.id !== trackId) } : p
+      )
+    );
+  }, []);
+
+  // MediaSession API Integration: Metadata updates
   useEffect(() => {
     if (typeof window === 'undefined' || !('mediaSession' in navigator)) return;
 
@@ -635,7 +886,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentTrack]);
 
-  // MediaSession API Integration: Playback state synchronization
+  // MediaSession API Integration: Playback state sync
   useEffect(() => {
     if (typeof window === 'undefined' || !('mediaSession' in navigator)) return;
     try {
@@ -653,12 +904,12 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     if (duration > 0 && currentTime >= 0 && currentTime <= duration) {
       try {
         navigator.mediaSession.setPositionState({
-          duration: duration,
+          duration,
           playbackRate: 1,
           position: Math.min(currentTime, duration),
         });
       } catch {
-        // ignore transient position errors
+        // ignore
       }
     }
   }, [currentTime, duration]);
@@ -687,7 +938,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       try {
         navigator.mediaSession.setActionHandler(action, handler);
       } catch {
-        // some action handlers might not be supported on all browsers
+        // ignore unsupported handlers
       }
     });
 
@@ -707,6 +958,8 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       value={{
         currentTrack,
         isPlaying,
+        isLoadingTrack,
+        playerError,
         currentTime,
         duration,
         volume,
@@ -714,7 +967,9 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
         isShuffle,
         repeatMode,
         queue,
+        playlists,
         showLyrics,
+        showQueue,
         isPlayerDismissed,
         playTrack,
         togglePlay,
@@ -728,11 +983,21 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
         toggleShuffle,
         toggleRepeat,
         setShowLyrics,
+        setShowQueue,
         dismissPlayer,
+        clearPlayerError,
+        addToQueue,
+        removeFromQueue,
+        moveQueueItem,
+        clearQueue,
+        createPlaylist,
+        deletePlaylist,
+        addTrackToPlaylist,
+        removeTrackFromPlaylist,
       }}
     >
       {children}
-      {/* Hidden YouTube Audio Engine - DO NOT REMOVE */}
+      {/* Hidden Persistent YouTube Audio Engine */}
       <div
         style={{
           position: 'fixed',

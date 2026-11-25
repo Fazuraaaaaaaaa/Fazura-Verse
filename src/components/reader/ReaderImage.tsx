@@ -11,36 +11,51 @@ interface ReaderImageProps {
 
 export function ReaderImage({ src, index, total, fit }: ReaderImageProps) {
   const [currentSrc, setCurrentSrc] = useState(src);
-  const [attemptedProxy, setAttemptedProxy] = useState(false);
+  const [fallbackStep, setFallbackStep] = useState<0 | 1 | 2>(0); // 0=direct, 1=https-upgraded, 2=proxy
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
   // Sync state when src prop changes
   useEffect(() => {
     setCurrentSrc(src);
-    setAttemptedProxy(false);
+    setFallbackStep(0);
     setLoaded(false);
     setError(false);
   }, [src]);
 
-  // Automatic retry fallback with proxy to prevent hotlink/CORS failure
+  // Controlled fallback chain (max 2 automatic retries, zero infinite loops)
   const handleError = useCallback(() => {
-    if (!attemptedProxy && src) {
-      setAttemptedProxy(true);
-      setLoaded(false);
-      // Auto-fallback once via image-proxy
-      setCurrentSrc(`/api/image-proxy?url=${encodeURIComponent(src)}`);
-    } else {
-      // Guard against infinite loop: proxy already attempted, show error
+    if (!src) {
       setError(true);
       setLoaded(false);
+      return;
     }
-  }, [attemptedProxy, src]);
+
+    if (fallbackStep === 0 && src.startsWith('http://')) {
+      // Step 1: Attempt HTTPS upgrade before proxy
+      setFallbackStep(1);
+      setLoaded(false);
+      setCurrentSrc(src.replace(/^http:\/\//i, 'https://'));
+      return;
+    }
+
+    if (fallbackStep < 2) {
+      // Step 2: Safe single-attempt proxy fallback for hotlink/CORS-blocked CDN images
+      setFallbackStep(2);
+      setLoaded(false);
+      setCurrentSrc(`/api/image-proxy?url=${encodeURIComponent(src)}`);
+      return;
+    }
+
+    // All controlled fallbacks exhausted
+    setError(true);
+    setLoaded(false);
+  }, [fallbackStep, src]);
 
   const handleRetry = useCallback(() => {
     setError(false);
     setLoaded(false);
-    setAttemptedProxy(false);
+    setFallbackStep(0);
     setCurrentSrc(src);
   }, [src]);
 
@@ -53,35 +68,42 @@ export function ReaderImage({ src, index, total, fit }: ReaderImageProps) {
       : 'w-full max-w-4xl mx-auto object-contain'; // default 'width'
 
   return (
-    <div className="relative min-h-[300px] w-full flex items-center justify-center bg-black/40 overflow-hidden">
+    <div
+      className={`relative w-full flex items-center justify-center bg-black/30 overflow-hidden ${
+        !loaded || error ? 'min-h-[260px]' : 'min-h-0'
+      }`}
+    >
       {/* Loading Shimmer Skeleton Overlay */}
       {!loaded && !error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/60 animate-pulse min-h-[400px] z-10">
-          <div className="w-8 h-8 border-3 border-accent-indigo border-t-transparent rounded-full animate-spin mb-2" />
-          <span className="text-xs text-slate-400 font-medium">
-            Page {index + 1} of {total} {attemptedProxy ? '(Proxy Stream)' : ''}
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-base/90 animate-pulse min-h-[260px] z-10">
+          <div className="w-8 h-8 border-[3px] border-accent-primary border-t-transparent rounded-full animate-spin mb-2" />
+          <span className="text-xs text-text-secondary font-medium">
+            Halaman {index + 1} / {total}{' '}
+            {fallbackStep === 2 ? '(Proxy CDN)' : fallbackStep === 1 ? '(HTTPS)' : ''}
           </span>
         </div>
       )}
 
       {/* Error Retry State */}
       {error ? (
-        <div className="p-8 text-center rounded-xl bg-card/60 border border-white/5 my-4 space-y-3 z-20">
+        <div className="p-8 text-center rounded-2xl bg-surface/80 border border-border-subtle my-4 space-y-3 z-20 max-w-xs">
           <ImageOff className="w-8 h-8 text-rose-400 mx-auto" />
-          <p className="text-xs text-slate-300">Gagal memuat halaman {index + 1}</p>
+          <p className="text-xs text-text-secondary">Gagal memuat gambar halaman {index + 1}</p>
           <button
+            type="button"
             onClick={handleRetry}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-indigo/20 text-accent-indigo hover:bg-accent-indigo hover:text-white text-xs font-semibold transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2 rounded-xl bg-accent-primary/20 text-accent-secondary hover:bg-accent-primary hover:text-white text-xs font-bold border border-accent-primary/30 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Coba Lagi
+            Muat Ulang Halaman
           </button>
         </div>
       ) : (
         <img
           src={currentSrc}
-          alt={`Page ${index + 1}`}
+          alt={`Halaman ${index + 1} dari ${total}`}
           loading="lazy"
+          decoding="async"
           referrerPolicy="no-referrer"
           onLoad={() => setLoaded(true)}
           onError={handleError}

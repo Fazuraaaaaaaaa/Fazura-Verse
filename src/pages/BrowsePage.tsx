@@ -30,6 +30,7 @@ import { GenreChips } from '../components/GenreChips';
 import type { MangaType } from '../types/manga';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 import { HubHistoryShelf } from '../components/library/HubHistoryShelf';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 type TabType =
   | 'all'
@@ -45,6 +46,10 @@ type TabType =
   | 'history';
 
 export function BrowsePage() {
+  usePageMeta({
+    title: 'Manga, Manhwa & Manhua Hub - Baca Komik Sub Indo',
+    description: 'Baca ribuan manga Jepang, manhwa Korea, dan manhua China dengan vertical webtoon reader berkualitas tinggi di FazuraStream.',
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 

@@ -25,10 +25,11 @@ import {
   getSamehadakuDetail,
   getNimegamiDetail,
   getKusonimeDetail,
-  getOtakudesuByGenre,
+  getRelatedAnimeRecommendations,
 } from '../services/animeApi';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 import { AnimeGridCard } from '../components/anime/AnimeGridCard';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 function formatEpisodeName(rawTitle: string | number, fallbackSlug?: string): string {
   const str = String(rawTitle || '').trim();
@@ -82,7 +83,22 @@ export function AnimeDetailPage() {
     enabled: Boolean(id),
   });
 
-  // Query Rekomendasi Terkait sesuai Genre Anime
+  usePageMeta({
+    title: anime?.title ? `${anime.title} - Nonton Anime Sub Indo` : 'Detail Anime',
+    description: anime?.synopsis?.slice(0, 155) || 'Streaming anime sub Indo kualitas HD di FazuraStream.',
+    image: anime?.poster,
+    type: 'video.episode',
+    jsonLd: anime?.title
+      ? {
+          '@type': 'TVSeries',
+          name: anime.title,
+          image: anime.poster,
+          description: anime.synopsis?.slice(0, 200),
+        }
+      : undefined,
+  });
+
+  // Query Rekomendasi Terkait (Prioritaskan Seri/Season S1-S3 + Kemiripan Multi-Genre)
   const primaryGenre = useMemo(() => {
     if (!anime?.genres || anime.genres.length === 0) return null;
     const first = anime.genres[0];
@@ -93,18 +109,20 @@ export function AnimeDetailPage() {
     };
   }, [anime?.genres]);
 
-  const { data: relatedAnimeData } = useQuery({
-    queryKey: ['anime', 'related', primaryGenre?.id],
-    queryFn: () => getOtakudesuByGenre(primaryGenre?.id || ''),
-    enabled: Boolean(primaryGenre?.id),
+  const { data: relatedRecommendations } = useQuery({
+    queryKey: ['anime', 'related-v2', id, anime?.title, anime?.genres?.map((g) => g.id || g.title).slice(0, 3).join(',')],
+    queryFn: () =>
+      getRelatedAnimeRecommendations({
+        currentId: id || '',
+        title: anime?.title || '',
+        genres: anime?.genres || [],
+      }),
+    enabled: Boolean(anime?.title),
+    staleTime: 1000 * 60 * 10,
   });
 
-  const relatedAnimeList = useMemo(() => {
-    if (!relatedAnimeData?.animeList) return [];
-    return relatedAnimeData.animeList
-      .filter((item) => item.id !== id && !item.id.includes(id || ''))
-      .slice(0, 12);
-  }, [relatedAnimeData?.animeList, id]);
+  const relatedAnimeList = relatedRecommendations?.items || [];
+  const franchiseCount = relatedRecommendations?.franchiseCount || 0;
 
   // Track watched episodes
   const watchedEpisodeMap = useMemo(() => {
@@ -504,9 +522,9 @@ export function AnimeDetailPage() {
         <section className="space-y-4 pt-6 border-t border-white/5 animate-in fade-in duration-300">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                  REKOMENDASI GENRE
+                  {franchiseCount > 0 ? 'SERI & GENRE TERKAIT' : 'REKOMENDASI GENRE'}
                 </span>
                 {primaryGenre && (
                   <span className="text-xs text-text-muted capitalize">
@@ -519,7 +537,9 @@ export function AnimeDetailPage() {
                 <span>Rekomendasi Anime Terkait</span>
               </h2>
               <p className="text-xs text-text-secondary">
-                Anime populer lainnya dengan genre yang serupa untuk menemani tontonan Anda
+                {franchiseCount > 0
+                  ? 'Menampilkan musim lanjutan/terkait (Season 1, 2, 3, Movie) di urutan teratas serta anime bergenre serupa'
+                  : 'Anime pilihan dengan kecocokan genre dan rating terbaik untuk menemani tontonan Anda'}
               </p>
             </div>
 
@@ -536,7 +556,12 @@ export function AnimeDetailPage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
             {relatedAnimeList.map((item) => (
-              <AnimeGridCard key={item.id} anime={item} />
+              <AnimeGridCard
+                key={`${item.provider}-${item.id}`}
+                anime={item}
+                relationBadge={item.relationBadge}
+                highlightRelation={item.isSameFranchise}
+              />
             ))}
           </div>
         </section>

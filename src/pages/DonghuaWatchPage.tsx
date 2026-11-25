@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { getDonghuaEpisode } from '../services/donghuaApi';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 export function DonghuaWatchPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -29,8 +30,38 @@ export function DonghuaWatchPage() {
     enabled: Boolean(slug),
   });
 
+  usePageMeta({
+    title: episode?.episode ? `${episode.episode} - Streaming Donghua` : 'Nonton Donghua Sub Indo',
+    description: `Streaming ${episode?.episode || 'episode donghua'} subtitle Indonesia HD di FazuraStream.`,
+    type: 'video.episode',
+  });
+
   const [selectedServerUrl, setSelectedServerUrl] = useState<string>('');
   const [playerKey, setPlayerKey] = useState<number>(0);
+
+  const { recordHistory } = useCategoryHistory('donghua');
+  const { isBookmarked, toggleBookmark } = useCategoryBookmarks('donghua');
+
+  const parentSlug =
+    episode?.donghuaDetails?.slug ||
+    episode?.navigation?.allEpisodesSlug ||
+    slug?.replace(/-episode-\d+.*$/i, '');
+
+  const bookmarked = parentSlug ? isBookmarked(parentSlug) : false;
+
+  useEffect(() => {
+    if (episode && slug) {
+      recordHistory({
+        id: parentSlug || slug,
+        category: 'donghua',
+        title: episode.donghuaDetails?.title || episode.episode || 'Donghua',
+        cover: episode.donghuaDetails?.poster || '',
+        lastItemTitle: episode.episode || `Episode ${slug}`,
+        lastItemLink: `/donghua/watch/${slug}`,
+        watchedAt: Date.now(),
+      });
+    }
+  }, [episode, slug, parentSlug, recordHistory]);
 
   const currentStream = selectedServerUrl || episode?.mainStreamUrl || '';
 
@@ -60,29 +91,6 @@ export function DonghuaWatchPage() {
       </div>
     );
   }
-
-  const parentSlug =
-    episode.donghuaDetails?.slug ||
-    episode.navigation.allEpisodesSlug ||
-    slug?.replace(/-episode-\d+.*$/i, '');
-
-  const { recordHistory } = useCategoryHistory('donghua');
-  const { isBookmarked, toggleBookmark } = useCategoryBookmarks('donghua');
-  const bookmarked = parentSlug ? isBookmarked(parentSlug) : false;
-
-  useEffect(() => {
-    if (episode && slug) {
-      recordHistory({
-        id: parentSlug || slug,
-        category: 'donghua',
-        title: episode.donghuaDetails?.title || episode.episode || 'Donghua',
-        cover: episode.donghuaDetails?.poster || '',
-        lastItemTitle: episode.episode || `Episode ${slug}`,
-        lastItemLink: `/donghua/watch/${slug}`,
-        watchedAt: Date.now(),
-      });
-    }
-  }, [episode, slug, parentSlug]);
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6 min-w-0">

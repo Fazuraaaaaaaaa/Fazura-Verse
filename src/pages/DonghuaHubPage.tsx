@@ -31,10 +31,15 @@ import {
 import type { DonghuaItem, DonghuaScheduleDay, DonghuaGenre } from '../types/media';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 import { HubHistoryShelf } from '../components/library/HubHistoryShelf';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 type TabType = 'ongoing' | 'completed' | 'schedule' | 'genres' | 'bookmarks' | 'history';
 
 export function DonghuaHubPage() {
+  usePageMeta({
+    title: 'Donghua Hub - Streaming Donghua 3D & 2D Sub Indo',
+    description: 'Nonton donghua Xianxia 3D/2D sub Indo (Soul Land, Battle Through the Heavens, Swallowed Star) dengan multi-server HD di FazuraStream.',
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   const searchParam = searchParams.get('search') || '';
   const tabParam = (searchParams.get('tab') as TabType) || 'ongoing';

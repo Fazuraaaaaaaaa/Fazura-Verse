@@ -9,10 +9,19 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { PageSkeletonLoader } from './components/PageSkeletonLoader';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { OfflineStatusBanner } from './components/OfflineStatusBanner';
+import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { MusicProvider, useMusic } from './context/MusicContext';
-import { MusicPlayerBar } from './components/music/MusicPlayerBar';
-import { LyricsModal } from './components/music/LyricsModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
+
+// Lazy-load Music overlays so they never block critical path initial JS
+const MusicPlayerBar = lazy(() =>
+  import('./components/music/MusicPlayerBar').then((m) => ({ default: m.MusicPlayerBar }))
+);
+const LyricsModal = lazy(() =>
+  import('./components/music/LyricsModal').then((m) => ({ default: m.LyricsModal }))
+);
 
 // Route-level code-splitting with React.lazy
 const LandingPage = lazy(() => import('./pages/LandingPage').then((m) => ({ default: m.LandingPage })));
@@ -57,11 +66,12 @@ function ScrollToTop() {
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const isReaderPage = location.pathname.startsWith('/chapter/');
-  const { currentTrack, isPlayerDismissed } = useMusic();
+  const { currentTrack, isPlayerDismissed, showLyrics } = useMusic();
   const hasActivePlayer = Boolean(currentTrack && !isPlayerDismissed && !isReaderPage);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-slate-100 selection:bg-accent-indigo selection:text-white relative w-full overflow-x-hidden min-w-0">
+    <div className="min-h-screen flex flex-col bg-bg-primary text-text-primary selection:bg-accent-primary selection:text-white relative w-full overflow-x-hidden min-w-0">
+      {!isReaderPage && <OfflineStatusBanner />}
       {!isReaderPage && <Navbar />}
       <main
         className={`flex-1 flex flex-col w-full min-w-0 ${
@@ -71,9 +81,18 @@ function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       {!isReaderPage && <Footer />}
-      {!isReaderPage && <MusicPlayerBar />}
+      {hasActivePlayer && (
+        <Suspense fallback={null}>
+          <MusicPlayerBar />
+        </Suspense>
+      )}
+      {showLyrics && (
+        <Suspense fallback={null}>
+          <LyricsModal />
+        </Suspense>
+      )}
       {!isReaderPage && <MobileBottomNav />}
-      <LyricsModal />
+      {!isReaderPage && <PWAInstallBanner />}
     </div>
   );
 }
@@ -85,45 +104,47 @@ export default function App() {
         <Router>
           <ScrollToTop />
           <Layout>
-            <Suspense fallback={<PageSkeletonLoader />}>
-              <Routes>
-                {/* Grand Landing Portal */}
-                <Route path="/" element={<LandingPage />} />
+            <ErrorBoundary>
+              <Suspense fallback={<PageSkeletonLoader />}>
+                <Routes>
+                  {/* Grand Landing Portal */}
+                  <Route path="/" element={<LandingPage />} />
 
-                {/* Manga Portal */}
-                <Route path="/manga" element={<BrowsePage />} />
-                <Route path="/browse" element={<BrowsePage />} />
-                <Route path="/manga/:slug" element={<MangaDetailPage />} />
-                <Route path="/chapter/:slug" element={<ReaderPage />} />
-                <Route path="/search" element={<SearchPage />} />
+                  {/* Manga Portal */}
+                  <Route path="/manga" element={<BrowsePage />} />
+                  <Route path="/browse" element={<BrowsePage />} />
+                  <Route path="/manga/:slug" element={<MangaDetailPage />} />
+                  <Route path="/chapter/:slug" element={<ReaderPage />} />
+                  <Route path="/search" element={<SearchPage />} />
 
-                {/* Anime Portal (Otakudesu & Samehadaku) */}
-                <Route path="/anime" element={<AnimeHubPage />} />
-                <Route path="/anime/detail/:provider/:id" element={<AnimeDetailPage />} />
-                <Route path="/anime/watch/:provider/:episodeId" element={<AnimeWatchPage />} />
+                  {/* Anime Portal */}
+                  <Route path="/anime" element={<AnimeHubPage />} />
+                  <Route path="/anime/detail/:provider/:id" element={<AnimeDetailPage />} />
+                  <Route path="/anime/watch/:provider/:episodeId" element={<AnimeWatchPage />} />
 
-                {/* Donghua Portal (Anichin) */}
-                <Route path="/donghua" element={<DonghuaHubPage />} />
-                <Route path="/donghua/detail/:slug" element={<DonghuaDetailPage />} />
-                <Route path="/donghua/watch/:slug" element={<DonghuaWatchPage />} />
+                  {/* Donghua Portal */}
+                  <Route path="/donghua" element={<DonghuaHubPage />} />
+                  <Route path="/donghua/detail/:slug" element={<DonghuaDetailPage />} />
+                  <Route path="/donghua/watch/:slug" element={<DonghuaWatchPage />} />
 
-                {/* Movie & Series Portal (FazuraDex Movie & Live TMDB) */}
-                <Route path="/movies" element={<MovieHubPage />} />
-                <Route path="/movies/:id" element={<MovieDetailPage />} />
-                <Route path="/movies/watch/:id" element={<MovieWatchPage />} />
-                <Route path="/movies/:id/watch" element={<MovieWatchPage />} />
+                  {/* Movie & Series Portal */}
+                  <Route path="/movies" element={<MovieHubPage />} />
+                  <Route path="/movies/:id" element={<MovieDetailPage />} />
+                  <Route path="/movies/watch/:id" element={<MovieWatchPage />} />
+                  <Route path="/movies/:id/watch" element={<MovieWatchPage />} />
 
-                {/* Music Portal (Fazura Music Streaming) */}
-                <Route path="/music" element={<MusicHubPage />} />
+                  {/* Music Portal */}
+                  <Route path="/music" element={<MusicHubPage />} />
 
-                {/* Personal Library */}
-                <Route path="/bookmarks" element={<BookmarksPage />} />
-                <Route path="/history" element={<HistoryPage />} />
+                  {/* Personal Library */}
+                  <Route path="/bookmarks" element={<BookmarksPage />} />
+                  <Route path="/history" element={<HistoryPage />} />
 
-                {/* Fallback */}
-                <Route path="*" element={<LandingPage />} />
-              </Routes>
-            </Suspense>
+                  {/* Fallback */}
+                  <Route path="*" element={<LandingPage />} />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
           </Layout>
         </Router>
       </MusicProvider>

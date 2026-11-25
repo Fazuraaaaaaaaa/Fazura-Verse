@@ -32,10 +32,15 @@ import type { AnimeItem, AnimeScheduleDay } from '../types/media';
 import { AnimeGridCard } from '../components/anime/AnimeGridCard';
 import { HubHistoryShelf } from '../components/library/HubHistoryShelf';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 type TabType = 'ongoing' | 'completed' | 'genres' | 'schedule' | 'bookmarks' | 'history';
 
 export function AnimeHubPage() {
+  usePageMeta({
+    title: 'Anime Hub - Streaming Anime Sub Indo HD',
+    description: 'Nonton anime ongoing, completed, anime klasik, dan jadwal rilis mingguan sub Indo dengan server VidHide, Mega, dan FileDon.',
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   const searchParam = searchParams.get('search') || '';
   const tabParam = (searchParams.get('tab') as TabType) || 'ongoing';
@@ -308,17 +313,6 @@ export function AnimeHubPage() {
             }`}
           >
             Semua Anime
-          </button>
-
-          <button
-            onClick={() => {
-              setSearchInput('Dragon Ball');
-              setSearchParams({ search: 'Dragon Ball' });
-            }}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all border bg-gradient-to-r from-amber-600/30 to-amber-500/20 hover:from-amber-600/50 hover:to-amber-500/40 text-amber-300 border-amber-500/40 shadow-sm flex items-center gap-1.5"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            🔥 Koleksi Anime Lawas & Klasik
           </button>
 
           {topGenreChips.map((chip) => {

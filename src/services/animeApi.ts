@@ -1367,3 +1367,373 @@ export async function searchAllAnime(query: string): Promise<{
     all,
   };
 }
+
+export interface RelatedAnimeRecommendationItem extends AnimeItem {
+  relationBadge?: string;
+  isSameFranchise?: boolean;
+}
+
+export interface RelatedAnimeRecommendationsResult {
+  items: RelatedAnimeRecommendationItem[];
+  franchiseCount: number;
+  matchedGenres: string[];
+}
+
+const STOPWORDS = new Set([
+  'the',
+  'no',
+  'wa',
+  'ga',
+  'wo',
+  'ni',
+  'to',
+  'de',
+  'of',
+  'and',
+  'in',
+  'a',
+  'an',
+  'kara',
+  'sub',
+  'indo',
+  'subtitle',
+  'indonesia',
+  'season',
+  'part',
+  'ova',
+  'ona',
+  'movie',
+  'special',
+]);
+
+function tokenizeWords(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+/**
+ * Extract franchise base title from an anime title by stripping season numbers,
+ * parts, arc subtitles after ": ", movies, and OVA/Special markers.
+ */
+export function extractFranchiseBaseTitle(rawTitle: string): string {
+  let base = cleanAnimeTitle(rawTitle)
+    .replace(/\((?:tv|ona|ova|special|movie|\d{4})\)/gi, '')
+    .replace(/\[[^\]]+\]/g, '')
+    .trim();
+
+  // Split subtitle after ": " (requires space after colon so "Re:Zero" stays intact)
+  const colonIdx = base.indexOf(': ');
+  if (colonIdx >= 4) {
+    base = base.slice(0, colonIdx).trim();
+  }
+
+  for (let pass = 0; pass < 2; pass++) {
+    base = base
+      .replace(/\s+(?:the\s+)?final\s+season.*$/i, '')
+      .replace(/\s+\d+(?:st|nd|rd|th)\s+season.*$/i, '')
+      .replace(/\s+(?:season|musim|s)\s*\d+.*$/i, '')
+      .replace(/\s+(?:part|cour)\s*\d+.*$/i, '')
+      .replace(/\s+(?:the\s+movie|movie(?:\s+\d+)?|gekijouban|ova|ona|specials?)\b.*$/i, '')
+      .replace(/\s+(?:ii|iii|iv|v|vi)$/i, '')
+      .trim();
+  }
+
+  return base || cleanAnimeTitle(rawTitle);
+}
+
+function isSameFranchiseTitle(candidateTitle: string, franchiseBase: string): boolean {
+  const baseWords = tokenizeWords(franchiseBase);
+  const candWords = tokenizeWords(cleanAnimeTitle(candidateTitle));
+  if (baseWords.length === 0 || candWords.length === 0) return false;
+
+  if (baseWords.length === 1) {
+    const word = baseWords[0];
+    if (word.length < 4) return false;
+    return candWords[0] === word || (word.length >= 6 && candWords.includes(word));
+  }
+
+  // Contiguous subsequence match for multi-word franchise names
+  for (let i = 0; i <= candWords.length - baseWords.length; i++) {
+    let matched = true;
+    for (let j = 0; j < baseWords.length; j++) {
+      if (candWords[i + j] !== baseWords[j]) {
+        matched = false;
+        break;
+      }
+    }
+    if (matched && (i === 0 || franchiseBase.length >= 8)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function getCanonicalRecommendationKey(rawTitle: string): string {
+  const cleaned = cleanAnimeTitle(rawTitle)
+    .toLowerCase()
+    .replace(/\((?:episode|eps?|ep)\s*[\d\s–-]+[^)]*\)/gi, '')
+    .replace(/\b(\d+)(?:st|nd|rd|th)\s*season\b/gi, 's$1')
+    .replace(/\b(?:season|musim|s)\s*(\d+)\b/gi, 's$1')
+    .trim();
+
+  const trailingMatch = cleaned.match(/^(.+?)\s+(\d+)$/);
+  let normalized = cleaned;
+  if (trailingMatch) {
+    const num = parseInt(trailingMatch[2], 10);
+    if (num >= 1 && num <= 15) {
+      normalized = `${trailingMatch[1]} s${num}`;
+    }
+  }
+  return normalized.replace(/[^a-z0-9]/g, '');
+}
+
+function classifyFranchiseSeason(
+  candidateTitle: string,
+  franchiseBase: string
+): { sortKey: number; badge: string } {
+  const cleanCand = cleanAnimeTitle(candidateTitle).replace(
+    /\((?:episode|eps?|ep)\s*[\d\s–-]+[^)]*\)/gi,
+    ''
+  );
+  const cleanLower = cleanCand.toLowerCase();
+
+  // Strip franchise prefix to inspect trailing remainder cleanly without confusing titles like "Mob Psycho 100"
+  const baseNorm = tokenizeWords(franchiseBase).join(' ');
+  const candWords = tokenizeWords(cleanCand);
+  const candJoined = candWords.join(' ');
+  const isDirectSeries = candJoined.startsWith(baseNorm);
+  const spinoffOffset = isDirectSeries ? 0 : 1200;
+  const remainder = isDirectSeries ? candJoined.slice(baseNorm.length).trim() : cleanLower;
+
+  if (/\b(?:the\s+movie|movie|film|gekijouban)\b/i.test(cleanLower)) {
+    const numMatch = cleanLower.match(/\bmovie\s*(\d+)/i);
+    const num = numMatch ? parseInt(numMatch[1], 10) : 0;
+    return { sortKey: 2000 + spinoffOffset + num, badge: 'Movie' };
+  }
+
+  if (/\b(?:ova|ona|specials?|sp\b)\b/i.test(remainder || cleanLower)) {
+    return { sortKey: 3000 + spinoffOffset, badge: 'OVA / Spesial' };
+  }
+
+  // Explicit season numbers: Season 2, S2, 2nd Season, II..VI
+  const explicitSeasonMatch =
+    cleanLower.match(/\b(?:season|musim)\s*(\d+)/i) ||
+    cleanLower.match(/\bs(\d+)\b/i) ||
+    cleanLower.match(/\b(\d+)(?:st|nd|rd|th)\s*season\b/i);
+
+  const romanMap: Record<string, number> = {
+    ii: 2,
+    iii: 3,
+    iv: 4,
+    v: 5,
+    vi: 6,
+  };
+  const romanMatch = remainder.match(/\b(ii|iii|iv|v|vi)\b/i);
+  const partMatch = cleanLower.match(/\b(?:part|cour)\s*(\d+)/i);
+  const partOffset = partMatch ? Math.min(9, parseInt(partMatch[1], 10)) : 0;
+
+  let seasonNum: number | null = null;
+  if (explicitSeasonMatch) {
+    seasonNum = parseInt(explicitSeasonMatch[1], 10);
+  } else if (romanMatch) {
+    seasonNum = romanMap[romanMatch[1].toLowerCase()] || null;
+  } else if (/^\d+$/.test(remainder)) {
+    const trailingNum = parseInt(remainder, 10);
+    if (trailingNum >= 1 && trailingNum <= 15) {
+      seasonNum = trailingNum;
+    }
+  }
+
+  if (seasonNum !== null) {
+    return {
+      sortKey: seasonNum * 10 + partOffset + spinoffOffset,
+      badge: isDirectSeries
+        ? partOffset > 1
+          ? `S${seasonNum} Part ${partOffset}`
+          : `Season ${seasonNum}`
+        : `Spin-off S${seasonNum}`,
+    };
+  }
+
+  if (/\bfinal\s+season\b/i.test(cleanLower)) {
+    return { sortKey: 900 + partOffset + spinoffOffset, badge: 'Final Season' };
+  }
+
+  // Original / Season 1 entry when candidate matches base title directly
+  if (candJoined === baseNorm) {
+    return { sortKey: 10, badge: 'Season 1' };
+  }
+
+  // Sub-arc or direct sequel (e.g., Naruto Shippuden, Kimetsu no Yaiba: Yuukaku-hen)
+  return {
+    sortKey: 500 + partOffset + spinoffOffset,
+    badge: isDirectSeries ? 'Seri Terkait' : 'Spin-off',
+  };
+}
+
+/**
+ * Compute accurate related anime recommendations:
+ * 1. Prioritizes same-franchise seasons (S1, S2, S3, sequels, movies) at the very top sorted by season order.
+ * 2. Scores remaining candidates across up to 3 genres by multi-genre overlap, rating score, and keyword similarity.
+ */
+export async function getRelatedAnimeRecommendations(params: {
+  currentId: string;
+  title: string;
+  genres: { title: string; id: string }[];
+}): Promise<RelatedAnimeRecommendationsResult> {
+  const { currentId, title, genres } = params;
+  const franchiseBase = extractFranchiseBaseTitle(title);
+  const currentNormTitle = getCanonicalRecommendationKey(title);
+  const currentNormId = currentId.toLowerCase().replace(/-sub-indo$/i, '').trim();
+
+  const targetGenres = genres.slice(0, 3).map((g) => ({
+    id: g.id || g.title.toLowerCase().replace(/\s+/g, '-'),
+    title: g.title,
+  }));
+
+  const [searchRes, ...genreResults] = await Promise.allSettled([
+    franchiseBase.length >= 3
+      ? searchAllAnime(franchiseBase)
+      : Promise.resolve({ otakudesu: [], samehadaku: [], nimegami: [], kusonime: [], all: [] }),
+    ...targetGenres.map((g) => getOtakudesuByGenre(g.id, 1)),
+  ]);
+
+  const isSameAsCurrent = (item: AnimeItem) => {
+    if (item.id === currentId) return true;
+    const itemNormId = item.id.toLowerCase().replace(/-sub-indo$/i, '').trim();
+    if (itemNormId && itemNormId === currentNormId) return true;
+    const itemNormTitle = getCanonicalRecommendationKey(item.title);
+    if (currentNormTitle && itemNormTitle === currentNormTitle) return true;
+    return false;
+  };
+
+  // 1. Collect & rank same-franchise candidates (S1, S2, S3, etc.)
+  const franchiseItemsMap = new Map<
+    string,
+    { item: RelatedAnimeRecommendationItem; sortKey: number; scoreNum: number }
+  >();
+
+  const searchCandidates: AnimeItem[] =
+    searchRes.status === 'fulfilled' ? searchRes.value.all : [];
+
+  for (const cand of searchCandidates) {
+    if (isSameAsCurrent(cand) || isBatchOrUnstreamableAnime(cand)) continue;
+    if (!isSameFranchiseTitle(cand.title, franchiseBase)) continue;
+
+    const dedupeKey = getCanonicalRecommendationKey(cand.title) || cand.id;
+    const { sortKey, badge } = classifyFranchiseSeason(cand.title, franchiseBase);
+    const scoreNum = parseFloat(String(cand.score || '0').replace(/[^\d.]/g, '')) || 0;
+
+    if (!franchiseItemsMap.has(dedupeKey)) {
+      franchiseItemsMap.set(dedupeKey, {
+        item: { ...cand, relationBadge: badge, isSameFranchise: true },
+        sortKey,
+        scoreNum,
+      });
+    }
+  }
+
+  const sortedFranchise = Array.from(franchiseItemsMap.values())
+    .sort((a, b) => a.sortKey - b.sortKey || b.scoreNum - a.scoreNum)
+    .map((entry) => entry.item);
+
+  const seenTitleKeys = new Set<string>(
+    sortedFranchise.map((item) => getCanonicalRecommendationKey(item.title) || item.id)
+  );
+  if (currentNormTitle) seenTitleKeys.add(currentNormTitle);
+
+  // 2. Score genre candidates by multi-genre overlap + rating score + keyword affinity
+  const baseMeaningfulTokens = new Set(
+    tokenizeWords(franchiseBase).filter((w) => w.length >= 3 && !STOPWORDS.has(w))
+  );
+
+  const genreCandidateMap = new Map<
+    string,
+    {
+      item: AnimeItem;
+      overlapCount: number;
+      matchedGenreTitles: string[];
+      relevanceScore: number;
+    }
+  >();
+
+  genreResults.forEach((res, idx) => {
+    if (res.status !== 'fulfilled') return;
+    const genreTitle = targetGenres[idx]?.title || targetGenres[idx]?.id || '';
+    const list = res.value.animeList || [];
+
+    for (const cand of list) {
+      if (isSameAsCurrent(cand) || isBatchOrUnstreamableAnime(cand)) continue;
+
+      const dedupeKey = getCanonicalRecommendationKey(cand.title) || cand.id;
+      if (seenTitleKeys.has(dedupeKey)) continue;
+
+      // Also catch franchise hits that appeared in genre pages even if search missed them
+      if (isSameFranchiseTitle(cand.title, franchiseBase)) {
+        const { sortKey, badge } = classifyFranchiseSeason(cand.title, franchiseBase);
+        const scoreNum = parseFloat(String(cand.score || '0').replace(/[^\d.]/g, '')) || 0;
+        seenTitleKeys.add(dedupeKey);
+        franchiseItemsMap.set(dedupeKey, {
+          item: { ...cand, relationBadge: badge, isSameFranchise: true },
+          sortKey,
+          scoreNum,
+        });
+        continue;
+      }
+
+      const existing = genreCandidateMap.get(dedupeKey);
+      const scoreNum = parseFloat(String(cand.score || '0').replace(/[^\d.]/g, '')) || 0;
+      const candTokens = tokenizeWords(cleanAnimeTitle(cand.title));
+      let keywordHits = 0;
+      for (const t of candTokens) {
+        if (baseMeaningfulTokens.has(t)) keywordHits++;
+      }
+
+      if (existing) {
+        if (!existing.matchedGenreTitles.includes(genreTitle)) {
+          existing.overlapCount += 1;
+          existing.matchedGenreTitles.push(genreTitle);
+          existing.relevanceScore =
+            existing.overlapCount * 100 + scoreNum * 12 + keywordHits * 15;
+        }
+      } else {
+        genreCandidateMap.set(dedupeKey, {
+          item: cand,
+          overlapCount: 1,
+          matchedGenreTitles: genreTitle ? [genreTitle] : [],
+          relevanceScore: 100 + scoreNum * 12 + keywordHits * 15,
+        });
+      }
+    }
+  });
+
+  // Re-sort franchise items in case genre pages contributed an extra franchise season
+  const finalFranchise = Array.from(franchiseItemsMap.values())
+    .sort((a, b) => a.sortKey - b.sortKey || b.scoreNum - a.scoreNum)
+    .map((entry) => entry.item);
+
+  const sortedGenreItems: RelatedAnimeRecommendationItem[] = Array.from(
+    genreCandidateMap.values()
+  )
+    .sort((a, b) => b.relevanceScore - a.relevanceScore)
+    .map((entry) => ({
+      ...entry.item,
+      relationBadge:
+        entry.overlapCount >= 2 ? `${entry.overlapCount} Genre Cocok` : undefined,
+      isSameFranchise: false,
+    }));
+
+  const maxTotal = Math.min(18, Math.max(12, finalFranchise.length + 6));
+  const combined = [...finalFranchise, ...sortedGenreItems].slice(0, maxTotal);
+
+  return {
+    items: combined,
+    franchiseCount: finalFranchise.length,
+    matchedGenres: targetGenres.map((g) => g.title),
+  };
+}

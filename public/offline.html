@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="id" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#090912" />
+    <title>Sedang Offline - FazuraStream</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #090912;
+        color: #f8fafc;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .card {
+        max-width: 420px;
+        width: 100%;
+        background: #181827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 32px 24px;
+        text-align: center;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+      }
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: rgba(139, 92, 246, 0.15);
+        border: 1px solid rgba(139, 92, 246, 0.35);
+        color: #c4b5fd;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 16px 0 8px;
+        font-size: 22px;
+        font-weight: 800;
+      }
+      p {
+        margin: 0 0 24px;
+        font-size: 14px;
+        color: #a1a1b5;
+        line-height: 1.6;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      button,
+      a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 20px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+      }
+      .primary {
+        background: #8b5cf6;
+        color: #ffffff;
+      }
+      .secondary {
+        background: #202033;
+        color: #f8fafc;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <span class="badge">FazuraStream Offline</span>
+      <h1>Koneksi Internet Terputus</h1>
+      <p>
+        Anda sedang offline. Konten streaming membutuhkan koneksi internet, namun halaman aplikasi dan chapter manga yang sudah Anda simpan offline tetap bisa diakses.
+      </p>
+      <div class="actions">
+        <button class="primary" onclick="window.location.reload()">Coba Lagi</button>
+        <a class="secondary" href="/">Ke Beranda</a>
+      </div>
+    </main>
+  </body>
+</html>

@@ -36,6 +36,8 @@ export function MobileBottomNav() {
           key={item.to}
           to={item.to}
           end={item.exact}
+          aria-label={item.label}
+          title={item.label}
           className={({ isActive }) =>
             `flex flex-col items-center justify-center flex-1 h-full min-h-[44px] min-w-[44px] py-1 text-[9px] min-[360px]:text-[10px] min-[400px]:text-[11px] font-semibold transition-all active:scale-95 relative ${
               isActive
@@ -70,8 +72,8 @@ export function MobileBottomNav() {
                 )}
               </div>
 
-              {/* Label - responsive font size for 320px/360px/390px/430px */}
-              <span className="truncate max-w-[50px] min-[360px]:max-w-none tracking-tight leading-none mt-0.5">
+              {/* Label - hidden below 360px for spacious 320px touch targets */}
+              <span className="hidden min-[360px]:block truncate max-w-[54px] min-[400px]:max-w-none tracking-tight leading-none mt-0.5">
                 {item.label}
               </span>
             </>

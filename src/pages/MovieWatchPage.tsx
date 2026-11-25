@@ -27,6 +27,7 @@ import {
 } from '../services/movieApi';
 import type { StreamResponse, StreamServer, SeasonItem, EpisodeItem } from '../types/movie';
 import { useCategoryHistory } from '../services/categoryStorage';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 export function MovieWatchPage() {
   const { id } = useParams<{ id: string }>();
@@ -50,6 +51,15 @@ export function MovieWatchPage() {
 
   const movie = detailResponse?.data;
   const isTv = movie?.mediaType === 'tv';
+
+  usePageMeta({
+    title: movie?.title
+      ? `${movie.title}${isTv ? ` S${seasonParam}E${episodeParam}` : ''} - Nonton Online`
+      : 'Cinema Player',
+    description: movie?.description?.slice(0, 155) || 'Pemutar film dan serial TV multi-server HD di FazuraStream.',
+    image: movie?.posterUrl,
+    type: 'video.movie',
+  });
 
   const { recordHistory } = useCategoryHistory('movies');
 

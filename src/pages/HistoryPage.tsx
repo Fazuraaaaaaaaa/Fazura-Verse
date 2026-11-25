@@ -17,7 +17,8 @@ import {
   Compass,
   X,
   Play,
-  RotateCcw,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import {
   useAllCategoryHistory,
@@ -27,9 +28,12 @@ import type {
   CategoryHistoryItem,
 } from '../services/categoryStorage';
 import { BackupRestoreModal } from '../components/library/BackupRestoreModal';
+import { ConfirmModal } from '../components/ConfirmModal';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 type ActiveTab = 'all' | CategoryType;
 type SortOption = 'recent' | 'oldest' | 'title-asc';
+type ViewMode = 'grid' | 'list';
 
 const CATEGORY_TABS: { id: ActiveTab; label: string; icon: React.FC<{ className?: string }> }[] = [
   { id: 'all', label: 'Semua', icon: Layers },
@@ -111,13 +115,20 @@ function formatRelativeTime(timestamp: number): string {
 }
 
 export function HistoryPage() {
+  usePageMeta({
+    title: 'Riwayat Aktivitas - Unified History',
+    description: 'Lanjutkan anime, manga, donghua, movie, dan lagu yang terakhir Anda nikmati di FazuraStream.',
+  });
+
   const { byCategory, allItems, totalCount, removeHistoryItem, clearHistory } =
     useAllCategoryHistory();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<SortOption>('recent');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
   // Filter items based on activeTab
@@ -170,16 +181,18 @@ export function HistoryPage() {
   };
 
   const handleClearAll = () => {
-    const targetLabel = activeTab === 'all' ? 'seluruh riwayat tontonan/bacaan' : `riwayat kategori ${activeTab.toUpperCase()}`;
-    if (window.confirm(`Apakah Anda yakin ingin menghapus ${targetLabel}? Tindakan ini tidak dapat dibatalkan.`)) {
-      if (activeTab === 'all') {
-        clearHistory();
-        showToast('Semua riwayat telah dibersihkan');
-      } else {
-        clearHistory(activeTab);
-        showToast(`Riwayat ${activeTab.toUpperCase()} telah dibersihkan`);
-      }
+    setIsClearConfirmOpen(true);
+  };
+
+  const confirmClearHistory = () => {
+    if (activeTab === 'all') {
+      clearHistory();
+      showToast('Semua riwayat telah dibersihkan');
+    } else {
+      clearHistory(activeTab);
+      showToast(`Riwayat ${activeTab.toUpperCase()} telah dibersihkan`);
     }
+    setIsClearConfirmOpen(false);
   };
 
   const getExploreLink = () => {
@@ -211,9 +224,9 @@ export function HistoryPage() {
               <div className="w-10 h-10 rounded-2xl bg-accent-primary/10 border border-accent-primary/20 flex items-center justify-center text-accent-primary">
                 <History className="w-5 h-5" />
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5 tracking-tight">
-                Riwayat Aktivitas
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-accent-primary/10 text-accent-secondary border border-accent-primary/20 font-mono font-normal">
+              <h1 className="text-2xl sm:text-3xl font-black text-white flex flex-wrap items-center gap-2 tracking-tight">
+                <span>Riwayat Aktivitas</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-accent-primary/10 text-accent-secondary border border-accent-primary/20 font-mono font-normal whitespace-nowrap shrink-0">
                   {totalCount} item
                 </span>
               </h1>
@@ -300,19 +313,50 @@ export function HistoryPage() {
             )}
           </div>
 
-          {/* Sort Selection */}
-          <div className="relative flex items-center self-end sm:self-auto shrink-0">
-            <ArrowUpDown className="w-3.5 h-3.5 text-text-muted absolute left-3 pointer-events-none" />
-            <select
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value as SortOption)}
-              aria-label="Urutkan riwayat"
-              className="pl-8 pr-7 py-2 text-xs bg-bg-primary/80 border border-white/10 rounded-xl text-text-secondary focus:outline-none focus:border-accent-primary appearance-none cursor-pointer"
-            >
-              <option value="recent">Terakhir Dilihat</option>
-              <option value="oldest">Terlama Dilihat</option>
-              <option value="title-asc">Judul A - Z</option>
-            </select>
+          {/* Sort & View Toggle Selection */}
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <div className="relative flex items-center">
+              <ArrowUpDown className="w-3.5 h-3.5 text-text-muted absolute left-3 pointer-events-none" />
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value as SortOption)}
+                aria-label="Urutkan riwayat"
+                className="pl-8 pr-7 py-2 text-xs bg-bg-primary/80 border border-white/10 rounded-xl text-text-secondary focus:outline-none focus:border-accent-primary appearance-none cursor-pointer"
+              >
+                <option value="recent">Terakhir Dilihat</option>
+                <option value="oldest">Terlama Dilihat</option>
+                <option value="title-asc">Judul A - Z</option>
+              </select>
+            </div>
+
+            <div className="flex items-center p-0.5 rounded-xl bg-bg-primary/80 border border-white/10">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-accent-primary text-white shadow-sm'
+                    : 'text-text-muted hover:text-white'
+                }`}
+                title="Tampilan Grid"
+                aria-label="Tampilan Grid"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-accent-primary text-white shadow-sm'
+                    : 'text-text-muted hover:text-white'
+                }`}
+                title="Tampilan Daftar"
+                aria-label="Tampilan Daftar"
+              >
+                <List className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -362,8 +406,77 @@ export function HistoryPage() {
               Hapus pencarian
             </button>
           </div>
+        ) : viewMode === 'grid' ? (
+          /* Poster Grid View */
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-5">
+            {filteredAndSortedItems.map((item) => {
+              const catConfig = CATEGORY_COLORS[item.category] || CATEGORY_COLORS.manga;
+              return (
+                <div
+                  key={`${item.category}-${item.id}-${item.lastItemLink}`}
+                  className="group relative flex flex-col bg-surface rounded-2xl overflow-hidden border border-border-subtle hover:border-accent-primary/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-accent-primary/10"
+                >
+                  <Link to={item.lastItemLink || '#'} className="relative aspect-[3/4] overflow-hidden bg-surface-base block">
+                    <img
+                      src={item.cover}
+                      alt={item.title}
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60';
+                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent opacity-85" />
+                    <div className="absolute top-2.5 left-2.5 z-10">
+                      <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border uppercase tracking-wider backdrop-blur-md ${catConfig.badge}`}>
+                        {item.category}
+                      </span>
+                    </div>
+                    <button
+                      onClick={(e) => handleRemove(item, e)}
+                      title="Hapus dari riwayat"
+                      aria-label="Hapus dari riwayat"
+                      className="absolute top-2 right-2 z-20 p-1.5 rounded-xl bg-black/70 hover:bg-rose-600 text-slate-300 hover:text-white border border-white/10 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-all shadow-md"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    {item.lastItemTitle && (
+                      <div className="absolute bottom-2 left-2.5 right-2.5 z-10">
+                        <span className="inline-block max-w-full truncate text-[10px] font-bold text-accent-soft bg-black/70 px-2 py-0.5 rounded-md backdrop-blur-sm border border-white/10">
+                          {item.lastItemTitle}
+                        </span>
+                      </div>
+                    )}
+                  </Link>
+                  <div className="p-3 flex-1 flex flex-col justify-between gap-1.5">
+                    <Link
+                      to={item.lastItemLink || '#'}
+                      className="font-bold text-xs sm:text-sm text-white hover:text-accent-primary transition-colors line-clamp-2 leading-snug"
+                      title={item.title}
+                    >
+                      {item.title}
+                    </Link>
+                    {typeof item.progress === 'number' && item.progress > 0 && (
+                      <div className="w-full bg-white/10 rounded-full h-1 overflow-hidden">
+                        <div
+                          className="bg-accent-primary h-full rounded-full"
+                          style={{ width: `${Math.min(100, Math.max(0, item.progress))}%` }}
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between text-[10px] text-text-muted pt-1 border-t border-white/5">
+                      <span>{catConfig.resumeAction}</span>
+                      <span>{formatRelativeTime(item.watchedAt)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
-          /* History Cards Grid (2-column on md+) */
+          /* History Cards List (2-column on md+) */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
             {filteredAndSortedItems.map((item) => {
               const catConfig = CATEGORY_COLORS[item.category] || CATEGORY_COLORS.manga;
@@ -472,6 +585,20 @@ export function HistoryPage() {
       <BackupRestoreModal
         isOpen={isBackupModalOpen}
         onClose={() => setIsBackupModalOpen(false)}
+      />
+
+      {/* In-App Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isClearConfirmOpen}
+        title={activeTab === 'all' ? 'Bersihkan Seluruh Riwayat?' : `Bersihkan Riwayat ${activeTab.toUpperCase()}?`}
+        message={
+          activeTab === 'all'
+            ? 'Semua riwayat tontonan dan bacaan di seluruh kategori akan dihapus dari penyimpanan lokal.'
+            : `Semua riwayat pada kategori ${activeTab.toUpperCase()} akan dihapus dari penyimpanan lokal.`
+        }
+        confirmLabel="Ya, Bersihkan"
+        onConfirm={confirmClearHistory}
+        onCancel={() => setIsClearConfirmOpen(false)}
       />
     </div>
   );

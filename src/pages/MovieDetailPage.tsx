@@ -31,6 +31,7 @@ import {
 } from '../services/movieApi';
 import type { MovieDetail, SeasonItem, EpisodeItem, MovieComment } from '../types/movie';
 import { useCategoryBookmarks } from '../services/categoryStorage';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 export function MovieDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -62,6 +63,22 @@ export function MovieDetailPage() {
   const movie = detailResponse?.data;
   const related = detailResponse?.related || [];
   const isTv = movie?.mediaType === 'tv';
+
+  usePageMeta({
+    title: movie?.title ? `${movie.title} - Nonton ${isTv ? 'Serial TV' : 'Film'} HD` : 'Detail Film & Serial',
+    description: movie?.description?.slice(0, 155) || 'Streaming film box office & serial TV HD di FazuraStream.',
+    image: movie?.posterUrl,
+    type: 'video.movie',
+    jsonLd: movie?.title
+      ? {
+          '@type': isTv ? 'TVSeries' : 'Movie',
+          name: movie.title,
+          image: movie.posterUrl,
+          datePublished: movie.releaseDate,
+          description: movie.description?.slice(0, 200),
+        }
+      : undefined,
+  });
 
   // 2. Fetch TV Seasons & Episodes if it's a TV show
   const { data: seasons = [] } = useQuery({

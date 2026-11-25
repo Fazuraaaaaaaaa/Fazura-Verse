@@ -28,10 +28,11 @@ import {
   getSamehadakuDetail,
   getNimegamiDetail,
   getAnimeServerUrl,
-  getOtakudesuByGenre,
+  getRelatedAnimeRecommendations,
 } from '../services/animeApi';
 import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 import { AnimeGridCard } from '../components/anime/AnimeGridCard';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 function formatEpisodeName(rawTitle: string | number, fallbackSlug?: string): string {
   const str = String(rawTitle || '').trim();
@@ -83,6 +84,12 @@ export function AnimeWatchPage() {
   const [switchError, setSwitchError] = useState<string>('');
   const [playerKey, setPlayerKey] = useState<number>(0);
   const autoSelectedEpisodeRef = useRef<string>('');
+
+  usePageMeta({
+    title: episode?.title ? `${episode.title} - Streaming Anime` : 'Nonton Anime Sub Indo',
+    description: `Nonton ${episode?.title || 'episode anime'} subtitle Indonesia kualitas HD di FazuraStream.`,
+    type: 'video.episode',
+  });
 
   const { recordHistory, history } = useCategoryHistory('anime');
   const animeId =
@@ -242,7 +249,7 @@ export function AnimeWatchPage() {
     return [...animeDetail.episodeList].reverse();
   }, [animeDetail?.episodeList]);
 
-  // Primary genre for related anime recommendations
+  // Primary genre & accurate recommendations (prioritizes S1/S2/S3 franchise entries + multi-genre overlap)
   const primaryGenre = useMemo(() => {
     if (!animeDetail?.genres || animeDetail.genres.length === 0) return null;
     const first = animeDetail.genres[0];
@@ -253,18 +260,26 @@ export function AnimeWatchPage() {
     };
   }, [animeDetail?.genres]);
 
-  const { data: relatedAnimeData } = useQuery({
-    queryKey: ['anime', 'related', primaryGenre?.id],
-    queryFn: () => getOtakudesuByGenre(primaryGenre?.id || ''),
-    enabled: Boolean(primaryGenre?.id),
+  const { data: relatedRecommendations } = useQuery({
+    queryKey: [
+      'anime',
+      'related-v2',
+      animeId,
+      animeDetail?.title,
+      animeDetail?.genres?.map((g) => g.id || g.title).slice(0, 3).join(','),
+    ],
+    queryFn: () =>
+      getRelatedAnimeRecommendations({
+        currentId: animeId || '',
+        title: animeDetail?.title || '',
+        genres: animeDetail?.genres || [],
+      }),
+    enabled: Boolean(animeDetail?.title),
+    staleTime: 1000 * 60 * 10,
   });
 
-  const relatedAnimeList = useMemo(() => {
-    if (!relatedAnimeData?.animeList) return [];
-    return relatedAnimeData.animeList
-      .filter((item) => item.id !== animeId && !item.id.includes(animeId || ''))
-      .slice(0, 12);
-  }, [relatedAnimeData?.animeList, animeId]);
+  const relatedAnimeList = relatedRecommendations?.items || [];
+  const franchiseCount = relatedRecommendations?.franchiseCount || 0;
 
   // Server whitelist filter:
   // For Otakudesu: strictly keep VidHide, FileDon, and Mega
@@ -783,9 +798,9 @@ export function AnimeWatchPage() {
         <div className="p-5 rounded-2xl bg-surface border border-white/10 shadow-xl space-y-4 animate-in fade-in duration-300">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-3">
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                  REKOMENDASI GENRE
+                  {franchiseCount > 0 ? 'SERI & GENRE TERKAIT' : 'REKOMENDASI GENRE'}
                 </span>
                 {primaryGenre && (
                   <span className="text-xs text-text-muted capitalize">
@@ -797,6 +812,11 @@ export function AnimeWatchPage() {
                 <Sparkles className="w-4 h-4 text-amber-400" />
                 <span>Rekomendasi Anime Terkait Lainnya</span>
               </h3>
+              <p className="text-xs text-text-secondary">
+                {franchiseCount > 0
+                  ? 'Season lanjutan/terkait (S1–S3) di urutan teratas & rekomendasi genre serupa'
+                  : 'Pilihan anime dengan kemiripan genre & rating tertinggi'}
+              </p>
             </div>
 
             {primaryGenre && (
@@ -812,7 +832,12 @@ export function AnimeWatchPage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
             {relatedAnimeList.map((item) => (
-              <AnimeGridCard key={item.id} anime={item} />
+              <AnimeGridCard
+                key={`${item.provider}-${item.id}`}
+                anime={item}
+                relationBadge={item.relationBadge}
+                highlightRelation={item.isSameFranchise}
+              />
             ))}
           </div>
         </div>

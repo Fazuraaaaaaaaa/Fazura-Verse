@@ -29,6 +29,8 @@ import type {
   CategoryBookmarkItem,
 } from '../services/categoryStorage';
 import { BackupRestoreModal } from '../components/library/BackupRestoreModal';
+import { ConfirmModal } from '../components/ConfirmModal';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 type ActiveTab = 'all' | CategoryType;
 type SortOption = 'newest' | 'oldest' | 'title-asc' | 'title-desc';
@@ -109,6 +111,11 @@ function formatRelativeTime(timestamp: number): string {
 }
 
 export function BookmarksPage() {
+  usePageMeta({
+    title: 'Unified Library - Favorit & Bookmark',
+    description: 'Pusat koleksi favorit lintas kategori Manga, Anime, Donghua, Movies & TV, serta Music di FazuraStream.',
+  });
+
   const { byCategory, allItems, totalCount, removeBookmark, clearBookmarks } =
     useAllCategoryBookmarks();
 
@@ -117,6 +124,7 @@ export function BookmarksPage() {
   const [sortOption, setSortOption] = useState<SortOption>('newest');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
   // Filter items based on activeTab
@@ -172,16 +180,18 @@ export function BookmarksPage() {
   };
 
   const handleClearAll = () => {
-    const targetLabel = activeTab === 'all' ? 'seluruh bookmark' : `bookmark kategori ${activeTab.toUpperCase()}`;
-    if (window.confirm(`Apakah Anda yakin ingin menghapus ${targetLabel}? Tindakan ini tidak dapat dibatalkan.`)) {
-      if (activeTab === 'all') {
-        clearBookmarks();
-        showToast('Semua bookmark telah dibersihkan');
-      } else {
-        clearBookmarks(activeTab);
-        showToast(`Bookmark ${activeTab.toUpperCase()} telah dibersihkan`);
-      }
+    setIsClearConfirmOpen(true);
+  };
+
+  const confirmClearBookmarks = () => {
+    if (activeTab === 'all') {
+      clearBookmarks();
+      showToast('Semua bookmark telah dibersihkan');
+    } else {
+      clearBookmarks(activeTab);
+      showToast(`Bookmark ${activeTab.toUpperCase()} telah dibersihkan`);
     }
+    setIsClearConfirmOpen(false);
   };
 
   const getExploreLink = () => {
@@ -213,9 +223,9 @@ export function BookmarksPage() {
               <div className="w-10 h-10 rounded-2xl bg-accent-primary/10 border border-accent-primary/20 flex items-center justify-center text-accent-primary">
                 <Bookmark className="w-5 h-5" />
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5 tracking-tight">
-                Unified Library
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-accent-primary/10 text-accent-secondary border border-accent-primary/20 font-mono font-normal">
+              <h1 className="text-2xl sm:text-3xl font-black text-white flex flex-wrap items-center gap-2 tracking-tight">
+                <span>Unified Library</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-accent-primary/10 text-accent-secondary border border-accent-primary/20 font-mono font-normal whitespace-nowrap shrink-0">
                   {totalCount} item
                 </span>
               </h1>
@@ -562,6 +572,20 @@ export function BookmarksPage() {
       <BackupRestoreModal
         isOpen={isBackupModalOpen}
         onClose={() => setIsBackupModalOpen(false)}
+      />
+
+      {/* In-App Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isClearConfirmOpen}
+        title={activeTab === 'all' ? 'Hapus Seluruh Bookmark?' : `Hapus Bookmark ${activeTab.toUpperCase()}?`}
+        message={
+          activeTab === 'all'
+            ? 'Semua item favorit di seluruh kategori akan dihapus dari penyimpanan lokal browser ini.'
+            : `Semua bookmark pada kategori ${activeTab.toUpperCase()} akan dihapus dari penyimpanan lokal.`
+        }
+        confirmLabel="Ya, Hapus"
+        onConfirm={confirmClearBookmarks}
+        onCancel={() => setIsClearConfirmOpen(false)}
       />
     </div>
   );

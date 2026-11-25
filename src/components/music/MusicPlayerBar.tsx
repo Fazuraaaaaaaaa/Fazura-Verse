@@ -16,9 +16,18 @@ import {
   ChevronUp,
   Minimize2,
   Maximize2,
+  ListMusic,
+  Loader2,
+  AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import { useMusic } from '../../context/MusicContext';
 import { useCategoryBookmarks } from '../../services/categoryStorage';
+import {
+  MUSIC_FALLBACK_SVG,
+  handleMusicImageError,
+  handleMusicImageLoad,
+} from '../../utils/musicThumbnail';
 
 function formatTime(seconds: number): string {
   if (isNaN(seconds) || seconds < 0) return '0:00';
@@ -64,12 +73,21 @@ export function MusicPlayerBar() {
   const {
     currentTrack,
     isPlaying,
+    isLoadingTrack,
+    playerError,
+    clearPlayerError,
     currentTime,
     duration,
     volume,
     isMuted,
     isShuffle,
     repeatMode,
+    queue,
+    showQueue,
+    setShowQueue,
+    playTrack,
+    removeFromQueue,
+    clearQueue,
     isPlayerDismissed,
     togglePlay,
     nextTrack,
@@ -132,10 +150,128 @@ export function MusicPlayerBar() {
 
   return (
     <div
-      className={`fixed bottom-14 md:bottom-0 left-0 right-0 z-40 bg-[#090912]/98 border-t border-white/10 backdrop-blur-2xl text-white shadow-2xl transition-all duration-300 ease-in-out ${
+      className={`fixed bottom-14 md:bottom-0 left-0 right-0 z-40 bg-[#090912]/95 border-t border-border-subtle backdrop-blur-2xl text-white shadow-2xl transition-all duration-300 ease-in-out ${
         isMini ? 'py-1.5 px-3 sm:px-6' : 'py-2 sm:py-3 px-3 sm:px-6'
       }`}
     >
+      {/* Audio Error Notification Toast above bar */}
+      {playerError && !showQueue && (
+        <div className="absolute bottom-full left-3 right-3 sm:left-auto sm:right-6 mb-2 sm:max-w-md rounded-2xl bg-surface border border-rose-500/40 px-3.5 py-2.5 shadow-2xl flex items-center justify-between gap-3 text-xs animate-in fade-in slide-in-from-bottom-2">
+          <div className="flex items-center gap-2 text-rose-300 min-w-0">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span className="truncate">{playerError}</span>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={nextTrack}
+              className="px-2.5 py-1 rounded-lg bg-[#1DB954] text-black font-bold text-[11px]"
+            >
+              Lagu Berikutnya
+            </button>
+            <button
+              type="button"
+              onClick={clearPlayerError}
+              aria-label="Tutup pesan error audio"
+              className="p-1 text-text-muted hover:text-white"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Playback Queue Drawer */}
+      {showQueue && (
+        <div className="absolute bottom-full right-3 left-3 sm:left-auto sm:right-6 mb-2 z-50 sm:w-96 max-h-[60vh] rounded-2xl bg-[#11111D] border border-white/15 shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-2">
+          <div className="px-4 py-3 border-b border-border-subtle flex items-center justify-between bg-[#181827]">
+            <div className="flex items-center gap-2">
+              <ListMusic className="w-4 h-4 text-[#1DB954]" />
+              <h4 className="text-xs sm:text-sm font-bold text-white">
+                Antrean Pemutaran ({queue.length})
+              </h4>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {queue.length > 1 && (
+                <button
+                  type="button"
+                  onClick={clearQueue}
+                  className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 px-2 py-1 rounded-lg hover:bg-rose-500/10 transition-colors flex items-center gap-1"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Kosongkan
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowQueue(false)}
+                aria-label="Tutup antrean"
+                className="p-1.5 rounded-lg text-text-muted hover:text-white hover:bg-white/5"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-y-auto divide-y divide-white/5 p-1.5 max-h-[48vh]">
+            {queue.length === 0 ? (
+              <p className="py-8 text-center text-xs text-text-muted">Antrean kosong.</p>
+            ) : (
+              queue.map((track, idx) => {
+                const isActiveItem = currentTrack.id === track.id;
+                return (
+                  <div
+                    key={`${track.id}-${idx}`}
+                    className={`flex items-center justify-between gap-2.5 p-2 rounded-xl transition-colors group ${
+                      isActiveItem ? 'bg-[#1DB954]/10' : 'hover:bg-white/5'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => playTrack(track, queue)}
+                      className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
+                    >
+                      <span className="text-[10px] font-mono text-text-muted w-4 shrink-0 text-center">
+                        {isActiveItem ? '▶' : idx + 1}
+                      </span>
+                      <img
+                        src={track.thumbnail || MUSIC_FALLBACK_SVG}
+                        alt={track.title}
+                        onError={handleMusicImageError}
+                        onLoad={handleMusicImageLoad}
+                        className="w-9 h-9 rounded-lg object-cover shrink-0 bg-surface"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={`text-xs font-bold truncate ${
+                            isActiveItem ? 'text-[#1DB954]' : 'text-white'
+                          }`}
+                        >
+                          {track.title}
+                        </p>
+                        <p className="text-[10px] text-text-secondary truncate">{track.artist}</p>
+                      </div>
+                    </button>
+
+                    {!isActiveItem && (
+                      <button
+                        type="button"
+                        onClick={() => removeFromQueue(track.id)}
+                        aria-label={`Hapus ${track.title} dari antrean`}
+                        title="Hapus dari antrean"
+                        className="p-1.5 rounded-lg text-text-muted hover:text-rose-400 hover:bg-rose-500/10 shrink-0"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Top 2px Slim Real-Time Progress Bar for both Mini & Expanded views */}
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-white/10 overflow-hidden pointer-events-none">
         <div
@@ -157,12 +293,10 @@ export function MusicPlayerBar() {
           >
             <div className="relative shrink-0">
               <img
-                src={currentTrack.thumbnail || 'https://i.ytimg.com/vi/kPa7bsKwL-c/hqdefault.jpg'}
+                src={currentTrack.thumbnail || MUSIC_FALLBACK_SVG}
                 alt={currentTrack.title}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    'https://i.ytimg.com/vi/kPa7bsKwL-c/hqdefault.jpg';
-                }}
+                onError={handleMusicImageError}
+                onLoad={handleMusicImageLoad}
                 className="w-10 h-10 rounded-lg object-cover shadow-md bg-slate-800"
               />
               {/* Equalizer overlay on thumbnail */}
@@ -221,16 +355,14 @@ export function MusicPlayerBar() {
           {/* Tier 1: Minimize Button + Track Info + Equalizer + Bookmark + Close */}
           <div className="flex items-center justify-between gap-2 w-full">
             {/* Left: Thumbnail & Song Info */}
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="relative shrink-0">
                 <img
-                  src={currentTrack.thumbnail || 'https://i.ytimg.com/vi/kPa7bsKwL-c/hqdefault.jpg'}
+                  src={currentTrack.thumbnail || MUSIC_FALLBACK_SVG}
                   alt={currentTrack.title}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      'https://i.ytimg.com/vi/kPa7bsKwL-c/hqdefault.jpg';
-                  }}
-                  className="w-10 h-10 rounded-lg object-cover shadow-md bg-slate-800"
+                  onError={handleMusicImageError}
+                  onLoad={handleMusicImageLoad}
+                  className="w-9 h-9 rounded-lg object-cover shadow-md bg-slate-800"
                 />
                 <div className="absolute bottom-0.5 right-0.5">
                   <EqualizerVisualizer isPlaying={isPlaying} />
@@ -245,22 +377,35 @@ export function MusicPlayerBar() {
               </div>
             </div>
 
-            {/* Right: Minimize, Bookmark & Close (touch targets >= 44x44px) */}
+            {/* Right: Minimize, Queue, Bookmark & Close (touch height >= 44px, fits 320px) */}
             <div className="flex items-center shrink-0">
               <button
                 onClick={toggleMiniMode}
                 aria-label="Perkecil Pemutar Musik"
                 title="Perkecil Pemutar Musik"
-                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-white active:scale-95 transition-all"
+                className="w-10 h-11 min-w-[40px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-white active:scale-95 transition-all"
               >
                 <ChevronDown className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => setShowQueue((prev) => !prev)}
+                aria-label="Antrean Lagu"
+                title="Antrean Lagu"
+                className={`w-10 h-11 min-w-[40px] min-h-[44px] flex items-center justify-center rounded-xl transition-all ${
+                  showQueue
+                    ? 'bg-[#1DB954]/20 text-[#1DB954]'
+                    : 'text-slate-400 hover:text-white active:scale-95'
+                }`}
+              >
+                <ListMusic className="w-4 h-4" />
               </button>
 
               <button
                 onClick={handleBookmarkToggle}
                 aria-label={bookmarked ? 'Hapus dari Lagu Favorit' : 'Simpan ke Lagu Favorit'}
                 title={bookmarked ? 'Hapus dari Lagu Favorit' : 'Simpan ke Lagu Favorit'}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-400 active:scale-95 transition-all"
+                className="w-10 h-11 min-w-[40px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-400 active:scale-95 transition-all"
               >
                 <Heart
                   className={`w-4 h-4 transition-colors ${
@@ -273,7 +418,7 @@ export function MusicPlayerBar() {
                 onClick={dismissPlayer}
                 aria-label="Tutup Pemutar Musik"
                 title="Tutup Pemutar Musik"
-                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-400 active:scale-95 transition-all"
+                className="w-10 h-11 min-w-[40px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-400 active:scale-95 transition-all"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -387,12 +532,10 @@ export function MusicPlayerBar() {
         <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 max-w-xs shrink-0">
           <div className="relative group shrink-0">
             <img
-              src={currentTrack.thumbnail || 'https://i.ytimg.com/vi/kPa7bsKwL-c/hqdefault.jpg'}
+              src={currentTrack.thumbnail || MUSIC_FALLBACK_SVG}
               alt={currentTrack.title}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  'https://i.ytimg.com/vi/kPa7bsKwL-c/hqdefault.jpg';
-              }}
+              onError={handleMusicImageError}
+              onLoad={handleMusicImageLoad}
               className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg object-cover shadow-md bg-slate-800"
             />
             {/* Equalizer overlay badge */}
@@ -466,7 +609,9 @@ export function MusicPlayerBar() {
               aria-label={isPlaying ? 'Jeda' : 'Putar'}
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#1DB954] hover:bg-[#1ed760] text-black flex items-center justify-center transition-transform hover:scale-105 shadow-md shadow-[#1DB954]/30"
             >
-              {isPlaying ? (
+              {isLoadingTrack && !isPlaying ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : isPlaying ? (
                 <Pause className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
               ) : (
                 <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current ml-0.5" />
@@ -520,8 +665,22 @@ export function MusicPlayerBar() {
           </div>
         </div>
 
-        {/* Right: Lyrics, Volume (with persistent memory) & Close Controls */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Right: Queue, Lyrics, Volume & Close Controls */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <button
+            onClick={() => setShowQueue((prev) => !prev)}
+            title={`Antrean Lagu (${queue.length})`}
+            aria-label="Buka Antrean Pemutaran"
+            className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              showQueue
+                ? 'bg-[#1DB954]/20 text-[#1DB954] border border-[#1DB954]/30'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <ListMusic className="w-4 h-4" />
+            <span className="hidden lg:inline text-[11px] font-mono">{queue.length}</span>
+          </button>
+
           <button
             onClick={() => setShowLyrics((prev) => !prev)}
             title="Buka Lirik Sinkronisasi Real-Time & Mode Mic Karaoke"

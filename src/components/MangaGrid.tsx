@@ -27,12 +27,12 @@ export function MangaGrid({
 
   if (!items || items.length === 0) {
     return (
-      <div className="py-16 px-4 text-center rounded-2xl bg-card/40 border border-white/5 flex flex-col items-center justify-center">
-        <div className="w-14 h-14 rounded-2xl bg-slate-800/80 border border-white/5 flex items-center justify-center text-slate-400 mb-4">
+      <div className="py-16 px-4 text-center rounded-2xl bg-surface/60 border border-border-subtle flex flex-col items-center justify-center">
+        <div className="w-14 h-14 rounded-2xl bg-surface-elevated border border-border-subtle flex items-center justify-center text-text-secondary mb-4">
           <BookX className="w-7 h-7" />
         </div>
-        <h4 className="text-lg font-bold text-white mb-1">{emptyTitle}</h4>
-        <p className="text-sm text-slate-400 max-w-sm">{emptyMessage}</p>
+        <h4 className="text-lg font-bold text-white mb-1 font-heading">{emptyTitle}</h4>
+        <p className="text-sm text-text-secondary max-w-sm">{emptyMessage}</p>
       </div>
     );
   }

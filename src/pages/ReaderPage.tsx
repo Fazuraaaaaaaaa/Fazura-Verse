@@ -17,6 +17,7 @@ import { useReadingHistory } from '../hooks/useReadingHistory';
 import { ReaderControls } from '../components/reader/ReaderControls';
 import { ReaderImage } from '../components/reader/ReaderImage';
 import { ReaderSkeleton } from '../components/SkeletonLoader';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 export function ReaderPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -58,6 +59,18 @@ export function ReaderPage() {
 
   const images = chapter?.images || [];
   const totalPages = images.length;
+  const isRtl = settings.direction === 'rtl';
+
+  usePageMeta({
+    title: chapter?.title
+      ? `${chapter.title} - Baca Komik`
+      : 'Baca Komik - FazuraStream Reader',
+    description: parentDetail?.title
+      ? `Baca ${chapter?.title || 'chapter terbaru'} dari ${parentDetail.title} sub Indo gratis di FazuraStream.`
+      : 'Baca komik manga, manhwa & manhua kualitas HD di FazuraStream Reader.',
+    image: parentDetail?.cover || images[0],
+    type: 'article',
+  });
 
   // Auto-save history whenever chapter loads or progress updates
   useEffect(() => {
@@ -110,24 +123,24 @@ export function ReaderPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Keyboard Navigation
+  // Keyboard Navigation (respects LTR / RTL reading direction)
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      if (settings.mode !== 'single' && settings.mode !== 'double') return;
+      const step = settings.mode === 'double' ? 2 : 1;
+      const goNext = () =>
+        setSinglePageIndex((prev) => Math.min(Math.max(0, totalPages - 1), prev + step));
+      const goPrev = () => setSinglePageIndex((prev) => Math.max(0, prev - step));
+
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-        if (settings.mode === 'single') {
-          setSinglePageIndex((prev) => Math.min(totalPages - 1, prev + 1));
-        } else if (settings.mode === 'double') {
-          setSinglePageIndex((prev) => Math.min(totalPages - 1, prev + 2));
-        }
+        if (isRtl) goPrev();
+        else goNext();
       } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-        if (settings.mode === 'single') {
-          setSinglePageIndex((prev) => Math.max(0, prev - 1));
-        } else if (settings.mode === 'double') {
-          setSinglePageIndex((prev) => Math.max(0, prev - 2));
-        }
+        if (isRtl) goNext();
+        else goPrev();
       }
     },
-    [settings.mode, totalPages]
+    [settings.mode, totalPages, isRtl]
   );
 
   useEffect(() => {
@@ -264,11 +277,11 @@ export function ReaderPage() {
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const clickX = e.clientX - rect.left;
-                if (clickX > rect.width / 2) {
-                  // Clicked right side -> Next page
+                const clickedRight = clickX > rect.width / 2;
+                const advance = isRtl ? !clickedRight : clickedRight;
+                if (advance) {
                   setSinglePageIndex((prev) => Math.min(totalPages - 1, prev + 1));
                 } else {
-                  // Clicked left side -> Prev page
                   setSinglePageIndex((prev) => Math.max(0, prev - 1));
                 }
               }}
@@ -310,9 +323,11 @@ export function ReaderPage() {
         ) : (
           /* Mode 3: Double Page View */
           <div className="flex flex-col items-center space-y-4">
-            <div className={`flex flex-row justify-center items-center gap-2 max-w-full overflow-hidden transition-all ${
-              settings.invertColors ? 'filter invert hue-rotate-180 contrast-105' : ''
-            }`}>
+            <div
+              className={`flex ${isRtl ? 'flex-row-reverse' : 'flex-row'} justify-center items-center gap-2 max-w-full overflow-hidden transition-all ${
+                settings.invertColors ? 'filter invert hue-rotate-180 contrast-105' : ''
+              }`}
+            >
               {singlePageIndex < totalPages && (
                 <div className="flex-1 max-w-[50%]">
                   <ReaderImage
@@ -410,6 +425,18 @@ export function ReaderPage() {
           </div>
         </div>
       </div>
+
+      {/* Floating Non-Intrusive Reading Progress Indicator */}
+      {totalPages > 0 && (
+        <div
+          aria-hidden="true"
+          className="fixed bottom-4 right-4 z-40 px-3 py-1.5 rounded-full bg-surface-base/90 border border-border-subtle backdrop-blur-md text-[11px] font-mono font-bold text-text-secondary shadow-xl pointer-events-none"
+        >
+          {settings.mode === 'vertical'
+            ? `${Math.round(scrollProgress)}% • ${totalPages} Hal`
+            : `Hal ${singlePageIndex + 1} / ${totalPages}`}
+        </div>
+      )}
     </div>
   );
 }

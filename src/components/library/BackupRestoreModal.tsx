@@ -62,6 +62,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
   const [fileName, setFileName] = useState<string>('');
   const [validationResult, setValidationResult] = useState<BackupValidationResult | null>(null);
   const [restoreMode, setRestoreMode] = useState<'merge' | 'overwrite'>('merge');
+  const [confirmOverwrite, setConfirmOverwrite] = useState(false);
   const [importStatus, setImportStatus] = useState<{
     success: boolean;
     message: string;
@@ -106,6 +107,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
       setValidationResult(null);
       setImportStatus(null);
       setRestoreMode('merge');
+      setConfirmOverwrite(false);
     }
   }, [isOpen]);
 
@@ -172,10 +174,15 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
 
   const handleApplyRestore = () => {
     if (!validationResult?.valid || !validationResult.data) return;
+    if (restoreMode === 'overwrite' && !confirmOverwrite) {
+      setConfirmOverwrite(true);
+      return;
+    }
 
     setIsProcessing(true);
     try {
       const result = applyBackupData(validationResult.data, restoreMode);
+      setConfirmOverwrite(false);
       setImportStatus({
         success: true,
         message: `Berhasil memulihkan ${result.bookmarksImported} bookmark dan ${result.historyImported} item riwayat (${
@@ -190,7 +197,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
     } catch (err: any) {
       setImportStatus({
         success: false,
-        message: `Terjadi kesalahan saat memulihkan data: ${err?.message || 'Error'}`,
+        message: `Terjadi kesalahan saat memulihkan data (data lama tetap aman): ${err?.message || 'Error'}`,
       });
     } finally {
       setIsProcessing(false);
@@ -482,7 +489,10 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <button
                             type="button"
-                            onClick={() => setRestoreMode('merge')}
+                            onClick={() => {
+                              setRestoreMode('merge');
+                              setConfirmOverwrite(false);
+                            }}
                             className={`p-3 rounded-xl border text-left transition-all ${
                               restoreMode === 'merge'
                                 ? 'bg-accent-primary/10 border-accent-primary text-white'
@@ -502,7 +512,10 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
 
                           <button
                             type="button"
-                            onClick={() => setRestoreMode('overwrite')}
+                            onClick={() => {
+                              setRestoreMode('overwrite');
+                              setConfirmOverwrite(false);
+                            }}
                             className={`p-3 rounded-xl border text-left transition-all ${
                               restoreMode === 'overwrite'
                                 ? 'bg-rose-500/10 border-rose-500 text-white'
@@ -517,18 +530,37 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                         </div>
                       </div>
 
+                      {/* Overwrite Explicit Confirmation Warning */}
+                      {restoreMode === 'overwrite' && confirmOverwrite && (
+                        <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-xs text-rose-200 flex items-start gap-2.5 animate-in fade-in">
+                          <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <p className="font-bold text-white">Konfirmasi Timpa Seluruh Data</p>
+                            <p>
+                              Semua bookmark dan riwayat lama saat ini akan diganti dengan isi file backup. Klik tombol konfirmasi di bawah untuk melanjutkan.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Apply Button */}
                       <button
                         onClick={handleApplyRestore}
                         disabled={isProcessing}
-                        className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-2xl bg-accent-primary hover:bg-accent-primary/90 text-white font-bold text-sm shadow-lg shadow-accent-primary/20 transition-all disabled:opacity-50"
+                        className={`w-full min-h-[44px] flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-bold text-sm shadow-lg transition-all disabled:opacity-50 ${
+                          restoreMode === 'overwrite' && confirmOverwrite
+                            ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/25'
+                            : 'bg-accent-primary hover:bg-accent-primary/90 text-white shadow-accent-primary/20'
+                        }`}
                       >
                         {isProcessing ? (
                           <RefreshCw className="w-4 h-4 animate-spin" />
                         ) : (
                           <ArrowRight className="w-4 h-4" />
                         )}
-                        Terapkan Pemulihan Data
+                        {restoreMode === 'overwrite' && confirmOverwrite
+                          ? 'Konfirmasi & Timpa Semua Data'
+                          : 'Terapkan Pemulihan Data'}
                       </button>
                     </div>
                   ) : (
@@ -570,7 +602,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
             /* TAB 3: Instant Cross-Device Sync Code */
             <div className="space-y-6">
               {/* Generate & Copy Sync Code Section */}
-              <div className="p-5 rounded-2xl bg-[#141824] border border-white/5 space-y-3">
+              <div className="p-5 rounded-2xl bg-surface-elevated border border-border-subtle space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -597,7 +629,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
               </div>
 
               {/* Paste & Apply Sync Code Section */}
-              <div className="p-5 rounded-2xl bg-[#141824] border border-white/5 space-y-3">
+              <div className="p-5 rounded-2xl bg-surface-elevated border border-border-subtle space-y-3">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <FolderSync className="w-4 h-4 text-emerald-400" /> 2. Tempel Kode Sinkronisasi
                 </h3>
