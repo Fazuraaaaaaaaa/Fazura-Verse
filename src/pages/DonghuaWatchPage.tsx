@@ -203,20 +203,21 @@ export function DonghuaWatchPage() {
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <button
-            disabled
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#191C25] text-[#747887] border border-[#343744] opacity-40 cursor-not-allowed transition-colors"
-            title="Skip OP hanya tersedia untuk stream langsung MP4 (tidak didukung di iframe)"
-          >
-            <FastForward className="w-3.5 h-3.5 text-[#67BFD5]" />
-            <span className="hidden sm:inline">Skip OP</span>
-          </button>
-          <button
             onClick={() => setPlayerKey((k) => k + 1)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white border border-white/5 transition-colors"
             title="Muat ulang pemutar jika terjadi error buffer"
           >
             <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
             Reload Player
+          </button>
+
+          <button
+            disabled
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#191C25] text-[#747887] border border-[#343744] opacity-40 cursor-not-allowed transition-colors"
+            title="Skip OP hanya tersedia untuk stream langsung MP4 (tidak didukung di iframe)"
+          >
+            <FastForward className="w-3.5 h-3.5 text-[#67BFD5]" />
+            <span className="hidden sm:inline">Skip OP</span>
           </button>
 
           {currentStream && (

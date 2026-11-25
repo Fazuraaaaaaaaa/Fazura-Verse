@@ -644,16 +644,6 @@ export function AnimeWatchPage() {
         )}
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
-          {isDirectVideoStream(activeStream) && (
-            <button
-              onClick={skipOpening}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#A78BFA] border border-[#343744] transition-colors"
-              title="Skip Opening +85 detik"
-            >
-              <FastForward className="w-3.5 h-3.5 text-[#A78BFA]" />
-              <span className="hidden sm:inline">Skip OP</span>
-            </button>
-          )}
           <button
             onClick={() => setPlayerKey((k) => k + 1)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white border border-white/10 transition-colors"
@@ -661,6 +651,16 @@ export function AnimeWatchPage() {
           >
             <RefreshCw className="w-3.5 h-3.5 text-accent-soft" />
             Reload Player
+          </button>
+
+          <button
+            onClick={skipOpening}
+            disabled={!isDirectVideoStream(activeStream)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#A78BFA] border border-[#343744] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title={isDirectVideoStream(activeStream) ? 'Skip Opening +85 detik' : 'Skip OP hanya tersedia untuk stream langsung MP4'}
+          >
+            <FastForward className="w-3.5 h-3.5 text-[#A78BFA]" />
+            <span className="hidden sm:inline">Skip OP</span>
           </button>
 
           {activeStream && (

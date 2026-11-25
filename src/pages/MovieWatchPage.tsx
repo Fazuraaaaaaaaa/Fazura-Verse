@@ -185,6 +185,14 @@ export function MovieWatchPage() {
 
           <div className="flex items-center gap-2 shrink-0">
             <button
+              onClick={() => setReloadKey((k) => k + 1)}
+              className="p-2 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white border border-white/5 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              title="Muat Ulang Server"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Reload</span>
+            </button>
+            <button
               disabled={!isDirectVideoStream(activeServerUrl)}
               onClick={skipOpening}
               className="p-2 rounded-[10px] bg-[#232633] text-[#A2A4B1] border border-[#343744] text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:bg-[#343744] hover:enabled:text-[#F0A15B]"
@@ -192,14 +200,6 @@ export function MovieWatchPage() {
             >
               <FastForward className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Skip OP</span>
-            </button>
-            <button
-              onClick={() => setReloadKey((k) => k + 1)}
-              className="p-2 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white border border-white/5 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              title="Muat Ulang Server"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Reload</span>
             </button>
             <button
               onClick={() => setIsTheaterMode(!isTheaterMode)}
