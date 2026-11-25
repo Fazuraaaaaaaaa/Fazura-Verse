@@ -242,11 +242,11 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
   };
 
   const categoryIcons: Record<CategoryType, React.ReactNode> = {
-    manga: <BookOpen className="w-3.5 h-3.5 text-emerald-400" />,
-    anime: <Tv className="w-3.5 h-3.5 text-purple-400" />,
-    donghua: <Film className="w-3.5 h-3.5 text-amber-400" />,
-    movies: <Clapperboard className="w-3.5 h-3.5 text-rose-400" />,
-    music: <Music className="w-3.5 h-3.5 text-emerald-400" />,
+    manga: <BookOpen className="w-3.5 h-3.5 text-[#75C9A0]" />,
+    anime: <Tv className="w-3.5 h-3.5 text-[#A78BFA]" />,
+    donghua: <Film className="w-3.5 h-3.5 text-[#67BFD5]" />,
+    movies: <Clapperboard className="w-3.5 h-3.5 text-[#F0A15B]" />,
+    music: <Music className="w-3.5 h-3.5 text-[#E68BA6]" />,
   };
 
   const categoryLabels: Record<CategoryType, string> = {
@@ -258,43 +258,44 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B0C10]/85 backdrop-blur-md animate-in fade-in duration-200">
       {/* Backdrop overlay */}
       <div className="absolute inset-0" onClick={onClose} />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-2xl bg-surface border border-white/10 rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-2xl bg-[#191C25] border border-[#343744] rounded-2xl shadow-dialog overflow-hidden z-10 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/5 bg-surface-elevated/40">
+        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-[#343744] bg-[#232633]/60">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-accent-primary/10 border border-accent-primary/20 flex items-center justify-center text-accent-primary">
+            <div className="w-10 h-10 rounded-[10px] bg-[#232633] border border-[#343744] flex items-center justify-center text-[#F0A15B]">
               <Database className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-bold font-heading text-[#F2F0EC] flex items-center gap-2">
                 Backup & Restore FazuraStream
               </h2>
-              <p className="text-xs text-text-muted">
+              <p className="text-xs text-[#A2A4B1]">
                 Simpan atau pulihkan data bookmark dan riwayat tontonan/bacaan antar perangkat
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-text-muted hover:text-white hover:bg-white/5 transition-colors"
+            aria-label="Tutup modal"
+            className="p-2 rounded-[10px] text-[#747887] hover:text-[#F2F0EC] hover:bg-[#232633] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Controls */}
-        <div className="flex border-b border-white/5 bg-bg-primary/50 px-6 pt-3 gap-2">
+        <div className="flex overflow-x-auto scrollbar-none border-b border-[#343744] bg-[#12141B] px-5 sm:px-6 pt-3 gap-2">
           <button
             onClick={() => setActiveTab('export')}
-            className={`flex items-center gap-2 px-4 py-2.5 font-bold text-xs rounded-t-xl transition-all border-b-2 ${
+            className={`flex items-center gap-2 px-4 py-2.5 font-semibold text-xs rounded-t-[10px] transition-colors border-b-2 shrink-0 ${
               activeTab === 'export'
-                ? 'text-accent-primary border-accent-primary bg-surface'
-                : 'text-text-muted border-transparent hover:text-white'
+                ? 'text-[#F0A15B] border-[#F0A15B] bg-[#191C25]'
+                : 'text-[#747887] border-transparent hover:text-[#F2F0EC]'
             }`}
           >
             <Download className="w-4 h-4" />
@@ -302,10 +303,10 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('import')}
-            className={`flex items-center gap-2 px-4 py-2.5 font-bold text-xs rounded-t-xl transition-all border-b-2 ${
+            className={`flex items-center gap-2 px-4 py-2.5 font-semibold text-xs rounded-t-[10px] transition-colors border-b-2 shrink-0 ${
               activeTab === 'import'
-                ? 'text-accent-primary border-accent-primary bg-surface'
-                : 'text-text-muted border-transparent hover:text-white'
+                ? 'text-[#F0A15B] border-[#F0A15B] bg-[#191C25]'
+                : 'text-[#747887] border-transparent hover:text-[#F2F0EC]'
             }`}
           >
             <Upload className="w-4 h-4" />
@@ -313,10 +314,10 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('sync')}
-            className={`flex items-center gap-2 px-4 py-2.5 font-bold text-xs rounded-t-xl transition-all border-b-2 ${
+            className={`flex items-center gap-2 px-4 py-2.5 font-semibold text-xs rounded-t-[10px] transition-colors border-b-2 shrink-0 ${
               activeTab === 'sync'
-                ? 'text-[#8B5CF6] border-[#8B5CF6] bg-surface'
-                : 'text-text-muted border-transparent hover:text-white'
+                ? 'text-[#F0A15B] border-[#F0A15B] bg-[#191C25]'
+                : 'text-[#747887] border-transparent hover:text-[#F2F0EC]'
             }`}
           >
             <FolderSync className="w-4 h-4" />
@@ -325,42 +326,42 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-6 overflow-y-auto space-y-6">
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-6">
           {activeTab === 'export' ? (
             /* EXPORT TAB */
             <div className="space-y-6">
-              <div className="p-4 rounded-2xl bg-surface-elevated border border-white/5 space-y-4">
+              <div className="p-4 rounded-[12px] bg-[#12141B] border border-[#343744] space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-white">Ringkasan Data Saat Ini</span>
-                  <span className="text-xs text-accent-secondary font-mono">
+                  <span className="text-sm font-semibold text-[#F2F0EC]">Ringkasan Data Saat Ini</span>
+                  <span className="text-xs text-[#F0A15B] font-mono">
                     Total: {(exportStats?.totalBookmarks || 0) + (exportStats?.totalHistory || 0)} item
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <div className="p-3.5 rounded-xl bg-bg-primary border border-white/5">
-                    <div className="text-xs text-text-muted mb-1 flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-accent-primary" />
+                  <div className="p-3.5 rounded-[10px] bg-[#191C25] border border-[#343744]">
+                    <div className="text-xs text-[#747887] mb-1 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-[#F0A15B]" />
                       Total Bookmark
                     </div>
-                    <div className="text-2xl font-black text-white">
+                    <div className="text-2xl font-bold font-heading text-[#F2F0EC]">
                       {exportStats?.totalBookmarks || 0}
                     </div>
                   </div>
-                  <div className="p-3.5 rounded-xl bg-bg-primary border border-white/5">
-                    <div className="text-xs text-text-muted mb-1 flex items-center gap-1.5">
-                      <FolderSync className="w-3.5 h-3.5 text-accent-cyan" />
+                  <div className="p-3.5 rounded-[10px] bg-[#191C25] border border-[#343744]">
+                    <div className="text-xs text-[#747887] mb-1 flex items-center gap-1.5">
+                      <FolderSync className="w-3.5 h-3.5 text-[#67BFD5]" />
                       Total Riwayat
                     </div>
-                    <div className="text-2xl font-black text-white">
+                    <div className="text-2xl font-bold font-heading text-[#F2F0EC]">
                       {exportStats?.totalHistory || 0}
                     </div>
                   </div>
                 </div>
 
                 {/* Per Category Breakdown */}
-                <div className="pt-2 border-t border-white/5">
-                  <div className="text-[11px] font-semibold text-text-muted mb-2 uppercase tracking-wider">
+                <div className="pt-2 border-t border-[#343744]">
+                  <div className="text-[11px] font-semibold text-[#747887] mb-2 uppercase tracking-wider">
                     Rincian per Kategori
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -370,15 +371,15 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                       return (
                         <div
                           key={cat}
-                          className="p-2.5 rounded-xl bg-bg-primary/60 border border-white/5 flex items-center justify-between"
+                          className="p-2.5 rounded-[10px] bg-[#191C25] border border-[#343744] flex items-center justify-between"
                         >
                           <div className="flex items-center gap-2">
                             {categoryIcons[cat]}
-                            <span className="text-xs font-semibold text-text-secondary">
+                            <span className="text-xs font-semibold text-[#A2A4B1]">
                               {categoryLabels[cat]}
                             </span>
                           </div>
-                          <span className="text-[11px] font-mono text-text-muted">
+                          <span className="text-[11px] font-mono text-[#747887]">
                             {b} b / {h} r
                           </span>
                         </div>
@@ -388,14 +389,14 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-accent-primary/5 border border-accent-primary/20 text-xs text-text-secondary space-y-2">
-                <p className="font-semibold text-accent-secondary flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-accent-primary" />
+              <div className="p-4 rounded-[10px] bg-[#12141B] border border-[#343744] text-xs text-[#A2A4B1] space-y-2">
+                <p className="font-semibold text-[#F2F0EC] flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#75C9A0]" />
                   Format Standar FazuraStream
                 </p>
                 <p>
                   File backup akan diunduh dengan nama{' '}
-                  <code className="text-white bg-black/40 px-1.5 py-0.5 rounded font-mono">
+                  <code className="text-[#F2F0EC] bg-[#232633] px-1.5 py-0.5 rounded font-mono">
                     fazurastream-backup-{new Date().toISOString().split('T')[0]}.json
                   </code>
                   . Anda dapat menyimpannya di Google Drive, flashdisk, atau membukanya di browser lain.
@@ -404,7 +405,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
 
               <button
                 onClick={handleExport}
-                className="w-full flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-2xl bg-accent-primary hover:bg-accent-primary/90 text-white font-bold text-sm shadow-lg shadow-accent-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
+                className="w-full min-h-[44px] flex items-center justify-center gap-2.5 py-3 px-6 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] font-bold text-sm transition-colors"
               >
                 <Download className="w-4 h-4" />
                 Unduh File Backup Sekarang
@@ -422,10 +423,10 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`cursor-pointer p-8 rounded-2xl border-2 border-dashed transition-all text-center flex flex-col items-center justify-center gap-3 ${
+                className={`cursor-pointer p-8 rounded-[12px] border-2 border-dashed transition-colors text-center flex flex-col items-center justify-center gap-3 ${
                   dragOver
-                    ? 'border-accent-primary bg-accent-primary/10'
-                    : 'border-white/10 hover:border-white/20 bg-surface-elevated/50'
+                    ? 'border-[#F0A15B] bg-[#232633]'
+                    : 'border-[#343744] hover:border-[#454958] bg-[#12141B]'
                 }`}
               >
                 <input
@@ -435,14 +436,14 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                   accept=".json,application/json"
                   className="hidden"
                 />
-                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-text-muted">
-                  <FileJson className="w-6 h-6 text-accent-primary" />
+                <div className="w-12 h-12 rounded-[10px] bg-[#232633] border border-[#343744] flex items-center justify-center text-[#F0A15B]">
+                  <FileJson className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-white">
+                  <div className="text-sm font-bold text-[#F2F0EC]">
                     {fileName ? fileName : 'Pilih atau Tarik File Backup JSON'}
                   </div>
-                  <p className="text-xs text-text-muted mt-1">
+                  <p className="text-xs text-[#747887] mt-1">
                     Mendukung file backup resmi FazuraStream (.json)
                   </p>
                 </div>
@@ -452,14 +453,14 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
               {validationResult && (
                 <div className="space-y-4">
                   {validationResult.valid ? (
-                    <div className="p-4 rounded-2xl bg-surface-elevated border border-accent-primary/30 space-y-3">
-                      <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+                    <div className="p-4 rounded-[12px] bg-[#12141B] border border-[#343744] space-y-3">
+                      <div className="flex items-center gap-2 text-[#75C9A0] font-bold text-xs">
                         <CheckCircle2 className="w-4 h-4 shrink-0" />
                         <span>File Terverifikasi Valid: Ditemukan {validationResult.summary?.totalBookmarks} Bookmark & {validationResult.summary?.totalHistory} Riwayat</span>
                       </div>
 
                       {/* Category Pills */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 border-t border-white/5">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 border-t border-[#343744]">
                         {(['manga', 'anime', 'donghua', 'movies', 'music'] as CategoryType[]).map((cat) => {
                           const b = validationResult.summary?.byCategory[cat]?.bookmarks || 0;
                           const h = validationResult.summary?.byCategory[cat]?.history || 0;
@@ -467,15 +468,15 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                           return (
                             <div
                               key={cat}
-                              className="p-2 rounded-xl bg-bg-primary/70 border border-white/5 flex items-center justify-between text-xs"
+                              className="p-2 rounded-[10px] bg-[#191C25] border border-[#343744] flex items-center justify-between text-xs"
                             >
                               <div className="flex items-center gap-1.5">
                                 {categoryIcons[cat]}
-                                <span className="font-semibold text-text-secondary">
+                                <span className="font-semibold text-[#A2A4B1]">
                                   {categoryLabels[cat]}
                                 </span>
                               </div>
-                              <span className="text-[11px] font-mono text-accent-secondary">
+                              <span className="text-[11px] font-mono text-[#F0A15B]">
                                 {b}b / {h}r
                               </span>
                             </div>
@@ -484,8 +485,8 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                       </div>
 
                       {/* Restore Mode Options */}
-                      <div className="pt-3 border-t border-white/5 space-y-2">
-                        <div className="text-xs font-bold text-white">Metode Pemulihan:</div>
+                      <div className="pt-3 border-t border-[#343744] space-y-2">
+                        <div className="text-xs font-bold text-[#F2F0EC]">Metode Pemulihan:</div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <button
                             type="button"
@@ -493,19 +494,19 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                               setRestoreMode('merge');
                               setConfirmOverwrite(false);
                             }}
-                            className={`p-3 rounded-xl border text-left transition-all ${
+                            className={`p-3 rounded-[10px] border text-left transition-colors ${
                               restoreMode === 'merge'
-                                ? 'bg-accent-primary/10 border-accent-primary text-white'
-                                : 'bg-bg-primary/40 border-white/5 text-text-muted hover:text-white'
+                                ? 'bg-[#232633] border-[#F0A15B] text-[#F2F0EC]'
+                                : 'bg-[#191C25] border-[#343744] text-[#A2A4B1] hover:text-[#F2F0EC]'
                             }`}
                           >
                             <div className="text-xs font-bold flex items-center gap-1.5">
                               <span>Gabungkan (Merge)</span>
-                              <span className="text-[10px] bg-accent-primary/20 text-accent-secondary px-1.5 py-0.2 rounded">
+                              <span className="text-[10px] bg-[#F0A15B]/15 text-[#F0A15B] px-1.5 py-0.5 rounded-[6px]">
                                 Rekomendasi
                               </span>
                             </div>
-                            <p className="text-[11px] text-text-muted mt-1">
+                            <p className="text-[11px] text-[#747887] mt-1">
                               Menambahkan data baru tanpa menghapus koleksi yang sudah ada saat ini.
                             </p>
                           </button>
@@ -516,14 +517,14 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                               setRestoreMode('overwrite');
                               setConfirmOverwrite(false);
                             }}
-                            className={`p-3 rounded-xl border text-left transition-all ${
+                            className={`p-3 rounded-[10px] border text-left transition-colors ${
                               restoreMode === 'overwrite'
-                                ? 'bg-rose-500/10 border-rose-500 text-white'
-                                : 'bg-bg-primary/40 border-white/5 text-text-muted hover:text-white'
+                                ? 'bg-rose-500/15 border-rose-500/60 text-[#F2F0EC]'
+                                : 'bg-[#191C25] border-[#343744] text-[#A2A4B1] hover:text-[#F2F0EC]'
                             }`}
                           >
                             <div className="text-xs font-bold text-rose-400">Timpa Semua (Overwrite)</div>
-                            <p className="text-[11px] text-text-muted mt-1">
+                            <p className="text-[11px] text-[#747887] mt-1">
                               Menghapus seluruh koleksi saat ini dan menggantinya dengan isi file backup.
                             </p>
                           </button>
@@ -532,10 +533,10 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
 
                       {/* Overwrite Explicit Confirmation Warning */}
                       {restoreMode === 'overwrite' && confirmOverwrite && (
-                        <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-xs text-rose-200 flex items-start gap-2.5 animate-in fade-in">
+                        <div className="p-3.5 rounded-[10px] bg-rose-500/15 border border-rose-500/40 text-xs text-rose-200 flex items-start gap-2.5 animate-in fade-in">
                           <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                           <div className="space-y-1">
-                            <p className="font-bold text-white">Konfirmasi Timpa Seluruh Data</p>
+                            <p className="font-bold text-[#F2F0EC]">Konfirmasi Timpa Seluruh Data</p>
                             <p>
                               Semua bookmark dan riwayat lama saat ini akan diganti dengan isi file backup. Klik tombol konfirmasi di bawah untuk melanjutkan.
                             </p>
@@ -547,10 +548,10 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                       <button
                         onClick={handleApplyRestore}
                         disabled={isProcessing}
-                        className={`w-full min-h-[44px] flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-bold text-sm shadow-lg transition-all disabled:opacity-50 ${
+                        className={`w-full min-h-[44px] flex items-center justify-center gap-2 py-3 px-6 rounded-[10px] font-bold text-sm transition-colors disabled:opacity-50 ${
                           restoreMode === 'overwrite' && confirmOverwrite
-                            ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/25'
-                            : 'bg-accent-primary hover:bg-accent-primary/90 text-white shadow-accent-primary/20'
+                            ? 'bg-rose-600 hover:bg-rose-500 text-white'
+                            : 'bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10]'
                         }`}
                       >
                         {isProcessing ? (
@@ -564,7 +565,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                       </button>
                     </div>
                   ) : (
-                    <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
+                    <div className="p-4 rounded-[10px] bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
                       <AlertTriangle className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" />
                       <div>
                         <div className="font-bold text-rose-200">File Tidak Valid</div>
@@ -578,22 +579,22 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
               {/* Import Result Feedback */}
               {importStatus && (
                 <div
-                  className={`p-4 rounded-2xl border text-xs flex items-start gap-2.5 animate-in fade-in ${
+                  className={`p-4 rounded-[10px] border text-xs flex items-start gap-2.5 animate-in fade-in ${
                     importStatus.success
-                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                      ? 'bg-[#12141B] border-[#75C9A0]/40 text-[#75C9A0]'
                       : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
                   }`}
                 >
                   {importStatus.success ? (
-                    <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400 mt-0.5" />
+                    <CheckCircle2 className="w-5 h-5 shrink-0 text-[#75C9A0] mt-0.5" />
                   ) : (
                     <AlertTriangle className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" />
                   )}
                   <div className="flex-1">
-                    <div className="font-bold text-white">
+                    <div className="font-bold text-[#F2F0EC]">
                       {importStatus.success ? 'Pemulihan Selesai' : 'Pemulihan Gagal'}
                     </div>
-                    <p className="mt-0.5">{importStatus.message}</p>
+                    <p className="mt-0.5 text-[#A2A4B1]">{importStatus.message}</p>
                   </div>
                 </div>
               )}
@@ -602,19 +603,19 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
             /* TAB 3: Instant Cross-Device Sync Code */
             <div className="space-y-6">
               {/* Generate & Copy Sync Code Section */}
-              <div className="p-5 rounded-2xl bg-surface-elevated border border-border-subtle space-y-3">
-                <div className="flex items-center justify-between">
+              <div className="p-5 rounded-[12px] bg-[#12141B] border border-[#343744] space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <Copy className="w-4 h-4 text-[#8B5CF6]" /> 1. Buat Kode Sinkronisasi
+                    <h3 className="text-sm font-bold text-[#F2F0EC] flex items-center gap-2">
+                      <Copy className="w-4 h-4 text-[#F0A15B]" /> 1. Buat Kode Sinkronisasi
                     </h3>
-                    <p className="text-xs text-text-muted mt-0.5">
+                    <p className="text-xs text-[#747887] mt-0.5">
                       Salin kode ini untuk memindahkan koleksi dan riwayat ke HP atau perangkat lain secara instan.
                     </p>
                   </div>
                   <button
                     onClick={handleGenerateSyncCode}
-                    className="px-4 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-[#8B5CF6]/20 shrink-0"
+                    className="px-4 py-2 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
                   >
                     {copiedSync ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     <span>{copiedSync ? 'Tersalin!' : 'Salin Kode'}</span>
@@ -622,18 +623,18 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                 </div>
 
                 {syncCode && (
-                  <div className="p-3 rounded-xl bg-black/40 border border-white/10 font-mono text-[11px] text-[#A78BFA] break-all max-h-24 overflow-y-auto">
+                  <div className="p-3 rounded-[10px] bg-[#191C25] border border-[#343744] font-mono text-[11px] text-[#A78BFA] break-all max-h-24 overflow-y-auto">
                     {syncCode}
                   </div>
                 )}
               </div>
 
               {/* Paste & Apply Sync Code Section */}
-              <div className="p-5 rounded-2xl bg-surface-elevated border border-border-subtle space-y-3">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <FolderSync className="w-4 h-4 text-emerald-400" /> 2. Tempel Kode Sinkronisasi
+              <div className="p-5 rounded-[12px] bg-[#12141B] border border-[#343744] space-y-3">
+                <h3 className="text-sm font-bold text-[#F2F0EC] flex items-center gap-2">
+                  <FolderSync className="w-4 h-4 text-[#75C9A0]" /> 2. Tempel Kode Sinkronisasi
                 </h3>
-                <p className="text-xs text-text-muted">
+                <p className="text-xs text-[#747887]">
                   Masukkan kode sinkronisasi yang Anda salin dari perangkat lain untuk memulihkan koleksi Anda.
                 </p>
 
@@ -642,19 +643,19 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                   onChange={(e) => setInputSyncCode(e.target.value)}
                   placeholder="Tempel kode sinkronisasi di sini..."
                   rows={3}
-                  className="w-full p-3 bg-black/50 border border-white/10 rounded-xl text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-[#8B5CF6] transition-all resize-none"
+                  className="w-full p-3 bg-[#191C25] border border-[#343744] rounded-[10px] text-xs font-mono text-[#F2F0EC] placeholder-[#747887] focus:outline-none focus:border-[#F0A15B] transition-colors resize-none"
                 />
 
-                <div className="flex items-center justify-between pt-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-text-muted">Metode:</span>
+                    <span className="text-[#747887]">Metode:</span>
                     <button
                       type="button"
                       onClick={() => setRestoreMode('merge')}
-                      className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
+                      className={`px-2.5 py-1 rounded-[6px] font-semibold transition-colors ${
                         restoreMode === 'merge'
-                          ? 'bg-[#8B5CF6]/20 text-[#A78BFA] border border-[#8B5CF6]/40'
-                          : 'text-slate-400 hover:text-white'
+                          ? 'bg-[#232633] text-[#F0A15B] border border-[#F0A15B]'
+                          : 'text-[#A2A4B1] hover:text-[#F2F0EC] border border-transparent'
                       }`}
                     >
                       Gabungkan (Merge)
@@ -662,10 +663,10 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setRestoreMode('overwrite')}
-                      className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
+                      className={`px-2.5 py-1 rounded-[6px] font-semibold transition-colors ${
                         restoreMode === 'overwrite'
                           ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                          : 'text-slate-400 hover:text-white'
+                          : 'text-[#A2A4B1] hover:text-[#F2F0EC] border border-transparent'
                       }`}
                     >
                       Timpa (Overwrite)
@@ -675,7 +676,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
                   <button
                     onClick={handleApplySyncCode}
                     disabled={!inputSyncCode.trim()}
-                    className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-black transition-all disabled:opacity-40 shadow-md shadow-emerald-500/20"
+                    className="px-4 py-2 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] text-xs font-bold transition-colors disabled:opacity-40"
                   >
                     Terapkan Sinkronisasi
                   </button>
@@ -684,15 +685,15 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
 
               {/* Status Feedback */}
               {syncError && (
-                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+                <div className="p-3.5 rounded-[10px] bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
                   <span>{syncError}</span>
                 </div>
               )}
 
               {syncSuccess && (
-                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div className="p-3.5 rounded-[10px] bg-[#12141B] border border-[#75C9A0]/40 text-[#75C9A0] text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#75C9A0] shrink-0" />
                   <span>{syncSuccess}</span>
                 </div>
               )}
@@ -701,11 +702,11 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 px-6 border-t border-white/5 bg-bg-primary/50 flex items-center justify-between text-xs text-text-muted">
+        <div className="p-4 px-5 sm:px-6 border-t border-[#343744] bg-[#12141B] flex items-center justify-between text-xs text-[#747887]">
           <span>FazuraStream Storage Engine v2.0</span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold transition-colors"
+            className="px-4 py-1.5 rounded-[10px] bg-[#232633] hover:bg-[#343744] text-[#F2F0EC] font-semibold transition-colors"
           >
             Tutup
           </button>

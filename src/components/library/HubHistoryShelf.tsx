@@ -1,17 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  RotateCcw,
-  Play,
-  BookOpen,
-  Film,
-  Music,
-  Trash2,
-  ChevronLeft,
-  ChevronRight,
-  ExternalLink,
-  Sparkles,
-} from 'lucide-react';
+import { Play, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   useCategoryHistory,
   type CategoryType,
@@ -23,6 +12,13 @@ import {
   handleMusicImageError,
   handleMusicImageLoad,
 } from '../../utils/musicThumbnail';
+import {
+  CATEGORY_THEMES,
+  createPosterFallbackSvg,
+  type MediaCategory,
+} from '../../utils/categoryTheme';
+import { SectionHeader } from '../common/SectionHeader';
+import { ConfirmModal } from '../ConfirmModal';
 
 interface HubHistoryShelfProps {
   category: CategoryType;
@@ -30,6 +26,37 @@ interface HubHistoryShelfProps {
   subtitle?: string;
   showWhenEmpty?: boolean;
 }
+
+const DEFAULT_META: Record<
+  CategoryType,
+  { title: string; subtitle: string; actionLabel: string }
+> = {
+  anime: {
+    title: 'Lanjutkan Nonton Anime',
+    subtitle: 'Lanjutkan episode anime terakhir yang Anda tonton',
+    actionLabel: 'Lanjut Nonton',
+  },
+  donghua: {
+    title: 'Lanjutkan Nonton Donghua',
+    subtitle: 'Lanjutkan serial donghua terakhir yang Anda ikuti',
+    actionLabel: 'Lanjut Nonton',
+  },
+  movies: {
+    title: 'Lanjutkan Nonton Film & Series',
+    subtitle: 'Lanjutkan film atau serial TV yang sempat tertunda',
+    actionLabel: 'Lanjut Putar',
+  },
+  music: {
+    title: 'Lagu Terakhir Diputar',
+    subtitle: 'Putar kembali lagu yang terakhir kali Anda dengarkan',
+    actionLabel: 'Putar Lagu',
+  },
+  manga: {
+    title: 'Lanjutkan Baca Komik',
+    subtitle: 'Buka kembali chapter terakhir manga, manhwa, atau manhua',
+    actionLabel: 'Lanjut Baca',
+  },
+};
 
 function formatRelativeTime(timestamp: number): string {
   const diffSec = Math.floor((Date.now() - timestamp) / 1000);
@@ -56,69 +83,22 @@ export function HubHistoryShelf({
   const { history, removeHistoryItem, clearHistory } = useCategoryHistory(category);
   const { playTrack } = useMusic();
   const navigate = useNavigate();
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
   const carouselId = `hub-history-carousel-${category}`;
+  const theme = CATEGORY_THEMES[category as MediaCategory];
+  const meta = DEFAULT_META[category];
+  const fallbackPoster = React.useMemo(
+    () => createPosterFallbackSvg(theme.label.toUpperCase(), theme.accentHex),
+    [theme.label, theme.accentHex]
+  );
 
   const scrollCarousel = (direction: 'left' | 'right') => {
     const el = document.getElementById(carouselId);
     if (el) {
-      const scrollAmount = direction === 'left' ? -340 : 340;
-      el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      el.scrollBy({ left: direction === 'left' ? -340 : 340, behavior: 'smooth' });
     }
   };
-
-  // Category Theme Colors & Default Titles
-  const config = {
-    anime: {
-      defaultTitle: 'Lanjutkan Nonton Anime',
-      defaultSubtitle: 'Lanjutkan episode anime terakhir yang Anda tonton',
-      badgeBg: 'bg-amber-500/20 border-amber-500/30 text-amber-400',
-      accentColor: '#F59E0B',
-      btnBg: 'bg-amber-500 hover:bg-amber-400 text-black',
-      icon: Film,
-      actionLabel: 'Lanjut Nonton',
-    },
-    donghua: {
-      defaultTitle: 'Lanjutkan Nonton Donghua',
-      defaultSubtitle: 'Lanjutkan serial kultivasi 3D & 2D terakhir Anda',
-      badgeBg: 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400',
-      accentColor: '#10B981',
-      btnBg: 'bg-emerald-500 hover:bg-emerald-400 text-black',
-      icon: Film,
-      actionLabel: 'Lanjut Nonton',
-    },
-    movies: {
-      defaultTitle: 'Lanjutkan Nonton Film & Series',
-      defaultSubtitle: 'Lanjutkan tontonan bioskop box office atau serial TV Anda',
-      badgeBg: 'bg-rose-500/20 border-rose-500/30 text-rose-400',
-      accentColor: '#F43F5E',
-      btnBg: 'bg-rose-500 hover:bg-rose-400 text-white',
-      icon: Film,
-      actionLabel: 'Lanjut Nonton',
-    },
-    music: {
-      defaultTitle: 'Lagu Terakhir Diputar',
-      defaultSubtitle: 'Daftar lagu yang baru-baru ini Anda dengarkan',
-      badgeBg: 'bg-[#1DB954]/20 border-[#1DB954]/30 text-[#1DB954]',
-      accentColor: '#1DB954',
-      btnBg: 'bg-[#1DB954] hover:bg-[#1ed760] text-black',
-      icon: Music,
-      actionLabel: 'Putar Lagu',
-    },
-    manga: {
-      defaultTitle: 'Lanjutkan Baca Komik',
-      defaultSubtitle: 'Lanjutkan chapter manga, manhwa, atau manhua Anda',
-      badgeBg: 'bg-[#8B5CF6]/20 border-[#8B5CF6]/30 text-[#A78BFA]',
-      accentColor: '#8B5CF6',
-      btnBg: 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white',
-      icon: BookOpen,
-      actionLabel: 'Lanjut Baca',
-    },
-  }[category];
-
-  const headerTitle = title || config.defaultTitle;
-  const headerSubtitle = subtitle || config.defaultSubtitle;
-  const IconComponent = config.icon;
 
   if (history.length === 0 && !showWhenEmpty) {
     return null;
@@ -136,88 +116,60 @@ export function HubHistoryShelf({
         thumbnail: item.cover,
         durationFormatted: item.extra?.durationFormatted,
       });
-    } else {
-      // Normal navigation
-      if (item.lastItemLink) {
-        e.preventDefault();
-        navigate(item.lastItemLink);
-      }
+    } else if (item.lastItemLink) {
+      e.preventDefault();
+      navigate(item.lastItemLink);
     }
   };
 
   return (
-    <section className="w-full space-y-4 animate-in fade-in duration-300">
-      {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${config.badgeBg}`}>
-              <RotateCcw className="w-3 h-3 animate-spin-slow" />
-              RIWAYAT TERAKHIR
-            </span>
-            <span className="text-xs text-slate-400 font-mono font-semibold">
-              ({history.length} tersimpan)
-            </span>
-          </div>
-          <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2 font-heading">
-            <IconComponent className="w-5 h-5" style={{ color: config.accentColor }} />
-            <span>{headerTitle}</span>
-          </h2>
-          <p className="text-xs text-slate-400">{headerSubtitle}</p>
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          {history.length > 0 && (
-            <>
+    <section className="w-full space-y-4">
+      <SectionHeader
+        category={category as MediaCategory}
+        title={title || meta.title}
+        subtitle={subtitle || meta.subtitle}
+        viewAllTo={history.length > 0 ? `/history?tab=${category}` : undefined}
+        viewAllLabel="Semua Riwayat"
+        rightSlot={
+          history.length > 0 ? (
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => {
-                  if (window.confirm(`Hapus semua riwayat ${category}?`)) {
-                    clearHistory();
-                  }
-                }}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all flex items-center gap-1.5"
+                type="button"
+                onClick={() => setConfirmClearOpen(true)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-xs font-medium text-[#A2A4B1] hover:text-rose-400 hover:bg-[#191C25] border border-transparent hover:border-[#343744] transition-colors cursor-pointer"
                 title="Bersihkan riwayat kategori ini"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span className="hidden md:inline">Bersihkan</span>
               </button>
 
-              <Link
-                to={`/history?tab=${category}`}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors flex items-center gap-1"
-              >
-                <span>Lihat Semua</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-
-              {/* Scroll buttons for desktop */}
-              <div className="hidden sm:flex items-center gap-1 pl-1">
+              <div className="hidden sm:flex items-center gap-1">
                 <button
+                  type="button"
                   onClick={() => scrollCarousel('left')}
-                  className="p-1.5 rounded-xl bg-surface/80 hover:bg-white/10 border border-white/5 text-slate-300 hover:text-white transition-colors"
+                  className="w-8 h-8 rounded-[6px] bg-[#191C25] border border-[#343744] hover:border-[#454958] text-[#A2A4B1] hover:text-[#F2F0EC] flex items-center justify-center transition-colors cursor-pointer"
                   aria-label="Scroll Kiri"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => scrollCarousel('right')}
-                  className="p-1.5 rounded-xl bg-surface/80 hover:bg-white/10 border border-white/5 text-slate-300 hover:text-white transition-colors"
+                  className="w-8 h-8 rounded-[6px] bg-[#191C25] border border-[#343744] hover:border-[#454958] text-[#A2A4B1] hover:text-[#F2F0EC] flex items-center justify-center transition-colors cursor-pointer"
                   aria-label="Scroll Kanan"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
-            </>
-          )}
-        </div>
-      </div>
+            </div>
+          ) : undefined
+        }
+      />
 
-      {/* History Items Carousel */}
       {history.length > 0 ? (
         <div
           id={carouselId}
-          className="flex items-stretch gap-3.5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 scroll-smooth"
+          className="flex items-stretch gap-3.5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-1 scroll-smooth"
         >
           {history.map((item) => {
             const resumeTarget = item.lastItemLink || `/${category}`;
@@ -225,26 +177,26 @@ export function HubHistoryShelf({
             return (
               <div
                 key={`${item.category}-${item.id}`}
-                className="w-64 sm:w-72 shrink-0 snap-start flex flex-col justify-between p-3 rounded-2xl bg-[#141824]/90 hover:bg-[#1a2030] border border-white/5 hover:border-white/15 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group relative overflow-hidden"
+                className="w-64 sm:w-72 shrink-0 snap-start flex flex-col justify-between p-3.5 rounded-[10px] bg-[#191C25] border border-[#343744] hover:border-[#454958] transition-colors duration-150 group relative"
               >
-                {/* Delete button on hover */}
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
                     removeHistoryItem(item.id);
                   }}
                   title="Hapus dari riwayat"
-                  className="absolute top-2 right-2 z-20 p-1.5 rounded-lg bg-black/60 text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label={`Hapus ${item.title} dari riwayat`}
+                  className="absolute top-2.5 right-2.5 z-20 p-1.5 rounded-[6px] bg-[#12141B] text-[#747887] hover:text-rose-400 border border-[#343744] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
 
                 <div className="flex items-start gap-3">
-                  {/* Poster Thumbnail */}
-                  <div className="relative w-16 h-20 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-white/10 shadow-md">
+                  <div className="relative w-14 aspect-[2/3] rounded-[6px] overflow-hidden bg-[#12141B] shrink-0 border border-[#343744]">
                     <img
-                      src={item.cover || (item.category === 'music' ? MUSIC_FALLBACK_SVG : '')}
+                      src={item.cover || (item.category === 'music' ? MUSIC_FALLBACK_SVG : fallbackPoster)}
                       alt={item.title}
                       referrerPolicy="no-referrer"
                       onLoad={(e) => {
@@ -257,57 +209,50 @@ export function HubHistoryShelf({
                           handleMusicImageError(e);
                           return;
                         }
-                        (e.target as HTMLImageElement).src =
-                          "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22140%22%20viewBox%3D%220%200%20100%20140%22%3E%3Crect%20fill%3D%22%23141824%22%20width%3D%22100%22%20height%3D%22140%22%2F%3E%3C/svg%3E";
+                        (e.currentTarget as HTMLImageElement).src = fallbackPoster;
                       }}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   </div>
 
-                  {/* Metadata */}
-                  <div className="flex-1 min-w-0 pr-5">
-                    <span className="text-[10px] text-slate-400 font-medium">
+                  <div className="flex-1 min-w-0 pr-5 space-y-1">
+                    <span className="text-[11px] text-[#747887] font-medium block">
                       {formatRelativeTime(item.watchedAt)}
                     </span>
-                    <h3 className="text-xs sm:text-sm font-bold text-white truncate group-hover:text-amber-400 transition-colors">
+                    <h3 className="text-[13px] font-semibold text-[#F2F0EC] truncate group-hover:text-[#F0A15B] transition-colors">
                       {item.title}
                     </h3>
-                    <p className="text-[11px] text-slate-300 font-semibold truncate mt-0.5">
+                    <p className="text-xs text-[#A2A4B1] truncate">
                       {item.lastItemTitle || item.extra?.artist || 'Terakhir diakses'}
                     </p>
 
-                    {/* Progress Bar if available */}
                     {typeof item.progress === 'number' && item.progress > 0 && (
-                      <div className="mt-2 w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{
-                            width: `${Math.min(100, Math.round(item.progress * 100))}%`,
-                            backgroundColor: config.accentColor,
-                          }}
-                        />
+                      <div className="pt-1.5">
+                        <div className="w-full bg-[#232633] h-1 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${Math.min(100, Math.round(item.progress * 100))}%`,
+                              backgroundColor: theme.accentHex,
+                            }}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Resume Action Bar */}
-                <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    {item.progress ? `${Math.round(item.progress * 100)}% selesai` : 'Tersedia'}
+                <div className="mt-3 pt-2.5 border-t border-[#343744]/70 flex items-center justify-between">
+                  <span className="text-[11px] text-[#747887]">
+                    {item.progress ? `${Math.round(item.progress * 100)}% selesai` : theme.label}
                   </span>
                   <Link
                     to={resumeTarget}
                     onClick={(e) => handleActionClick(e, item)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-sm ${config.btnBg}`}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] text-xs font-semibold transition-colors"
                   >
-                    {category === 'music' ? (
-                      <Play className="w-3 h-3 fill-current" />
-                    ) : (
-                      <Play className="w-3 h-3 fill-current" />
-                    )}
-                    <span>{config.actionLabel}</span>
+                    <Play className="w-3 h-3 fill-current" />
+                    <span>{meta.actionLabel}</span>
                   </Link>
                 </div>
               </div>
@@ -315,15 +260,25 @@ export function HubHistoryShelf({
           })}
         </div>
       ) : (
-        <div className="p-6 rounded-2xl bg-[#141824]/50 border border-white/5 text-center space-y-2">
-          <p className="text-xs text-slate-400">
-            Belum ada riwayat tontonan/bacaan untuk kategori ini.
+        <div className="p-6 rounded-[10px] bg-[#191C25] border border-[#343744] text-center">
+          <p className="text-xs text-[#A2A4B1]">
+            Belum ada riwayat {theme.label.toLowerCase()}. Mulai jelajahi katalog untuk menyimpannya di sini.
           </p>
-          <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
-            <Sparkles className="w-3 h-3 text-amber-400" /> Jelajahi katalog di bawah untuk mulai!
-          </span>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmClearOpen}
+        title={`Bersihkan Riwayat ${theme.label}?`}
+        message={`Seluruh riwayat ${theme.label.toLowerCase()} lokal akan dihapus. Koleksi favorit Anda tidak akan terpengaruh.`}
+        confirmLabel="Hapus Riwayat"
+        variant="danger"
+        onConfirm={() => {
+          clearHistory();
+          setConfirmClearOpen(false);
+        }}
+        onCancel={() => setConfirmClearOpen(false)}
+      />
     </section>
   );
 }

@@ -30,6 +30,7 @@ import type {
 import { BackupRestoreModal } from '../components/library/BackupRestoreModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { createPosterFallbackSvg, CATEGORY_THEMES } from '../utils/categoryTheme';
 
 type ActiveTab = 'all' | CategoryType;
 type SortOption = 'recent' | 'oldest' | 'title-asc';
@@ -49,46 +50,46 @@ const CATEGORY_COLORS: Record<
   { badge: string; text: string; bg: string; border: string; link: string; exploreTitle: string; resumeAction: string }
 > = {
   manga: {
-    badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    text: 'text-emerald-400',
-    bg: 'bg-emerald-500',
-    border: 'border-emerald-500/30',
+    badge: 'bg-[#75C9A0]/15 text-[#75C9A0] border-[#75C9A0]/30',
+    text: 'text-[#75C9A0]',
+    bg: 'bg-[#75C9A0]',
+    border: 'border-[#75C9A0]/35',
     link: '/manga',
     exploreTitle: 'Jelajahi Manga',
     resumeAction: 'Lanjut Baca',
   },
   anime: {
-    badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-    text: 'text-purple-400',
-    bg: 'bg-purple-500',
-    border: 'border-purple-500/30',
+    badge: 'bg-[#A78BFA]/15 text-[#A78BFA] border-[#A78BFA]/30',
+    text: 'text-[#A78BFA]',
+    bg: 'bg-[#A78BFA]',
+    border: 'border-[#A78BFA]/35',
     link: '/anime',
     exploreTitle: 'Jelajahi Anime',
     resumeAction: 'Lanjut Nonton',
   },
   donghua: {
-    badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    text: 'text-amber-400',
-    bg: 'bg-amber-500',
-    border: 'border-amber-500/30',
+    badge: 'bg-[#67BFD5]/15 text-[#67BFD5] border-[#67BFD5]/30',
+    text: 'text-[#67BFD5]',
+    bg: 'bg-[#67BFD5]',
+    border: 'border-[#67BFD5]/35',
     link: '/donghua',
     exploreTitle: 'Jelajahi Donghua',
     resumeAction: 'Lanjut Nonton',
   },
   movies: {
-    badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-    text: 'text-rose-400',
-    bg: 'bg-rose-500',
-    border: 'border-rose-500/30',
+    badge: 'bg-[#F0A15B]/15 text-[#F0A15B] border-[#F0A15B]/30',
+    text: 'text-[#F0A15B]',
+    bg: 'bg-[#F0A15B]',
+    border: 'border-[#F0A15B]/35',
     link: '/movies',
     exploreTitle: 'Jelajahi Film & Serial',
     resumeAction: 'Lanjut Putar',
   },
   music: {
-    badge: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-    text: 'text-cyan-400',
-    bg: 'bg-cyan-500',
-    border: 'border-cyan-500/30',
+    badge: 'bg-[#E68BA6]/15 text-[#E68BA6] border-[#E68BA6]/30',
+    text: 'text-[#E68BA6]',
+    bg: 'bg-[#E68BA6]',
+    border: 'border-[#E68BA6]/35',
     link: '/music',
     exploreTitle: 'Jelajahi Musik',
     resumeAction: 'Putar Lagi',
@@ -209,8 +210,8 @@ export function HistoryPage() {
     <div className="min-h-screen bg-bg-primary text-text-primary">
       {/* Toast Notification */}
       {feedbackToast && (
-        <div className="fixed bottom-20 sm:bottom-8 right-4 sm:right-8 z-50 px-4 py-2.5 rounded-2xl bg-surface border border-accent-primary/40 text-xs sm:text-sm font-semibold text-white shadow-2xl shadow-accent-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-200 flex items-center gap-2">
-          <History className="w-4 h-4 text-accent-primary" />
+        <div className="fixed bottom-20 sm:bottom-8 right-4 sm:right-8 z-50 px-4 py-2.5 rounded-[12px] bg-[#232633] border border-[#F0A15B]/50 text-xs sm:text-sm font-semibold text-[#F2F0EC] shadow-subtle-menu animate-in fade-in slide-in-from-bottom-2 duration-200 flex items-center gap-2">
+          <History className="w-4 h-4 text-[#F0A15B]" />
           <span>{feedbackToast}</span>
         </div>
       )}
@@ -221,12 +222,12 @@ export function HistoryPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/5">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-accent-primary/10 border border-accent-primary/20 flex items-center justify-center text-accent-primary">
+              <div className="w-10 h-10 rounded-[10px] bg-[#191C25] border border-[#343744] flex items-center justify-center text-[#F0A15B]">
                 <History className="w-5 h-5" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-black text-white flex flex-wrap items-center gap-2 tracking-tight">
                 <span>Riwayat Aktivitas</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-accent-primary/10 text-accent-secondary border border-accent-primary/20 font-mono font-normal whitespace-nowrap shrink-0">
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#232633] text-[#F0A15B] border border-[#343744] font-mono font-normal whitespace-nowrap shrink-0">
                   {totalCount} item
                 </span>
               </h1>
@@ -240,17 +241,17 @@ export function HistoryPage() {
           <div className="flex items-center gap-2.5 self-start md:self-auto">
             <button
               onClick={() => setIsBackupModalOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-elevated text-text-secondary hover:text-white border border-white/10 hover:border-accent-primary/40 transition-all shadow-sm"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-[10px] text-xs font-semibold bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] border border-[#343744] transition-colors"
               title="Backup & Restore Data"
             >
-              <Database className="w-3.5 h-3.5 text-accent-primary" />
+              <Database className="w-3.5 h-3.5 text-[#F0A15B]" />
               <span>Backup / Restore</span>
             </button>
 
             {baseItems.length > 0 && (
               <button
                 onClick={handleClearAll}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-[10px] text-xs font-semibold text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 transition-colors"
                 title="Hapus semua item pada tab riwayat aktif"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -273,8 +274,8 @@ export function HistoryPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 border ${
                   isActive
-                    ? 'bg-accent-primary text-white border-accent-primary shadow-lg shadow-accent-primary/20'
-                    : 'bg-surface/80 hover:bg-surface text-text-secondary hover:text-white border-white/5'
+                    ? 'bg-[#232633] text-[#F2F0EC] border-[#F0A15B]'
+                    : 'bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] border-[#343744]'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -292,7 +293,7 @@ export function HistoryPage() {
         </div>
 
         {/* Controls Toolbar: Search & Sort */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-2xl bg-surface/60 border border-white/5">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-[12px] bg-[#191C25] border border-[#343744]">
           {/* Live Search */}
           <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -301,7 +302,7 @@ export function HistoryPage() {
               placeholder={`Cari di riwayat ${activeTab === 'all' ? 'semua' : activeTab}...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-bg-primary/80 border border-white/10 rounded-xl text-white placeholder-text-muted focus:outline-none focus:border-accent-primary transition-colors"
+              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-[#12141B] border border-[#343744] rounded-[10px] text-[#F2F0EC] placeholder-[#747887] focus:outline-none focus:border-[#F0A15B] transition-colors"
             />
             {searchQuery && (
               <button
@@ -321,7 +322,7 @@ export function HistoryPage() {
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value as SortOption)}
                 aria-label="Urutkan riwayat"
-                className="pl-8 pr-7 py-2 text-xs bg-bg-primary/80 border border-white/10 rounded-xl text-text-secondary focus:outline-none focus:border-accent-primary appearance-none cursor-pointer"
+                className="pl-8 pr-7 py-2 text-xs bg-[#12141B] border border-[#343744] rounded-[10px] text-[#F2F0EC] focus:outline-none focus:border-[#F0A15B] appearance-none cursor-pointer"
               >
                 <option value="recent">Terakhir Dilihat</option>
                 <option value="oldest">Terlama Dilihat</option>
@@ -329,13 +330,13 @@ export function HistoryPage() {
               </select>
             </div>
 
-            <div className="flex items-center p-0.5 rounded-xl bg-bg-primary/80 border border-white/10">
+            <div className="flex items-center p-0.5 rounded-[10px] bg-[#12141B] border border-[#343744]">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-lg transition-colors ${
                   viewMode === 'grid'
-                    ? 'bg-accent-primary text-white shadow-sm'
+                    ? 'bg-[#F0A15B] text-[#0B0C10]'
                     : 'text-text-muted hover:text-white'
                 }`}
                 title="Tampilan Grid"
@@ -348,7 +349,7 @@ export function HistoryPage() {
                 onClick={() => setViewMode('list')}
                 className={`p-1.5 rounded-lg transition-colors ${
                   viewMode === 'list'
-                    ? 'bg-accent-primary text-white shadow-sm'
+                    ? 'bg-[#F0A15B] text-[#0B0C10]'
                     : 'text-text-muted hover:text-white'
                 }`}
                 title="Tampilan Daftar"
@@ -363,20 +364,20 @@ export function HistoryPage() {
         {/* History Items Display */}
         {baseItems.length === 0 ? (
           /* Empty State for category */
-          <div className="py-20 text-center rounded-3xl bg-surface/30 border border-white/5 max-w-lg mx-auto p-8 space-y-4">
-            <div className="w-16 h-16 rounded-3xl bg-accent-primary/10 border border-accent-primary/20 text-accent-primary flex items-center justify-center mx-auto">
+          <div className="py-20 text-center rounded-2xl bg-[#191C25] border border-[#343744] max-w-lg mx-auto p-8 space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-[#232633] border border-[#343744] text-[#F0A15B] flex items-center justify-center mx-auto">
               {activeTab === 'all' ? (
                 <History className="w-8 h-8" />
               ) : activeTab === 'manga' ? (
-                <BookOpen className="w-8 h-8 text-emerald-400" />
+                <BookOpen className="w-7 h-7 text-[#75C9A0]" />
               ) : activeTab === 'anime' ? (
-                <Tv className="w-8 h-8 text-purple-400" />
+                <Tv className="w-7 h-7 text-[#A78BFA]" />
               ) : activeTab === 'donghua' ? (
-                <Film className="w-8 h-8 text-amber-400" />
+                <Film className="w-7 h-7 text-[#67BFD5]" />
               ) : activeTab === 'movies' ? (
-                <Clapperboard className="w-8 h-8 text-rose-400" />
+                <Clapperboard className="w-7 h-7 text-[#F0A15B]" />
               ) : (
-                <Music className="w-8 h-8 text-cyan-400" />
+                <Music className="w-7 h-7 text-[#E68BA6]" />
               )}
             </div>
             <div className="space-y-1">
@@ -389,7 +390,7 @@ export function HistoryPage() {
             </div>
             <Link
               to={getExploreLink()}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-accent-primary hover:bg-accent-primary/90 text-white font-bold text-xs sm:text-sm shadow-lg shadow-accent-primary/25 transition-all hover:scale-105"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] font-bold text-xs sm:text-sm transition-colors"
             >
               <Compass className="w-4 h-4" />
               <span>{getExploreTitle()}</span>
@@ -397,7 +398,7 @@ export function HistoryPage() {
           </div>
         ) : filteredAndSortedItems.length === 0 ? (
           /* Search Empty State */
-          <div className="py-16 text-center text-xs sm:text-sm text-text-muted bg-surface/20 rounded-2xl border border-white/5 space-y-2">
+          <div className="py-16 text-center text-xs sm:text-sm text-[#A2A4B1] bg-[#191C25] rounded-[12px] border border-[#343744] space-y-2">
             <div>Tidak ada riwayat yang cocok dengan pencarian &quot;{searchQuery}&quot;.</div>
             <button
               onClick={() => setSearchQuery('')}
@@ -414,17 +415,23 @@ export function HistoryPage() {
               return (
                 <div
                   key={`${item.category}-${item.id}-${item.lastItemLink}`}
-                  className="group relative flex flex-col bg-surface rounded-2xl overflow-hidden border border-border-subtle hover:border-accent-primary/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-accent-primary/10"
+                  className="group relative flex flex-col bg-[#191C25] rounded-[12px] overflow-hidden border border-[#343744] hover:border-[#F0A15B]/60 transition-all duration-200 hover:-translate-y-1"
                 >
-                  <Link to={item.lastItemLink || '#'} className="relative aspect-[3/4] overflow-hidden bg-surface-base block">
+                  <Link to={item.lastItemLink || '#'} className="relative aspect-[2/3] overflow-hidden bg-[#232633] block">
                     <img
                       src={item.cover}
                       alt={item.title}
                       referrerPolicy="no-referrer"
                       loading="lazy"
+                      onLoad={(e) => {
+                        const img = e.currentTarget as HTMLImageElement;
+                        if (img.naturalWidth > 0 && img.naturalWidth <= 120 && img.naturalHeight <= 90) {
+                          img.src = createPosterFallbackSvg(item.title, CATEGORY_THEMES[item.category]?.accentHex || '#F0A15B');
+                        }
+                      }}
                       onError={(e) => {
                         (e.target as HTMLImageElement).src =
-                          'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60';
+                          createPosterFallbackSvg(item.title, CATEGORY_THEMES[item.category]?.accentHex || '#F0A15B');
                       }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
@@ -453,7 +460,7 @@ export function HistoryPage() {
                   <div className="p-3 flex-1 flex flex-col justify-between gap-1.5">
                     <Link
                       to={item.lastItemLink || '#'}
-                      className="font-bold text-xs sm:text-sm text-white hover:text-accent-primary transition-colors line-clamp-2 leading-snug"
+                      className="font-semibold text-xs sm:text-sm text-[#F2F0EC] hover:text-[#F0A15B] transition-colors line-clamp-2 leading-snug"
                       title={item.title}
                     >
                       {item.title}
@@ -461,7 +468,7 @@ export function HistoryPage() {
                     {typeof item.progress === 'number' && item.progress > 0 && (
                       <div className="w-full bg-white/10 rounded-full h-1 overflow-hidden">
                         <div
-                          className="bg-accent-primary h-full rounded-full"
+                          className="bg-[#F0A15B] h-full rounded-full"
                           style={{ width: `${Math.min(100, Math.max(0, item.progress))}%` }}
                         />
                       </div>
@@ -483,23 +490,29 @@ export function HistoryPage() {
               return (
                 <div
                   key={`${item.category}-${item.id}-${item.lastItemLink}`}
-                  className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-surface border border-white/5 hover:border-accent-primary/40 hover:bg-surface-elevated/40 shadow-lg shadow-black/20 transition-all gap-3.5 sm:gap-4 group"
+                  className="flex items-center justify-between p-3.5 sm:p-4 rounded-[12px] bg-[#191C25] border border-[#343744] hover:border-[#F0A15B]/60 hover:bg-[#232633]/60 transition-colors gap-3.5 sm:gap-4 group"
                 >
                   {/* Left: Thumbnail & Info */}
                   <div className="flex items-center gap-3.5 min-w-0 flex-1">
                     {/* Thumbnail */}
                     <Link
                       to={item.lastItemLink || '#'}
-                      className="relative w-14 h-20 sm:w-16 sm:h-22 rounded-xl overflow-hidden shrink-0 border border-white/10 group-hover:scale-105 transition-transform bg-bg-secondary"
+                      className="relative w-14 aspect-[2/3] sm:w-16 rounded-[10px] overflow-hidden shrink-0 border border-[#343744] group-hover:scale-105 transition-transform bg-[#232633]"
                     >
                       <img
                         src={item.cover}
                         alt={item.title}
                         referrerPolicy="no-referrer"
                         loading="lazy"
+                        onLoad={(e) => {
+                          const img = e.currentTarget as HTMLImageElement;
+                          if (img.naturalWidth > 0 && img.naturalWidth <= 120 && img.naturalHeight <= 90) {
+                            img.src = createPosterFallbackSvg(item.title, CATEGORY_THEMES[item.category]?.accentHex || '#F0A15B');
+                          }
+                        }}
                         onError={(e) => {
                           (e.target as HTMLImageElement).src =
-                            'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60';
+                            createPosterFallbackSvg(item.title, CATEGORY_THEMES[item.category]?.accentHex || '#F0A15B');
                         }}
                         className="w-full h-full object-cover"
                       />
@@ -524,7 +537,7 @@ export function HistoryPage() {
                       {/* Main Title */}
                       <Link
                         to={item.lastItemLink || '#'}
-                        className="font-bold text-white hover:text-accent-primary transition-colors truncate block text-xs sm:text-sm leading-snug"
+                        className="font-semibold text-[#F2F0EC] hover:text-[#F0A15B] transition-colors truncate block text-xs sm:text-sm leading-snug"
                         title={item.title}
                       >
                         {item.title}
@@ -533,7 +546,7 @@ export function HistoryPage() {
                       {/* Last Item Pill (Episode/Chapter) */}
                       {item.lastItemTitle && (
                         <div className="flex items-center gap-1.5 text-xs font-semibold text-accent-secondary truncate">
-                          <PlayCircle className="w-3.5 h-3.5 text-accent-primary shrink-0" />
+                          <PlayCircle className="w-3.5 h-3.5 text-[#F0A15B] shrink-0" />
                           <span className="truncate">{item.lastItemTitle}</span>
                         </div>
                       )}
@@ -547,7 +560,7 @@ export function HistoryPage() {
                           </div>
                           <div className="w-full bg-white/10 rounded-full h-1 overflow-hidden">
                             <div
-                              className="bg-accent-primary h-full rounded-full transition-all duration-300"
+                              className="bg-[#F0A15B] h-full rounded-full transition-all duration-300"
                               style={{ width: `${Math.min(100, Math.max(0, item.progress))}%` }}
                             />
                           </div>
@@ -560,7 +573,7 @@ export function HistoryPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <Link
                       to={item.lastItemLink || '#'}
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent-primary hover:bg-accent-primary/90 text-white font-bold text-xs shadow-md shadow-accent-primary/20 transition-all hover:scale-105 active:scale-95"
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] font-bold text-xs transition-colors"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
                       <span className="hidden sm:inline">{catConfig.resumeAction}</span>

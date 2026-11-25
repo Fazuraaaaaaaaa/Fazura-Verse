@@ -2,12 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Cinematic Entertainment Base Surfaces */
+  --bg-base: #0B0C10;
+  --bg-page: #12141B;
+  --bg-surface: #191C25;
+  --bg-elevated: #232633;
+
+  /* Brand Actions (Warm Amber) */
+  --brand-primary: #F0A15B;
+  --brand-hover: #F6B779;
+  --brand-active: #D98945;
+
+  /* Text Hierarchy */
+  --text-primary: #F2F0EC;
+  --text-secondary: #A2A4B1;
+  --text-muted: #747887;
+  --text-disabled: #555967;
+
+  /* Borders */
+  --border-default: #343744;
+  --border-hover: #454958;
+
+  /* Supporting Category Accents */
+  --cat-anime: #A78BFA;
+  --cat-movies: #F0A15B;
+  --cat-manga: #75C9A0;
+  --cat-donghua: #67BFD5;
+  --cat-music: #E68BA6;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
     color-scheme: dark;
-    background-color: #090912;
-    color: #f8fafc;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
     overflow-x: hidden;
     max-width: 100vw;
   }
@@ -15,14 +45,21 @@
   body {
     margin: 0;
     padding: 0;
-    background-color: #090912;
-    color: #f8fafc;
-    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
     min-height: 100vh;
     overflow-x: hidden;
     max-width: 100vw;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, .font-heading {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    letter-spacing: -0.02em;
   }
 
   #root {
@@ -32,51 +69,46 @@
     width: 100%;
   }
 
-  /* Custom smooth scrollbar styled with surface #181827 and surface-elevated #202033 */
+  /* Custom restrained scrollbar matching FazuraStream tokens */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: #090912;
+    background: var(--bg-base);
   }
   ::-webkit-scrollbar-thumb {
-    background: #181827;
-    border: 1px solid #202033;
-    border-radius: 4px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #202033;
+    background: var(--border-hover);
   }
 }
 
 @layer utilities {
-  /* Shimmer animation utilities for skeleton loaders */
   .skeleton-shimmer {
     position: relative;
     overflow: hidden;
-    background-color: #181827;
+    background-color: var(--bg-surface);
   }
 
   .skeleton-shimmer::after {
     position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
+    inset: 0;
     transform: translateX(-100%);
     background-image: linear-gradient(
       90deg,
       rgba(255, 255, 255, 0) 0,
-      rgba(255, 255, 255, 0.05) 20%,
-      rgba(255, 255, 255, 0.1) 60%,
+      rgba(255, 255, 255, 0.04) 20%,
+      rgba(255, 255, 255, 0.08) 60%,
       rgba(255, 255, 255, 0)
     );
     animation: shimmer 2s infinite;
     content: '';
   }
 
-  /* Hide scrollbar utility */
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }

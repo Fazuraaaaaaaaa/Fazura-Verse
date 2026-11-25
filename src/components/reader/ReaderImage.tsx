@@ -75,9 +75,9 @@ export function ReaderImage({ src, index, total, fit }: ReaderImageProps) {
     >
       {/* Loading Shimmer Skeleton Overlay */}
       {!loaded && !error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-base/90 animate-pulse min-h-[260px] z-10">
-          <div className="w-8 h-8 border-[3px] border-accent-primary border-t-transparent rounded-full animate-spin mb-2" />
-          <span className="text-xs text-text-secondary font-medium">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#12141B]/95 min-h-[260px] z-10">
+          <div className="w-8 h-8 border-[3px] border-[#75C9A0] border-t-transparent rounded-full animate-spin mb-2" />
+          <span className="text-xs text-[#A2A4B1] font-medium">
             Halaman {index + 1} / {total}{' '}
             {fallbackStep === 2 ? '(Proxy CDN)' : fallbackStep === 1 ? '(HTTPS)' : ''}
           </span>
@@ -86,13 +86,13 @@ export function ReaderImage({ src, index, total, fit }: ReaderImageProps) {
 
       {/* Error Retry State */}
       {error ? (
-        <div className="p-8 text-center rounded-2xl bg-surface/80 border border-border-subtle my-4 space-y-3 z-20 max-w-xs">
+        <div className="p-8 text-center rounded-2xl bg-[#191C25] border border-[#343744] my-4 space-y-3 z-20 max-w-xs">
           <ImageOff className="w-8 h-8 text-rose-400 mx-auto" />
-          <p className="text-xs text-text-secondary">Gagal memuat gambar halaman {index + 1}</p>
+          <p className="text-xs text-[#A2A4B1]">Gagal memuat gambar halaman {index + 1}</p>
           <button
             type="button"
             onClick={handleRetry}
-            className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2 rounded-xl bg-accent-primary/20 text-accent-secondary hover:bg-accent-primary hover:text-white text-xs font-bold border border-accent-primary/30 transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] text-xs font-bold transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Muat Ulang Halaman

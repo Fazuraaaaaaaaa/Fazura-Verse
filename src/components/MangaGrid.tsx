@@ -1,8 +1,8 @@
 import React from 'react';
+import { BookX } from 'lucide-react';
 import type { MangaItem } from '../types/manga';
 import { MangaCard } from './MangaCard';
-import { GridSkeleton } from './SkeletonLoader';
-import { BookX } from 'lucide-react';
+import { CardGridSkeleton, EmptyState } from './common/StateViews';
 
 interface MangaGridProps {
   items?: MangaItem[];
@@ -17,28 +17,26 @@ export function MangaGrid({
   items = [],
   isLoading = false,
   skeletonCount = 12,
-  emptyTitle = 'No Manga Found',
-  emptyMessage = 'We could not find any manga matching your criteria.',
+  emptyTitle = 'Komik Tidak Ditemukan',
+  emptyMessage = 'Coba ubah filter atau kata kunci untuk menemukan komik lainnya.',
   showRanking = false,
 }: MangaGridProps) {
   if (isLoading) {
-    return <GridSkeleton count={skeletonCount} />;
+    return <CardGridSkeleton count={skeletonCount} />;
   }
 
   if (!items || items.length === 0) {
     return (
-      <div className="py-16 px-4 text-center rounded-2xl bg-surface/60 border border-border-subtle flex flex-col items-center justify-center">
-        <div className="w-14 h-14 rounded-2xl bg-surface-elevated border border-border-subtle flex items-center justify-center text-text-secondary mb-4">
-          <BookX className="w-7 h-7" />
-        </div>
-        <h4 className="text-lg font-bold text-white mb-1 font-heading">{emptyTitle}</h4>
-        <p className="text-sm text-text-secondary max-w-sm">{emptyMessage}</p>
-      </div>
+      <EmptyState
+        icon={<BookX className="w-5 h-5" />}
+        title={emptyTitle}
+        description={emptyMessage}
+      />
     );
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-5">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
       {items.map((manga, index) => (
         <MangaCard
           key={`${manga.slug}-${index}`}

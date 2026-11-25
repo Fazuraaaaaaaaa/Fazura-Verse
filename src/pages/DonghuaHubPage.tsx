@@ -1,24 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Tv,
-  Clock,
-  CheckCircle,
-  Search,
-  Star,
-  Play,
-  Calendar,
-  Tag,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Sparkles,
-  Bookmark,
-  History,
-  Trash2,
-  Heart,
-} from 'lucide-react';
+import { Tv, Bookmark, History, Trash2, Calendar } from 'lucide-react';
 import {
   getDonghuaOngoing,
   getDonghuaCompleted,
@@ -28,18 +11,30 @@ import {
   searchDonghua,
   proxyDonghuaPoster,
 } from '../services/donghuaApi';
-import type { DonghuaItem, DonghuaScheduleDay, DonghuaGenre } from '../types/media';
-import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
+import type { DonghuaItem } from '../types/media';
 import { HubHistoryShelf } from '../components/library/HubHistoryShelf';
+import { useCategoryBookmarks, useCategoryHistory } from '../services/categoryStorage';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { CategoryHero } from '../components/media/CategoryHero';
+import { FilterBar } from '../components/common/FilterBar';
+import { SectionHeader } from '../components/common/SectionHeader';
+import { PaginationBar } from '../components/common/PaginationBar';
+import { CardGridSkeleton, EmptyState } from '../components/common/StateViews';
+import { MediaCard } from '../components/media/MediaCard';
+import { ConfirmModal } from '../components/ConfirmModal';
+import { Button } from '../components/common/Button';
+import { createPosterFallbackSvg } from '../utils/categoryTheme';
 
-type TabType = 'ongoing' | 'completed' | 'schedule' | 'genres' | 'bookmarks' | 'history';
+type TabType = 'ongoing' | 'completed' | 'genres' | 'schedule' | 'bookmarks' | 'history';
+type SortOption = 'default' | 'title_asc';
 
 export function DonghuaHubPage() {
   usePageMeta({
     title: 'Donghua Hub - Streaming Donghua 3D & 2D Sub Indo',
-    description: 'Nonton donghua Xianxia 3D/2D sub Indo (Soul Land, Battle Through the Heavens, Swallowed Star) dengan multi-server HD di FazuraStream.',
+    description:
+      'Nonton donghua Xianxia 3D/2D sub Indo (Soul Land, Battle Through the Heavens, Swallowed Star) dengan multi-server HD di FazuraStream.',
   });
+
   const [searchParams, setSearchParams] = useSearchParams();
   const searchParam = searchParams.get('search') || '';
   const tabParam = (searchParams.get('tab') as TabType) || 'ongoing';
@@ -51,70 +46,55 @@ export function DonghuaHubPage() {
   const [selectedDay, setSelectedDay] = useState<string>('Senin');
   const [selectedGenre, setSelectedGenre] = useState<string>(genreParam);
   const [searchInput, setSearchInput] = useState(searchParam);
-  const [jumpPageInput, setJumpPageInput] = useState<string>('');
+  const [sortBy, setSortBy] = useState<SortOption>('default');
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
-  const { bookmarks, removeBookmark } = useCategoryBookmarks('donghua');
-  const { history, clearHistory, removeHistoryItem } = useCategoryHistory('donghua');
+  const { bookmarks } = useCategoryBookmarks('donghua');
+  const { history, clearHistory } = useCategoryHistory('donghua');
 
-  const totalPages = React.useMemo(() => {
-    if (activeTab === 'ongoing') return 3; // 72 ongoing donghua
-    if (activeTab === 'completed') return 15; // ~450+ completed donghua
-    if (activeTab === 'genres') return 10; // ~100 per genre
+  const totalPages = useMemo(() => {
+    if (activeTab === 'ongoing') return 3;
+    if (activeTab === 'completed') return 15;
+    if (activeTab === 'genres') return 10;
     return 1;
   }, [activeTab]);
 
-  const handleJumpPage = (e: React.FormEvent) => {
-    e.preventDefault();
-    const target = parseInt(jumpPageInput.trim(), 10);
-    if (!isNaN(target) && target >= 1 && target <= totalPages) {
-      handlePageChange(target);
-      setJumpPageInput('');
-    }
-  };
-
-  // Sync state with url params
   useEffect(() => {
     if (tabParam && tabParam !== activeTab) setActiveTab(tabParam);
     if (pageParam && pageParam !== page) setPage(pageParam);
     if (genreParam !== selectedGenre) setSelectedGenre(genreParam);
   }, [tabParam, pageParam, genreParam]);
 
-  // Query: 102 Donghua Genres list
   const { data: genresList } = useQuery({
     queryKey: ['donghua', 'genres-list'],
     queryFn: getDonghuaGenres,
     staleTime: 1000 * 60 * 60,
   });
 
-  // Query: Search Results
   const { data: searchResults, isLoading: searchLoading } = useQuery({
     queryKey: ['donghua', 'search', searchParam],
     queryFn: () => searchDonghua(searchParam),
     enabled: Boolean(searchParam && searchParam.trim().length > 0),
   });
 
-  // Query: Ongoing Donghua (Paginated)
   const { data: ongoingData, isLoading: ongoingLoading } = useQuery({
     queryKey: ['donghua', 'ongoing', page],
     queryFn: () => getDonghuaOngoing(page),
     enabled: activeTab === 'ongoing' && !searchParam,
   });
 
-  // Query: Completed Donghua (Paginated)
   const { data: completedData, isLoading: completedLoading } = useQuery({
     queryKey: ['donghua', 'completed', page],
     queryFn: () => getDonghuaCompleted(page),
     enabled: activeTab === 'completed' && !searchParam,
   });
 
-  // Query: Weekly Release Schedule
   const { data: scheduleData, isLoading: scheduleLoading } = useQuery({
     queryKey: ['donghua', 'schedule'],
     queryFn: getDonghuaSchedule,
     enabled: activeTab === 'schedule' && !searchParam,
   });
 
-  // Query: Filter by Genre
   const { data: genreData, isLoading: genreLoading } = useQuery({
     queryKey: ['donghua', 'genre', selectedGenre, page],
     queryFn: () => getDonghuaByGenre(selectedGenre, page),
@@ -127,783 +107,434 @@ export function DonghuaHubPage() {
     setSearchParams({ search: searchInput.trim() });
   };
 
-  const handleTabChange = (newTab: TabType) => {
-    setActiveTab(newTab);
+  const handleTabChange = (newTab: string) => {
+    const tab = newTab as TabType;
+    setActiveTab(tab);
     setPage(1);
-    setSearchParams({ tab: newTab });
-  };
-
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-    window.scrollTo({ top: 350, behavior: 'smooth' });
-    const currentParams: any = { tab: activeTab, page: String(newPage) };
-    if (selectedGenre) currentParams.genre = selectedGenre;
-    setSearchParams(currentParams);
+    if (tab !== 'genres') {
+      setSelectedGenre('');
+      setSearchParams({ tab });
+    } else {
+      const p: Record<string, string> = { tab: 'genres' };
+      if (selectedGenre) p.genre = selectedGenre;
+      setSearchParams(p);
+    }
   };
 
   const handleGenreSelect = (genreSlug: string) => {
     setSelectedGenre(genreSlug);
-    setActiveTab('genres');
     setPage(1);
-    setSearchParams({ tab: 'genres', genre: genreSlug });
+    if (genreSlug) {
+      setActiveTab('genres');
+      setSearchParams({ tab: 'genres', genre: genreSlug });
+    } else {
+      setActiveTab('ongoing');
+      setSearchParams({ tab: 'ongoing' });
+    }
   };
 
-  // Determine active dataset and pagination
-  let activeDonghuaList: DonghuaItem[] = [];
-  let hasNextPage = false;
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    window.scrollTo({ top: 320, behavior: 'smooth' });
+    const params: Record<string, string> = { tab: activeTab, page: String(newPage) };
+    if (selectedGenre) params.genre = selectedGenre;
+    setSearchParams(params);
+  };
+
+  const handleResetFilters = () => {
+    setSearchInput('');
+    setSelectedGenre('');
+    setSortBy('default');
+    setActiveTab('ongoing');
+    setPage(1);
+    setSearchParams({ tab: 'ongoing' });
+  };
+
+  let rawDonghuaList: DonghuaItem[] = [];
   let isLoading = false;
 
   if (activeTab === 'ongoing') {
-    activeDonghuaList = ongoingData?.donghuaList || [];
-    hasNextPage = Boolean(ongoingData?.hasNextPage);
+    rawDonghuaList = ongoingData?.donghuaList || [];
     isLoading = ongoingLoading;
   } else if (activeTab === 'completed') {
-    activeDonghuaList = completedData?.donghuaList || [];
-    hasNextPage = Boolean(completedData?.hasNextPage);
+    rawDonghuaList = completedData?.donghuaList || [];
     isLoading = completedLoading;
   } else if (activeTab === 'genres') {
-    activeDonghuaList = genreData?.donghuaList || [];
-    hasNextPage = Boolean(genreData?.hasNextPage);
+    rawDonghuaList = genreData?.donghuaList || [];
     isLoading = genreLoading;
   }
 
-  const totalTitlesEst = React.useMemo(() => {
-    if (activeTab === 'ongoing') return 72;
-    if (activeTab === 'completed') return 450;
-    if (activeTab === 'genres') return 100;
-    return activeDonghuaList.length;
-  }, [activeTab, activeDonghuaList.length]);
+  const sortItems = (list: DonghuaItem[]) => {
+    if (sortBy === 'title_asc') {
+      return [...list].sort((a, b) => a.title.localeCompare(b.title));
+    }
+    return list;
+  };
 
-  const topGenreChips = [
-    'action',
-    'cultivation',
-    'fantasy',
-    'xianxia',
-    'xuanhuan',
-    'martial-arts',
-    'adventure',
-    'romance',
-    'supernatural',
-    'reincarnation',
-  ];
+  const activeDonghuaList = useMemo(() => sortItems(rawDonghuaList), [rawDonghuaList, sortBy]);
+  const displayedSearch = useMemo(() => sortItems(searchResults || []), [searchResults, sortBy]);
 
-  return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 min-w-0">
-      {/* 1. Donghua Hub Banner & Search */}
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#0c1a14] via-[#0f241c] to-[#0c1a14] border border-emerald-500/20 p-6 sm:p-8 shadow-2xl">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2 text-left">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider border border-emerald-500/30">
-              <Tv className="w-3.5 h-3.5" />
-              Katalog Lengkap Animasi 3D & 2D Tiongkok
-            </div>
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-              FAZURASTREAM <span className="text-emerald-400">DONGHUA</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-              Koleksi serial animasi kultivasi Tiongkok terlengkap (Xianxia, Xuanhuan): Swallowed Star, Soul Land, BTTH, Perfect World, Renegade Immortal, dan ratusan episode lainnya dengan subtitle Indonesia.
-            </p>
-          </div>
+  const heroPosterRaw = ongoingData?.donghuaList?.[0]?.poster;
+  const heroBackdrop = heroPosterRaw ? proxyDonghuaPoster(heroPosterRaw) : undefined;
 
-          <div className="flex items-center gap-2 p-2 rounded-2xl bg-[#09140f] border border-emerald-500/30 shadow-lg shrink-0">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500 text-black shadow-md shadow-emerald-500/30">
-              <Sparkles className="w-4 h-4" />
-              Anichin Provider
-            </div>
-          </div>
-        </div>
-
-        {/* Search Bar inside Hub */}
-        <form onSubmit={handleSearchSubmit} className="mt-6 max-w-xl">
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Cari donghua (e.g. Swallowed Star, BTTH, Soul Land, Perfect World)..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full pl-10 pr-24 py-3 text-xs sm:text-sm bg-[#09140f] border border-white/10 focus:border-emerald-500 rounded-xl text-white placeholder-slate-400 focus:outline-none shadow-inner"
-            />
-            <button
-              type="submit"
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-1.5 rounded-lg bg-emerald-500 text-black font-bold text-xs hover:bg-emerald-400 transition-colors shadow"
-            >
-              Cari
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* 2. Quick Genre Filter Chips */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-          <span className="flex items-center gap-1.5">
-            <Tag className="w-3.5 h-3.5 text-emerald-400" />
-            Filter Cepat Berdasarkan Genre
-          </span>
-          <button
-            onClick={() => handleTabChange('genres')}
-            className="text-emerald-400 hover:underline capitalize"
-          >
-            Lihat Semua 102 Genre →
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          <button
-            onClick={() => handleTabChange('ongoing')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all border ${
-              activeTab !== 'genres'
-                ? 'bg-emerald-500 text-black border-emerald-400'
-                : 'bg-[#111622] hover:bg-slate-800 text-slate-300 border-white/5'
-            }`}
-          >
-            Semua Donghua
-          </button>
-
-          {topGenreChips.map((chip) => {
-            const isSelected = activeTab === 'genres' && selectedGenre.toLowerCase() === chip.toLowerCase();
-            return (
-              <button
-                key={chip}
-                onClick={() => handleGenreSelect(chip)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 capitalize transition-all border ${
-                  isSelected
-                    ? 'bg-emerald-500 text-black font-bold border-emerald-400 shadow-md shadow-emerald-500/20'
-                    : 'bg-[#111622] hover:bg-slate-800 text-slate-300 border-white/5'
-                }`}
-              >
-                {chip.replace(/-/g, ' ')}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 2.5 Hub History Shelf */}
-      <HubHistoryShelf category="donghua" />
-
-      {/* 3. Navigation Tabs Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs sm:text-sm font-bold">
-          <button
-            onClick={() => handleTabChange('ongoing')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
-              activeTab === 'ongoing' && !searchParam
-                ? 'bg-emerald-500 text-black shadow-md shadow-emerald-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-            Sedang Tayang (Ongoing • 72 Judul)
-          </button>
-
-          <button
-            onClick={() => handleTabChange('completed')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
-              activeTab === 'completed' && !searchParam
-                ? 'bg-emerald-500 text-black shadow-md shadow-emerald-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <CheckCircle className="w-4 h-4" />
-            Tamat (Completed • 15 Hal / ~450+ Judul)
-          </button>
-
-          <button
-            onClick={() => handleTabChange('schedule')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
-              activeTab === 'schedule' && !searchParam
-                ? 'bg-emerald-500 text-black shadow-md shadow-emerald-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Calendar className="w-4 h-4" />
-            Jadwal Rilis Mingguan
-          </button>
-
-          <button
-            onClick={() => handleTabChange('genres')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
-              activeTab === 'genres' && !searchParam
-                ? 'bg-emerald-500 text-black shadow-md shadow-emerald-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Tag className="w-4 h-4" />
-            Katalog 102 Genre (~1.000+ Judul)
-          </button>
-
-          {/* Donghua Bookmark Tab */}
-          <button
-            onClick={() => handleTabChange('bookmarks')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
-              activeTab === 'bookmarks' && !searchParam
-                ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Bookmark className="w-4 h-4" />
-            Favorit Saya
-            {bookmarks.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-rose-500/30 text-rose-200 text-[10px] font-bold">
-                {bookmarks.length}
-              </span>
-            )}
-          </button>
-
-          {/* Donghua History Tab */}
-          <button
-            onClick={() => handleTabChange('history')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl shrink-0 whitespace-nowrap transition-all ${
-              activeTab === 'history' && !searchParam
-                ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <History className="w-4 h-4" />
-            Riwayat Tonton
-            {history.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-indigo-500/30 text-indigo-200 text-[10px] font-bold">
-                {history.length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {searchParam && (
-          <button
-            onClick={() => {
-              setSearchInput('');
-              setSearchParams({ tab: activeTab });
-            }}
-            className="text-xs font-semibold text-rose-400 hover:underline shrink-0"
-          >
-            Hapus Pencarian
-          </button>
-        )}
-      </div>
-
-      {/* 4. CONTENT SECTIONS */}
-      {searchParam ? (
-        /* SECTION A: Search Results Active */
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            Hasil Pencarian: "<span className="text-emerald-400">{searchParam}</span>" di Anichin
-          </h2>
-
-          {searchLoading ? (
-            <div className="py-20 text-center space-y-3">
-              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto" />
-              <p className="text-sm text-slate-400">Mencari serial donghua...</p>
-            </div>
-          ) : searchResults && searchResults.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {searchResults.map((donghua) => (
-                <DonghuaGridCard key={donghua.slug} donghua={donghua} />
-              ))}
-            </div>
-          ) : (
-            <div className="py-20 text-center space-y-2">
-              <Search className="w-12 h-12 text-slate-600 mx-auto" />
-              <h3 className="text-base font-bold text-white">Tidak Ada Donghua Ditemukan</h3>
-              <p className="text-xs text-slate-400">
-                Judul "{searchParam}" tidak ditemukan di database Donghua. Coba kata kunci yang lebih ringkas.
-              </p>
-            </div>
-          )}
-        </div>
-      ) : activeTab === 'bookmarks' ? (
-        /* SECTION: Donghua Bookmarks View */
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Bookmark className="w-5 h-5 text-rose-500 fill-rose-500" />
-                Donghua Favorit Saya ({bookmarks.length})
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Koleksi judul animasi Tiongkok (Donghua) yang Anda simpan.
-              </p>
-            </div>
-          </div>
-
-          {bookmarks.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {bookmarks.map((b) => (
-                <div key={b.id} className="relative group rounded-xl overflow-hidden bg-[#111622] border border-white/5 hover:border-rose-500/40 transition-all flex flex-col justify-between">
-                  <Link to={b.link} className="block relative aspect-[3/4] overflow-hidden bg-slate-900">
-                    <img
-                      src={b.cover}
-                      alt={b.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                    <span className="absolute bottom-2 left-2 text-[10px] px-2 py-0.5 rounded bg-emerald-500 text-black font-bold">
-                      Donghua 3D
-                    </span>
-                  </Link>
-
-                  <div className="p-3 space-y-1.5">
-                    <Link to={b.link} className="text-xs font-bold text-white hover:text-emerald-400 line-clamp-2 block">
-                      {b.title}
-                    </Link>
-                    {b.subtitle && (
-                      <p className="text-[10px] text-slate-400 truncate">{b.subtitle}</p>
-                    )}
-                    <div className="pt-2 flex items-center justify-between border-t border-white/5">
-                      <Link
-                        to={b.link}
-                        className="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
-                      >
-                        <Play className="w-3 h-3 fill-current" /> Tonton
-                      </Link>
-                      <button
-                        onClick={() => removeBookmark(b.id)}
-                        title="Hapus dari Bookmark"
-                        className="p-1 rounded text-slate-400 hover:text-rose-400 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-16 text-center bg-[#111622] rounded-2xl border border-white/5 space-y-3 p-6">
-              <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
-                <Bookmark className="w-6 h-6" />
-              </div>
-              <h4 className="text-base font-bold text-white">Belum Ada Donghua Favorit</h4>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                Buka halaman detail donghua dan klik tombol "Bookmark" untuk menambahkannya ke koleksi ini.
-              </p>
-              <button
-                onClick={() => handleTabChange('ongoing')}
-                className="px-4 py-2 rounded-xl bg-emerald-500 text-black font-bold text-xs"
-              >
-                Jelajahi Donghua Ongoing
-              </button>
-            </div>
-          )}
-        </div>
-      ) : activeTab === 'history' ? (
-        /* SECTION: Donghua Watch History View */
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <History className="w-5 h-5 text-indigo-400" />
-                Riwayat Tonton Donghua ({history.length})
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Riwayat episode donghua yang terakhir Anda tonton.
-              </p>
-            </div>
-
-            {history.length > 0 && (
-              <button
-                onClick={clearHistory}
-                className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 text-xs font-semibold text-slate-400 transition-colors flex items-center gap-1.5"
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Hapus Semua Riwayat
-              </button>
-            )}
-          </div>
-
-          {history.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {history.map((h, idx) => (
-                <div key={`${h.id}-${idx}`} className="relative group rounded-xl overflow-hidden bg-[#111622] border border-white/5 hover:border-indigo-500/40 transition-all flex flex-col justify-between">
-                  <Link to={h.lastItemLink || `/donghua/detail/${h.id}`} className="block relative aspect-[3/4] overflow-hidden bg-slate-900">
-                    <img
-                      src={h.cover}
-                      alt={h.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                    {h.lastItemTitle && (
-                      <span className="absolute bottom-2 left-2 text-[10px] px-2 py-0.5 rounded bg-indigo-500 text-white font-bold truncate max-w-[85%]">
-                        {h.lastItemTitle}
-                      </span>
-                    )}
-                  </Link>
-
-                  <div className="p-3 space-y-1.5">
-                    <Link to={h.lastItemLink || `/donghua/detail/${h.id}`} className="text-xs font-bold text-white hover:text-indigo-400 line-clamp-2 block">
-                      {h.title}
-                    </Link>
-                    <p className="text-[10px] text-slate-400">
-                      Terakhir tonton: {new Date(h.watchedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                    </p>
-                    <div className="pt-2 flex items-center justify-between border-t border-white/5">
-                      <Link
-                        to={h.lastItemLink || `/donghua/detail/${h.id}`}
-                        className="text-[11px] font-bold text-indigo-400 hover:underline flex items-center gap-1"
-                      >
-                        <Play className="w-3 h-3 fill-current" /> Lanjut Nonton
-                      </Link>
-                      <button
-                        onClick={() => removeHistoryItem(h.id)}
-                        title="Hapus item riwayat"
-                        className="p-1 rounded text-slate-400 hover:text-rose-400 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-16 text-center bg-[#111622] rounded-2xl border border-white/5 space-y-3 p-6">
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
-                <History className="w-6 h-6" />
-              </div>
-              <h4 className="text-base font-bold text-white">Belum Ada Riwayat Nonton Donghua</h4>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                Episode donghua yang Anda tonton akan secara otomatis tersimpan di sini.
-              </p>
-              <button
-                onClick={() => handleTabChange('ongoing')}
-                className="px-4 py-2 rounded-xl bg-emerald-500 text-black font-bold text-xs"
-              >
-                Mulai Nonton Donghua
-              </button>
-            </div>
-          )}
-        </div>
-      ) : activeTab === 'schedule' ? (
-        /* SECTION B: Weekly Schedule View (Senin - Minggu) */
-        <div className="space-y-6">
-          <div className="flex items-center justify-start gap-2 overflow-x-auto pb-2 scrollbar-none w-full">
-            {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map((day) => (
-              <button
-                key={day}
-                onClick={() => setSelectedDay(day)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold shrink-0 whitespace-nowrap transition-all border ${
-                  selectedDay.toLowerCase() === day.toLowerCase()
-                    ? 'bg-emerald-500 text-black border-emerald-400 shadow-md shadow-emerald-500/20'
-                    : 'bg-[#111622] hover:bg-slate-800 text-slate-300 border-white/5'
-                }`}
-              >
-                Hari {day}
-              </button>
-            ))}
-          </div>
-
-          {scheduleLoading ? (
-            <div className="py-20 text-center space-y-3">
-              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto" />
-              <p className="text-sm text-slate-400">Memuat jadwal rilis donghua...</p>
-            </div>
-          ) : (
-            (() => {
-              const currentDayObj = (scheduleData || []).find(
-                (d) => d.day.toLowerCase() === selectedDay.toLowerCase()
-              );
-              const list = currentDayObj?.donghuaList || [];
-
-              if (list.length === 0) {
-                return (
-                  <div className="py-16 text-center text-sm text-slate-400">
-                    Tidak ada jadwal tayang donghua untuk hari {selectedDay}.
-                  </div>
-                );
-              }
-
-              return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {list.map((item, idx) => (
-                    <Link
-                      key={idx}
-                      to={`/donghua/detail/${item.slug}`}
-                      className="flex items-center justify-between p-3.5 rounded-xl bg-[#111622] hover:bg-slate-800 border border-white/5 hover:border-emerald-500/40 transition-all group"
-                    >
-                      <div className="min-w-0 flex-1 pr-2">
-                        <p className="text-xs sm:text-sm font-bold text-slate-200 group-hover:text-emerald-400 truncate">
-                          {item.title}
-                        </p>
-                        <p className="text-[11px] text-emerald-400 font-semibold mt-0.5">
-                          Tayang {selectedDay}
-                        </p>
-                      </div>
-                      <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 group-hover:bg-emerald-500 group-hover:text-black transition-colors">
-                        <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              );
-            })()
-          )}
-        </div>
-      ) : activeTab === 'genres' && !selectedGenre ? (
-        /* SECTION C: 102 Genres Directory */
-        <div className="space-y-4">
-          <div className="border-b border-white/5 pb-2">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <Tag className="w-4 h-4 text-emerald-400" />
-              Daftar Lengkap 102 Kategori & Genre Donghua
-            </h3>
-            <p className="text-xs text-slate-400">
-              Pilih salah satu kategori untuk melihat koleksi serial animasi Tiongkok
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-            {(genresList || []).map((g) => (
-              <button
-                key={g.slug}
-                onClick={() => handleGenreSelect(g.slug)}
-                className="flex items-center justify-between p-3 rounded-xl bg-[#111622] hover:bg-slate-800 border border-white/5 hover:border-emerald-500/40 text-left transition-all group"
-              >
-                <span className="text-xs font-bold text-slate-200 group-hover:text-emerald-400 capitalize truncate">
-                  {g.name}
-                </span>
-                <span className="text-[10px] text-slate-500 group-hover:text-white shrink-0">→</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : (
-        /* SECTION D: Paginated Donghua Grids (Ongoing, Completed, or Genre Filter) */
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#111622] p-4 rounded-2xl border border-white/5">
-            <div className="space-y-0.5">
-              <h2 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                {activeTab === 'ongoing' && <Clock className="w-4 h-4 text-emerald-400" />}
-                {activeTab === 'completed' && <CheckCircle className="w-4 h-4 text-emerald-400" />}
-                {activeTab === 'genres' && <Tag className="w-4 h-4 text-emerald-400" />}
-
-                <span>
-                  {activeTab === 'ongoing' && 'Donghua Sedang Tayang (Ongoing)'}
-                  {activeTab === 'completed' && 'Daftar Donghua Tamat (Completed)'}
-                  {activeTab === 'genres' && `Koleksi Genre: ${selectedGenre.toUpperCase()}`}
-                </span>
-              </h2>
-              <p className="text-xs text-slate-400">
-                Menampilkan <strong className="text-white">{activeDonghuaList.length}</strong> judul di halaman ini • Total katalog: <strong className="text-emerald-400 font-bold">{totalTitlesEst}+ judul</strong> ({totalPages} halaman tersedia)
-              </p>
-            </div>
-
-            <span className="text-xs font-semibold text-slate-400 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5 self-start sm:self-auto">
-              Halaman <strong className="text-white">{page}</strong> dari <strong className="text-white">{totalPages}</strong>
-            </span>
-          </div>
-
-          {isLoading ? (
-            <div className="py-24 text-center space-y-3">
-              <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mx-auto" />
-              <p className="text-sm text-slate-400">Memuat katalog donghua...</p>
-            </div>
-          ) : activeDonghuaList.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {activeDonghuaList.map((donghua) => (
-                <DonghuaGridCard key={donghua.slug} donghua={donghua} />
-              ))}
-            </div>
-          ) : (
-            <div className="py-20 text-center text-sm text-slate-400">
-              Tidak ada donghua pada halaman ini.
-            </div>
-          )}
-
-          {/* Interactive Pagination Toolbar */}
-          {totalPages > 1 && (
-            <div className="w-full space-y-4 pt-8 border-t border-white/5">
-              <div className="flex items-center justify-center gap-1 sm:gap-2 max-w-full overflow-x-auto scrollbar-none px-1 py-1">
-                <button
-                  onClick={() => handlePageChange(Math.max(1, page - 1))}
-                  disabled={page <= 1 || isLoading}
-                  className="flex items-center gap-1 px-2.5 sm:px-4 py-2 rounded-xl bg-[#111622] hover:bg-slate-800 disabled:opacity-30 text-white text-xs font-semibold border border-white/5 transition-colors shrink-0"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Sebelumnya</span>
-                </button>
-
-                {/* Page number pill */}
-                <div className="flex items-center gap-1 shrink-0">
-                  {page > 2 && (
-                    <button
-                      onClick={() => handlePageChange(1)}
-                      className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
-                    >
-                      1
-                    </button>
-                  )}
-
-                  {page > 3 && <span className="text-slate-600 px-0.5 sm:px-1 text-xs">...</span>}
-
-                  {page > 1 && (
-                    <button
-                      onClick={() => handlePageChange(page - 1)}
-                      className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
-                    >
-                      {page - 1}
-                    </button>
-                  )}
-
-                  <button className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-emerald-500 text-black text-xs font-black shadow-md shadow-emerald-500/30 shrink-0">
-                    {page}
-                  </button>
-
-                  {page < totalPages && (
-                    <button
-                      onClick={() => handlePageChange(page + 1)}
-                      className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
-                    >
-                      {page + 1}
-                    </button>
-                  )}
-
-                  {page === 1 && totalPages > 2 && (
-                    <button
-                      onClick={() => handlePageChange(3)}
-                      className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
-                    >
-                      3
-                    </button>
-                  )}
-
-                  {page === 1 && totalPages > 3 && (
-                    <button
-                      onClick={() => handlePageChange(4)}
-                      className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0 hidden sm:block"
-                    >
-                      4
-                    </button>
-                  )}
-
-                  {page === 1 && totalPages > 4 && (
-                    <button
-                      onClick={() => handlePageChange(5)}
-                      className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0 hidden sm:block"
-                    >
-                      5
-                    </button>
-                  )}
-
-                  {page < totalPages - 2 && (
-                    <span className="text-slate-600 px-0.5 sm:px-1 text-xs">...</span>
-                  )}
-
-                  {page < totalPages - 1 && (
-                    <button
-                      onClick={() => handlePageChange(totalPages)}
-                      className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#111622] hover:bg-slate-800 text-xs text-slate-300 font-semibold border border-white/5 transition-colors shrink-0"
-                    >
-                      {totalPages}
-                    </button>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
-                  disabled={page >= totalPages || isLoading}
-                  className="flex items-center gap-1 px-2.5 sm:px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 text-black text-xs font-bold transition-colors shadow shrink-0"
-                >
-                  <span className="hidden sm:inline">Selanjutnya</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-
-              {totalPages > 3 && (
-                <form
-                  onSubmit={handleJumpPage}
-                  className="flex items-center justify-center gap-2 text-xs text-slate-400"
-                >
-                  <span>Lompat ke halaman:</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={totalPages}
-                    placeholder={String(page)}
-                    value={jumpPageInput}
-                    onChange={(e) => setJumpPageInput(e.target.value)}
-                    className="w-16 px-2.5 py-1.5 rounded-lg bg-[#111622] border border-white/10 text-white text-center focus:border-emerald-500 focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-emerald-500 hover:text-black text-white font-semibold transition-colors border border-white/5"
-                  >
-                    Buka
-                  </button>
-                </form>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+  const genreOptions = useMemo(
+    () =>
+      (genresList || []).map((g) => ({
+        value: g.slug,
+        label: g.name,
+      })),
+    [genresList]
   );
-}
 
-function DonghuaGridCard({ donghua }: { donghua: DonghuaItem }) {
-  const [imgError, setImgError] = useState(false);
+  const donghuaPosterMap = useMemo(() => {
+    const map: Record<string, string> = {
+      'apotheosis': 'https://anichin.moe/wp-content/uploads/2022/11/Apotheosis-Episode-105-Subtitle-Indonesia.webp',
+      'swallowed-star': 'https://anichin.moe/wp-content/uploads/2020/11/Swallowed-Star-Subtitle-Indonesia.webp',
+      'supreme-god-emperor': 'https://anichin.moe/wp-content/uploads/2026/07/Supreme-God-Emperor-Subtitle-Indonesia.webp',
+      'againts-the-sky-supreme': 'https://anichin.moe/wp-content/uploads/2025/09/0-2-768x1077.webp',
+      'immortality-season-5': 'https://anichin.moe/wp-content/uploads/2025/12/IMMORTALITY-SEASON-5-SUBTITLE-INDONESIA.webp',
+      'the-supreme-body-refining-master': 'https://anichin.moe/wp-content/uploads/2026/01/The-Supreme-Body-Refining-Master-Subtitle-Indonesia.webp',
+      'battle-through-the-heavens': 'https://anichin.moe/wp-content/uploads/2026/11/BTTH-Movie-Battle-of-Two-Emperors-Subtitle-Indonesia.webp',
+      'btth': 'https://anichin.moe/wp-content/uploads/2026/11/BTTH-Movie-Battle-of-Two-Emperors-Subtitle-Indonesia.webp',
+      'perfect-world': 'https://anichin.moe/wp-content/uploads/2021/01/Perfect-World-Subtitle-Indonesia-4.webp',
+      'renegade-immortal': 'https://anichin.moe/wp-content/uploads/2023/09/RENEGADE-IMMORTAL-SUBTITLE-INDONESIA-3.webp',
+      'shrouding-the-heavens': 'https://anichin.moe/wp-content/uploads/2023/05/Shrouding-the-Heavens-Subtitle-Indonesia-3-768x1077.webp',
+      'soul-land': 'https://anichin.moe/wp-content/uploads/2025/12/THE-DRAGON-SOUL-SUBTITLE-INDONESIA-768x1077.webp',
+      'soul-land-2': 'https://anichin.moe/wp-content/uploads/2025/12/THE-DRAGON-SOUL-SUBTITLE-INDONESIA-768x1077.webp',
+      '100-000-years-of-refining-qi': 'https://anichin.moe/wp-content/uploads/2023/02/100.000-Years-of-Refining-Qi-1-768x1077.jpg',
+      'stellar-transformations': 'https://anichin.moe/wp-content/uploads/2023/01/Stellar-Transformations-Season-5-768x1075.jpg',
+      'tomb-of-fallen-gods': 'https://anichin.moe/wp-content/uploads/2022/07/Tomb-of-Fallen-Gods-768x1075.jpg',
+      'peerless-martial-spirit': 'https://anichin.moe/wp-content/uploads/2021/04/Peerless-Martial-Spirit-768x1075.jpg',
+      'the-demon-hunter': 'https://anichin.moe/wp-content/uploads/2023/06/The-Demon-Hunter-768x1075.jpg',
+      'big-brother': 'https://anichin.moe/wp-content/uploads/2023/01/My-Senior-Brother-is-Too-Steady-768x1075.jpg',
+      'tales-of-demons-and-gods': 'https://anichin.moe/wp-content/uploads/2021/04/Tales-of-Demons-and-Gods-768x1075.jpg',
+      'land-of-miracles': 'https://anichin.moe/wp-content/uploads/2022/07/Land-of-Miracles-768x1075.jpg',
+      'record-of-a-mortals-journey-to-immortality': 'https://anichin.moe/wp-content/uploads/2021/11/A-Record-of-a-Mortals-Journey-to-Immortality-Season-2-768x1075.jpg',
+    };
+    (ongoingData?.donghuaList || []).forEach((item) => {
+      if (item.slug && item.poster) map[item.slug] = item.poster;
+    });
+    (completedData?.donghuaList || []).forEach((item) => {
+      if (item.slug && item.poster) map[item.slug] = item.poster;
+    });
+    return map;
+  }, [ongoingData?.donghuaList, completedData?.donghuaList]);
 
-  const fallbackPoster =
-    "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22300%22%20viewBox%3D%220%200%20200%20300%22%3E%3Crect%20fill%3D%22%230f172a%22%20width%3D%22200%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2310b981%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%2210.5%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3EDONGHUA%3C%2Ftext%3E%3C%2Fsvg%3E";
+  const getPosterForSchedule = (slug: string, title: string) => {
+    const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    if (donghuaPosterMap[cleanSlug]) return proxyDonghuaPoster(donghuaPosterMap[cleanSlug]);
+    for (const [k, v] of Object.entries(donghuaPosterMap)) {
+      if (cleanSlug.includes(k) || k.includes(cleanSlug)) return proxyDonghuaPoster(v);
+    }
+    return createPosterFallbackSvg(title, '#67BFD5');
+  };
 
-  const posterSrc = imgError || !donghua.poster ? fallbackPoster : proxyDonghuaPoster(donghua.poster);
+  const renderDonghuaCard = (donghua: DonghuaItem) => (
+    <MediaCard
+      key={donghua.slug}
+      id={donghua.slug}
+      category="donghua"
+      title={donghua.title}
+      imageUrl={proxyDonghuaPoster(donghua.poster || '') || donghua.poster}
+      link={`/donghua/detail/${donghua.slug}`}
+      topBadge={donghua.currentEpisode || donghua.status}
+      metaPrimary={donghua.type || 'Donghua 3D'}
+      metaSecondary={donghua.status}
+      bookmarkType={donghua.type || 'Donghua'}
+    />
+  );
 
   return (
-    <Link
-      to={`/donghua/detail/${donghua.slug}`}
-      className="group relative flex flex-col rounded-2xl overflow-hidden bg-[#111622] border border-white/5 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-emerald-500/10"
-    >
-      <div className="relative aspect-[3/4] w-full bg-slate-900 overflow-hidden">
-        <img
-          src={posterSrc}
-          alt={donghua.title}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          onError={() => setImgError(true)}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+    <div className="min-h-screen bg-[#12141B] text-[#F2F0EC] pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 min-w-0">
+        {/* 1. Unified Category Hero (Cyan Accent on Shared Dark Surface) */}
+        <CategoryHero
+          category="donghua"
+          eyebrow="Donghua Catalog"
+          title="Katalog Donghua Sub Indo"
+          description="Saksikan serial animasi 3D dan 2D kultivasi Xianxia & Xuanhuan terpopuler dengan subtitle Indonesia dan multi-server."
+          backdropUrl={heroBackdrop}
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          onSearchSubmit={handleSearchSubmit}
+          searchPlaceholder="Cari donghua (e.g. Swallowed Star, BTTH, Soul Land, Perfect World)..."
         />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-80" />
+        {/* 2. Unified Filter Bar */}
+        <FilterBar
+          category="donghua"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          onSearchSubmit={handleSearchSubmit}
+          searchPlaceholder="Filter cepat donghua..."
+          tabs={[
+            { id: 'ongoing', label: 'Ongoing' },
+            { id: 'completed', label: 'Completed' },
+            { id: 'genres', label: 'Genre' },
+            { id: 'schedule', label: 'Jadwal Rilis' },
+            { id: 'bookmarks', label: 'Favorit', count: bookmarks.length },
+            { id: 'history', label: 'Riwayat', count: history.length },
+          ]}
+          activeTab={searchParam ? '' : activeTab}
+          onTabChange={handleTabChange}
+          genreOptions={genreOptions}
+          selectedGenre={selectedGenre}
+          onGenreChange={handleGenreSelect}
+          genreLabel="Semua Genre"
+          sortOptions={[
+            { value: 'default', label: 'Urutan Default' },
+            { value: 'title_asc', label: 'Judul (A-Z)' },
+          ]}
+          selectedSort={sortBy}
+          onSortChange={(val) => setSortBy(val as SortOption)}
+          hasActiveFilters={Boolean(searchParam || selectedGenre || sortBy !== 'default')}
+          onResetFilters={handleResetFilters}
+        />
 
-        {/* Status / Episode Badge */}
-        {donghua.currentEpisode ? (
-          <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider shadow">
-            {donghua.currentEpisode}
-          </div>
-        ) : donghua.status ? (
-          <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-black/80 text-slate-200 text-[10px] font-bold border border-white/10 shadow">
-            {donghua.status}
-          </div>
-        ) : null}
+        {/* 3. Continue Watching Shelf */}
+        {!searchParam && activeTab !== 'history' && <HubHistoryShelf category="donghua" />}
 
-        {/* Type badge */}
-        {donghua.type && (
-          <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 rounded-md bg-black/80 text-emerald-400 text-[10px] font-bold border border-white/10 shadow">
-            {donghua.type}
+        {/* 4. Main Content */}
+        {searchParam ? (
+          <div className="space-y-4">
+            <SectionHeader
+              category="donghua"
+              title={`Hasil Pencarian: "${searchParam}"`}
+              subtitle={`Ditemukan ${displayedSearch.length} serial donghua`}
+            />
+            {searchLoading ? (
+              <CardGridSkeleton count={12} />
+            ) : displayedSearch.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {displayedSearch.map(renderDonghuaCard)}
+              </div>
+            ) : (
+              <EmptyState
+                icon={<Tv className="w-5 h-5" />}
+                title="Donghua Tidak Ditemukan"
+                description={`Kata kunci "${searchParam}" belum tersedia. Coba judul lain atau reset filter.`}
+                actionLabel="Reset Pencarian"
+                onAction={handleResetFilters}
+              />
+            )}
+          </div>
+        ) : activeTab === 'bookmarks' ? (
+          <div className="space-y-4">
+            <SectionHeader
+              category="donghua"
+              title={`Donghua Favorit Saya (${bookmarks.length})`}
+              subtitle="Daftar donghua yang Anda simpan di koleksi lokal"
+            />
+            {bookmarks.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {bookmarks.map((b) => (
+                  <MediaCard
+                    key={b.id}
+                    id={b.id}
+                    category="donghua"
+                    title={b.title}
+                    imageUrl={proxyDonghuaPoster(b.cover || '') || b.cover}
+                    link={b.link}
+                    topBadge={b.type || 'Donghua'}
+                    metaPrimary={b.subtitle || 'Favorit'}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={<Bookmark className="w-5 h-5" />}
+                title="Belum Ada Donghua Favorit"
+                description="Simpan serial donghua dari halaman detail agar mudah ditemukan kembali."
+                actionLabel="Jelajahi Donghua"
+                onAction={() => handleTabChange('ongoing')}
+              />
+            )}
+          </div>
+        ) : activeTab === 'history' ? (
+          <div className="space-y-4">
+            <SectionHeader
+              category="donghua"
+              title={`Riwayat Tonton Donghua (${history.length})`}
+              subtitle="Lanjutkan episode donghua yang terakhir Anda tonton"
+              rightSlot={
+                history.length > 0 ? (
+                  <Button variant="danger" size="sm" onClick={() => setConfirmClearOpen(true)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Hapus Semua</span>
+                  </Button>
+                ) : undefined
+              }
+            />
+            {history.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {history.map((h) => (
+                  <MediaCard
+                    key={h.id}
+                    id={h.id}
+                    category="donghua"
+                    title={h.title}
+                    imageUrl={proxyDonghuaPoster(h.cover || '') || h.cover}
+                    link={h.lastItemLink || `/donghua/detail/${h.id}`}
+                    topBadge={h.lastItemTitle}
+                    metaPrimary={h.lastItemTitle || 'Lanjut Nonton'}
+                    metaSecondary={new Date(h.watchedAt).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'short',
+                    })}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={<History className="w-5 h-5" />}
+                title="Belum Ada Riwayat Tonton"
+                description="Episode donghua yang Anda tonton akan otomatis tercatat di sini."
+                actionLabel="Mulai Nonton"
+                onAction={() => handleTabChange('ongoing')}
+              />
+            )}
+          </div>
+        ) : activeTab === 'schedule' ? (
+          <div className="space-y-5">
+            <SectionHeader
+              category="donghua"
+              title={`Jadwal Rilis — Hari ${selectedDay}`}
+              subtitle="Jadwal pembaruan donghua mingguan"
+            />
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map((day) => (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => setSelectedDay(day)}
+                  className={`h-9 px-3.5 rounded-[10px] text-xs font-semibold border transition-colors shrink-0 cursor-pointer ${
+                    selectedDay.toLowerCase() === day.toLowerCase()
+                      ? 'bg-[#67BFD5]/15 text-[#67BFD5] border-[#67BFD5]/45'
+                      : 'bg-[#191C25] text-[#A2A4B1] hover:text-[#F2F0EC] border-[#343744]'
+                  }`}
+                >
+                  {day}
+                </button>
+              ))}
+            </div>
+
+            {scheduleLoading ? (
+              <CardGridSkeleton count={12} />
+            ) : (
+              (() => {
+                const dayObj = (scheduleData || []).find(
+                  (d) => d.day.toLowerCase() === selectedDay.toLowerCase()
+                );
+                const list = dayObj?.donghuaList || [];
+                if (list.length === 0) {
+                  return (
+                    <EmptyState
+                      icon={<Calendar className="w-5 h-5" />}
+                      title={`Tidak Ada Jadwal Hari ${selectedDay}`}
+                      description="Pilih hari lain untuk melihat rilis donghua mingguan."
+                    />
+                  );
+                }
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    {list.map((d) => (
+                      <MediaCard
+                        key={d.slug}
+                        id={d.slug}
+                        category="donghua"
+                        title={d.title}
+                        imageUrl={getPosterForSchedule(d.slug, d.title)}
+                        link={`/donghua/detail/${d.slug}`}
+                        topBadge={`Rilis ${selectedDay}`}
+                        metaPrimary="Donghua"
+                        metaSecondary="Jadwal Mingguan"
+                        bookmarkType="Donghua"
+                      />
+                    ))}
+                  </div>
+                );
+              })()
+            )}
+          </div>
+        ) : activeTab === 'genres' && !selectedGenre ? (
+          <div className="space-y-4">
+            <SectionHeader
+              category="donghua"
+              title="Jelajahi Genre Donghua"
+              subtitle="Pilih kategori genre atau tag donghua untuk menyaring katalog"
+            />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {(genresList || []).map((g) => (
+                <button
+                  key={g.slug}
+                  type="button"
+                  onClick={() => handleGenreSelect(g.slug)}
+                  className="flex items-center justify-between h-11 px-3.5 rounded-[10px] bg-[#191C25] hover:bg-[#232633] border border-[#343744] hover:border-[#67BFD5]/45 text-left transition-colors group cursor-pointer"
+                >
+                  <span className="text-[13px] font-medium text-[#F2F0EC] group-hover:text-[#67BFD5] capitalize truncate">
+                    {g.name}
+                  </span>
+                  <span className="text-xs text-[#747887] group-hover:text-[#67BFD5]">→</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            <SectionHeader
+              category="donghua"
+              title={
+                activeTab === 'ongoing'
+                  ? 'Donghua Sedang Tayang (Ongoing)'
+                  : activeTab === 'completed'
+                  ? 'Daftar Donghua Tamat (Completed)'
+                  : `Genre: ${selectedGenre.replace(/-/g, ' ')}`
+              }
+              rightSlot={
+                <span className="text-xs text-[#A2A4B1]">
+                  Halaman {page} dari {totalPages}
+                </span>
+              }
+            />
+
+            {isLoading ? (
+              <CardGridSkeleton count={18} />
+            ) : activeDonghuaList.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {activeDonghuaList.map(renderDonghuaCard)}
+              </div>
+            ) : (
+              <EmptyState
+                icon={<Tv className="w-5 h-5" />}
+                title="Tidak Ada Donghua di Halaman Ini"
+                description="Coba pindah halaman atau pilih kategori lainnya."
+                actionLabel="Reset Filter"
+                onAction={handleResetFilters}
+              />
+            )}
+
+            <PaginationBar
+              currentPage={page}
+              totalPages={totalPages}
+              isLoading={isLoading}
+              onPageChange={handlePageChange}
+            />
           </div>
         )}
-
-        {/* Play Icon on hover */}
-        <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-background/40 backdrop-blur-[2px]">
-          <div className="w-10 h-10 rounded-full bg-emerald-500 text-black flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
-            <Play className="w-5 h-5 fill-black ml-0.5" />
-          </div>
-        </div>
       </div>
 
-      <div className="p-3 flex-1 flex flex-col justify-between gap-1.5">
-        <h3
-          title={donghua.title}
-          className="font-bold text-xs sm:text-sm text-slate-100 group-hover:text-emerald-400 transition-colors line-clamp-2 leading-tight"
-        >
-          {donghua.title}
-        </h3>
-
-        <div className="flex items-center justify-between text-[11px] text-slate-400">
-          <span>{donghua.type || 'Donghua 3D'}</span>
-          <span>{donghua.status || 'Sub Indo'}</span>
-        </div>
-      </div>
-    </Link>
+      <ConfirmModal
+        isOpen={confirmClearOpen}
+        title="Hapus Semua Riwayat Donghua?"
+        message="Seluruh riwayat tontonan donghua lokal akan dihapus."
+        confirmLabel="Hapus Semua"
+        variant="danger"
+        onConfirm={() => {
+          clearHistory();
+          setConfirmClearOpen(false);
+        }}
+        onCancel={() => setConfirmClearOpen(false)}
+      />
+    </div>
   );
 }

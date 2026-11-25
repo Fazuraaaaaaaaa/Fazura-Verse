@@ -13,9 +13,12 @@ const DONGHUA_BASE_URL = 'https://www.sankavollerei.web.id/anime/donghua';
  */
 export function proxyDonghuaPoster(rawUrl?: string): string {
   if (!rawUrl) return '';
-  if (rawUrl.startsWith('/api/image-proxy')) return rawUrl;
+  if (rawUrl.startsWith('https://fazurastream.web.id/api/image-proxy')) return rawUrl;
+  if (rawUrl.startsWith('/api/image-proxy')) {
+    return `https://fazurastream.web.id${rawUrl}`;
+  }
   if (rawUrl.includes('anichin.moe') || rawUrl.includes('wp-content')) {
-    return `/api/image-proxy?url=${encodeURIComponent(rawUrl)}`;
+    return `https://fazurastream.web.id/api/image-proxy?url=${encodeURIComponent(rawUrl)}`;
   }
   return rawUrl;
 }

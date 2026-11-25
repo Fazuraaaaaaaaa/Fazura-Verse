@@ -43,17 +43,17 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-[70vh] bg-bg-primary text-text-primary flex items-center justify-center p-4">
-          <div className="max-w-md w-full p-7 rounded-3xl bg-surface border border-border-subtle text-center space-y-5 shadow-2xl">
+        <div className="min-h-[70vh] bg-[#12141B] text-[#F2F0EC] flex items-center justify-center p-4">
+          <div className="max-w-md w-full p-7 rounded-2xl bg-[#191C25] border border-[#343744] text-center space-y-5 shadow-dialog">
             <div className="w-14 h-14 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-7 h-7" />
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-xl font-black text-white font-heading">
+              <h2 className="text-xl font-bold text-[#F2F0EC] font-heading">
                 Oops! Halaman Mengalami Gangguan
               </h2>
-              <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#A2A4B1] leading-relaxed">
                 {this.state.errorMessage}
               </p>
             </div>
@@ -62,7 +62,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               <button
                 type="button"
                 onClick={this.handleReload}
-                className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-accent-primary hover:bg-accent-primary/90 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-accent-primary/25 transition-all"
+                className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
                 Muat Ulang
@@ -70,7 +70,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               <button
                 type="button"
                 onClick={this.handleGoHome}
-                className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-surface-elevated hover:bg-surface-secondary text-text-primary text-xs sm:text-sm font-semibold border border-border-subtle flex items-center justify-center gap-2 transition-colors"
+                className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-[10px] bg-[#232633] hover:bg-[#343744] text-[#F2F0EC] text-xs sm:text-sm font-semibold border border-[#343744] flex items-center justify-center gap-2 transition-colors"
               >
                 <Home className="w-4 h-4" />
                 Ke Beranda

@@ -1,37 +1,39 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import {
-  Sparkles,
-  BookOpen,
-  Film,
-  Tv,
+  Play,
   Search,
   Menu,
   X,
   Loader2,
-  Clapperboard,
-  Headphones,
   Bookmark,
   History,
+  BookOpen,
+  Film,
+  Tv,
+  Clapperboard,
+  Headphones,
+  Home,
 } from 'lucide-react';
+import { CATEGORY_THEMES } from '../utils/categoryTheme';
 
 interface SearchDropdownItem {
   id: string;
   title: string;
   poster: string;
   typeLabel: string;
-  badgeStyle: string;
+  accentHex: string;
   link: string;
   subtitle?: string;
 }
 
-const NAV_ITEMS = [
-  { to: '/', label: 'Home', icon: Sparkles, exact: true, accent: 'text-[#8B5CF6]' },
-  { to: '/manga', label: 'Manga', icon: BookOpen, accent: 'text-[#8B5CF6]' },
-  { to: '/anime', label: 'Anime', icon: Film, accent: 'text-amber-400' },
-  { to: '/donghua', label: 'Donghua', icon: Tv, accent: 'text-emerald-400' },
-  { to: '/movies', label: 'Movies', icon: Clapperboard, accent: 'text-rose-400' },
-  { to: '/music', label: 'Music', icon: Headphones, accent: 'text-[#1DB954]' },
+const DESKTOP_NAV_ITEMS = [
+  { to: '/', label: 'Home', icon: Home, exact: true },
+  { to: '/manga', label: 'Manga', icon: BookOpen },
+  { to: '/anime', label: 'Anime', icon: Film },
+  { to: '/donghua', label: 'Donghua', icon: Tv },
+  { to: '/movies', label: 'Movies', icon: Clapperboard },
+  { to: '/music', label: 'Music', icon: Headphones },
 ];
 
 export function Navbar() {
@@ -46,17 +48,13 @@ export function Navbar() {
   const desktopInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  // Scroll-aware navbar transition
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 15);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 12);
     handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Global keyboard shortcut (Ctrl+K / Cmd+K or '/') to focus quick search
   useEffect(() => {
     const onGlobalKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -91,7 +89,6 @@ export function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Dynamically load API search modules only when the user searches (keeps initial bundle lean)
   useEffect(() => {
     const trimmed = searchQuery.trim();
     if (!trimmed || trimmed.length < 2) {
@@ -124,9 +121,9 @@ export function Navbar() {
               title: m.title,
               poster: m.posterUrl || '',
               typeLabel: m.mediaType === 'tv' ? 'Series' : 'Movie',
-              badgeStyle: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
+              accentHex: CATEGORY_THEMES.movies.accentHex,
               link: `/movies/${m.id}`,
-              subtitle: m.ratingValue ? `★ ${m.ratingValue.toFixed(1)}` : 'Cinema',
+              subtitle: m.ratingValue ? `★ ${m.ratingValue.toFixed(1)}` : 'Movies',
             });
           });
         }
@@ -138,9 +135,9 @@ export function Navbar() {
               title: a.title,
               poster: a.poster,
               typeLabel: 'Anime',
-              badgeStyle: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+              accentHex: CATEGORY_THEMES.anime.accentHex,
               link: `/anime/detail/otakudesu/${a.id}`,
-              subtitle: a.status || (a.score ? `★ ${a.score}` : 'Otakudesu'),
+              subtitle: a.status || (a.score ? `★ ${a.score}` : 'Anime'),
             });
           });
         }
@@ -152,9 +149,9 @@ export function Navbar() {
               title: d.title,
               poster: d.poster,
               typeLabel: 'Donghua',
-              badgeStyle: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+              accentHex: CATEGORY_THEMES.donghua.accentHex,
               link: `/donghua/detail/${d.slug}`,
-              subtitle: d.currentEpisode || 'Donghua 3D',
+              subtitle: d.currentEpisode || 'Donghua',
             });
           });
         }
@@ -166,7 +163,7 @@ export function Navbar() {
               title: m.title,
               poster: m.cover,
               typeLabel: m.type || 'Manga',
-              badgeStyle: 'bg-accent-primary/20 text-accent-secondary border-accent-primary/30',
+              accentHex: CATEGORY_THEMES.manga.accentHex,
               link: `/manga/${m.slug}`,
               subtitle: m.chapter || 'Komik',
             });
@@ -180,9 +177,9 @@ export function Navbar() {
               title: track.title,
               poster: track.thumbnail,
               typeLabel: 'Music',
-              badgeStyle: 'bg-[#1DB954]/20 text-[#1DB954] border-[#1DB954]/30',
+              accentHex: CATEGORY_THEMES.music.accentHex,
               link: `/music?play=${encodeURIComponent(track.id)}`,
-              subtitle: `${track.artist} • ${track.durationFormatted || 'Lagu'}`,
+              subtitle: `${track.artist}${track.durationFormatted ? ` • ${track.durationFormatted}` : ''}`,
             });
           });
         }
@@ -239,64 +236,52 @@ export function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`sticky top-0 z-50 transition-colors duration-200 border-b ${
         scrolled
-          ? 'bg-bg-primary/95 backdrop-blur-md border-b border-border-subtle shadow-xl shadow-black/50'
-          : 'bg-bg-primary/75 backdrop-blur-sm border-b border-white/5'
+          ? 'bg-[#0B0C10]/95 backdrop-blur-md border-[#343744]'
+          : 'bg-[#0B0C10]/80 backdrop-blur-sm border-[#343744]/60'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-3">
-        {/* Brand Logo with Japanese Digital Aesthetic */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[68px] flex items-center justify-between gap-4">
+        {/* LEFT: Brand Mark */}
         <Link
           to="/"
           onClick={() => setMobileMenuOpen(false)}
-          className="flex items-center gap-2 sm:gap-2.5 group shrink-0"
+          className="flex items-center gap-2.5 group shrink-0"
         >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-[#8B5CF6] via-[#A78BFA] to-amber-400 p-[2px] transition-transform duration-300 group-hover:scale-105 shadow-md shadow-[#8B5CF6]/25">
-            <div className="w-full h-full bg-surface-base rounded-[9px] sm:rounded-[10px] flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-accent-primary group-hover:text-amber-400 transition-colors" />
-            </div>
-          </div>
+          <span className="w-9 h-9 rounded-[10px] bg-[#191C25] border border-[#343744] group-hover:border-[#F0A15B] flex items-center justify-center transition-colors">
+            <Play className="w-4 h-4 text-[#F0A15B] fill-[#F0A15B] ml-0.5" />
+          </span>
           <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="font-heading font-black text-lg sm:text-xl tracking-tight text-white group-hover:opacity-95 transition-opacity">
-                FAZURA<span className="text-accent-primary drop-shadow-[0_0_12px_rgba(139,92,246,0.5)]">STREAM</span>
-              </span>
-              <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-accent-primary/15 text-accent-secondary border border-accent-primary/30 hidden sm:inline-block">
-                次元
-              </span>
-            </div>
-            <span className="hidden 2xl:block text-[9px] text-text-secondary -mt-1 font-bold tracking-wider uppercase">
-              Manga • Anime • Donghua • Movie • Music
+            <span className="font-heading font-bold text-lg sm:text-xl tracking-tight text-[#F2F0EC] leading-none">
+              Fazura<span className="text-[#F0A15B]">Stream</span>
+            </span>
+            <span className="hidden 2xl:block text-[10px] text-[#747887] font-medium tracking-wide mt-0.5">
+              Your Universe of Entertainment
             </span>
           </div>
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <nav className="hidden xl:flex items-center gap-1 text-xs font-semibold shrink-0" aria-label="Navigasi Utama">
-          {NAV_ITEMS.map((item) => (
+        {/* CENTER: Category Navigation */}
+        <nav className="hidden lg:flex items-center gap-1" aria-label="Navigasi Utama">
+          {DESKTOP_NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.exact}
               className={({ isActive }) =>
-                `relative px-2.5 py-2 rounded-xl transition-all flex items-center gap-1.5 group whitespace-nowrap ${
+                `relative px-3.5 py-2 text-[14px] font-medium whitespace-nowrap transition-colors duration-150 ${
                   isActive
-                    ? 'text-white bg-accent-primary/15 border border-accent-primary/30 shadow-md shadow-accent-primary/20 font-bold'
-                    : 'text-text-secondary hover:text-white hover:bg-white/5 border border-transparent'
+                    ? 'text-[#F2F0EC] font-semibold'
+                    : 'text-[#A2A4B1] hover:text-[#F2F0EC]'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <item.icon
-                    className={`w-4 h-4 transition-colors ${
-                      isActive ? item.accent || 'text-accent-primary' : 'text-text-muted group-hover:text-white'
-                    }`}
-                  />
                   <span>{item.label}</span>
                   {isActive && (
-                    <span className="absolute -bottom-[1px] left-2.5 right-2.5 h-[2px] bg-gradient-to-r from-transparent via-[#8B5CF6] to-transparent rounded-full shadow-[0_0_8px_#8B5CF6]" />
+                    <span className="absolute inset-x-3 -bottom-[14px] h-[2px] bg-[#F0A15B] rounded-full" />
                   )}
                 </>
               )}
@@ -304,12 +289,12 @@ export function Navbar() {
           ))}
         </nav>
 
-        {/* Search Bar & User Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <div ref={searchRef} className="relative hidden sm:block w-40 md:w-48 lg:w-52 xl:w-44 2xl:w-60 shrink-0">
+        {/* RIGHT: Search, Library, History */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div ref={searchRef} className="relative hidden sm:block w-48 md:w-56 xl:w-64 shrink-0">
             <form onSubmit={handleSearchSubmit}>
               <div className="relative">
-                <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-4 h-4 text-[#747887] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   ref={desktopInputRef}
                   type="text"
@@ -322,10 +307,10 @@ export function Navbar() {
                   onKeyDown={handleInputKeyDown}
                   onFocus={() => setSearchOpen(true)}
                   aria-label="Pencarian cepat"
-                  className="w-full pl-9 pr-8 py-1.5 min-h-[38px] text-xs bg-surface-base/90 hover:bg-surface-base focus:bg-surface border border-border-subtle focus:border-accent-primary rounded-xl text-white placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary/40 transition-all shadow-inner"
+                  className="w-full h-10 pl-9 pr-8 text-[13px] bg-[#191C25] border border-[#343744] hover:border-[#454958] focus:border-[#F0A15B] rounded-[10px] text-[#F2F0EC] placeholder-[#747887] focus:outline-none transition-colors"
                 />
                 {searchLoading ? (
-                  <Loader2 className="w-3.5 h-3.5 text-accent-primary animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
+                  <Loader2 className="w-3.5 h-3.5 text-[#F0A15B] animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
                 ) : searchQuery ? (
                   <button
                     type="button"
@@ -334,7 +319,7 @@ export function Navbar() {
                       setSearchResults([]);
                     }}
                     aria-label="Kosongkan pencarian"
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-white p-0.5"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#747887] hover:text-[#F2F0EC] p-0.5"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -342,16 +327,15 @@ export function Navbar() {
               </div>
             </form>
 
-            {/* Dropdown preview */}
             {searchOpen && searchQuery.trim().length >= 2 && (
               <div
                 role="listbox"
-                className="absolute top-full left-0 right-0 mt-2 rounded-xl bg-surface-base border border-border-subtle shadow-2xl overflow-hidden z-50"
+                className="absolute top-full left-0 right-0 mt-2 rounded-[10px] bg-[#191C25] border border-[#343744] shadow-subtle-menu overflow-hidden z-50"
               >
                 {searchLoading && searchResults.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-text-secondary flex items-center justify-center gap-2">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-accent-primary" />
-                    Mencari komik, anime, movie, & musik...
+                  <div className="p-4 text-center text-xs text-[#A2A4B1] flex items-center justify-center gap-2">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#F0A15B]" />
+                    <span>Mencari di seluruh kategori...</span>
                   </div>
                 ) : searchResults.length > 0 ? (
                   <div className="p-1.5 space-y-1 max-h-[65vh] overflow-y-auto">
@@ -366,57 +350,56 @@ export function Navbar() {
                           setSearchQuery('');
                           setHighlightedIndex(-1);
                         }}
-                        className={`flex items-center gap-3 p-2 rounded-lg transition-colors group ${
-                          highlightedIndex === idx ? 'bg-surface-elevated' : 'hover:bg-surface'
+                        className={`flex items-center gap-3 p-2 rounded-[6px] transition-colors ${
+                          highlightedIndex === idx ? 'bg-[#232633]' : 'hover:bg-[#232633]/70'
                         }`}
                       >
                         <img
                           src={
                             item.poster ||
-                            "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2260%22%20height%3D%2280%22%20viewBox%3D%220%200%2060%2080%22%3E%3Crect%20fill%3D%22%23181827%22%20width%3D%2260%22%20height%3D%2280%22%2F%3E%3C%2Fsvg%3E"
+                            "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2260%22%20height%3D%2290%22%20viewBox%3D%220%200%2060%2090%22%3E%3Crect%20fill%3D%22%23191C25%22%20width%3D%2260%22%20height%3D%2290%22%2F%3E%3C%2Fsvg%3E"
                           }
                           alt={item.title}
                           referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src =
-                              "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2260%22%20height%3D%2280%22%20viewBox%3D%220%200%2060%2080%22%3E%3Crect%20fill%3D%22%23181827%22%20width%3D%2260%22%20height%3D%2280%22%2F%3E%3C%2Fsvg%3E";
-                          }}
-                          className="w-8 h-11 object-cover rounded bg-surface shrink-0"
+                          className="w-8 h-12 object-cover rounded-[6px] bg-[#12141B] shrink-0"
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <span
-                              className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase border ${item.badgeStyle}`}
+                              className="px-1.5 py-0.2 rounded-[4px] text-[10px] font-semibold border border-[#343744] bg-[#12141B]"
+                              style={{ color: item.accentHex }}
                             >
                               {item.typeLabel}
                             </span>
                             {item.subtitle && (
-                              <span className="text-[10px] text-text-secondary truncate">
+                              <span className="text-[11px] text-[#747887] truncate">
                                 {item.subtitle}
                               </span>
                             )}
                           </div>
-                          <p className="text-xs font-bold text-slate-200 group-hover:text-accent-secondary truncate">
+                          <p className="text-xs font-semibold text-[#F2F0EC] truncate">
                             {item.title}
                           </p>
                         </div>
                       </Link>
                     ))}
                     <button
+                      type="button"
                       onClick={handleSearchSubmit}
-                      className="w-full py-2.5 px-3 text-center text-xs font-bold text-accent-secondary hover:text-white bg-bg-primary hover:bg-surface border-t border-border-subtle transition-colors"
+                      className="w-full py-2.5 px-3 text-center text-xs font-semibold text-[#F0A15B] hover:text-[#F6B779] bg-[#12141B] border-t border-[#343744] transition-colors cursor-pointer"
                     >
-                      Buka hasil pencarian lengkap untuk &quot;{searchQuery}&quot; →
+                      Lihat semua hasil untuk &quot;{searchQuery}&quot; →
                     </button>
                   </div>
                 ) : (
-                  <div className="p-4 text-center text-xs text-text-secondary space-y-2">
+                  <div className="p-4 text-center text-xs text-[#A2A4B1] space-y-2">
                     <p>Tidak ditemukan hasil cepat untuk &quot;{searchQuery}&quot;</p>
                     <button
+                      type="button"
                       onClick={handleSearchSubmit}
-                      className="text-accent-secondary hover:underline font-semibold"
+                      className="text-[#F0A15B] hover:underline font-semibold"
                     >
-                      Cari lengkap di halaman pencarian →
+                      Cari lengkap →
                     </button>
                   </div>
                 )}
@@ -424,95 +407,94 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Library Quick Links on Desktop */}
           <Link
             to="/bookmarks"
-            title="Unified Library (Favorit)"
+            title="Favorit & Koleksi"
             aria-label="Unified Library Favorit"
-            className="hidden sm:flex items-center justify-center w-10 h-10 rounded-xl bg-surface-base/80 hover:bg-surface text-text-secondary hover:text-accent-secondary border border-border-subtle transition-colors"
+            className="hidden sm:flex items-center justify-center w-10 h-10 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F0A15B] border border-[#343744] hover:border-[#454958] transition-colors"
           >
             <Bookmark className="w-4 h-4" />
           </Link>
+
           <Link
             to="/history"
             title="Riwayat Tonton & Baca"
             aria-label="Riwayat Tonton dan Baca"
-            className="hidden lg:flex items-center justify-center w-10 h-10 rounded-xl bg-surface-base/80 hover:bg-surface text-text-secondary hover:text-accent-secondary border border-border-subtle transition-colors"
+            className="hidden sm:flex items-center justify-center w-10 h-10 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F0A15B] border border-[#343744] hover:border-[#454958] transition-colors"
           >
             <History className="w-4 h-4" />
           </Link>
 
-          {/* Mobile Search Shortcut Icon (< sm) */}
           <Link
             to="/search"
             aria-label="Cari Konten"
-            className="sm:hidden w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-surface-base text-text-secondary hover:text-white border border-border-subtle flex items-center justify-center active:scale-95 transition-all"
+            className="sm:hidden w-10 h-10 min-w-[44px] min-h-[44px] rounded-[10px] bg-[#191C25] text-[#A2A4B1] hover:text-[#F2F0EC] border border-[#343744] flex items-center justify-center"
           >
             <Search className="w-4 h-4" />
           </Link>
 
-          {/* Mobile Menu Hamburger Toggle */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            type="button"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
-            className="xl:hidden w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-surface-base text-slate-300 hover:text-white border border-border-subtle flex items-center justify-center active:scale-95 transition-all"
+            className="lg:hidden w-10 h-10 min-w-[44px] min-h-[44px] rounded-[10px] bg-[#191C25] text-[#F2F0EC] border border-[#343744] flex items-center justify-center"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5 text-accent-primary" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <X className="w-5 h-5 text-[#F0A15B]" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
-      {/* Smooth Animated Mobile Drawer */}
+      {/* Tablet / Mobile Header Drawer */}
       {mobileMenuOpen && (
-        <div className="xl:hidden border-t border-border-subtle bg-bg-primary/98 backdrop-blur-2xl px-4 py-4 space-y-2 max-h-[85vh] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200 shadow-2xl">
-          <form onSubmit={handleSearchSubmit} className="mb-3">
+        <div className="lg:hidden border-t border-[#343744] bg-[#0B0C10] px-4 py-4 space-y-2 max-h-[85vh] overflow-y-auto shadow-dialog">
+          <form onSubmit={handleSearchSubmit} className="mb-3 sm:hidden">
             <div className="relative">
-              <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-[#747887] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Cari komik, anime, movie, musik..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 min-h-[44px] text-xs bg-surface-base border border-border-subtle focus:border-accent-primary rounded-xl text-white placeholder-text-muted focus:outline-none"
+                className="w-full h-11 pl-9 pr-4 text-sm bg-[#191C25] border border-[#343744] focus:border-[#F0A15B] rounded-[10px] text-[#F2F0EC] placeholder-[#747887] focus:outline-none"
               />
             </div>
           </form>
 
-          {NAV_ITEMS.map((item) => (
+          {DESKTOP_NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.exact}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3.5 py-2.5 min-h-[44px] rounded-xl text-sm font-semibold transition-all ${
+                `flex items-center gap-3 px-3.5 py-2.5 min-h-[44px] rounded-[10px] text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-accent-primary/20 text-white font-bold border border-accent-primary/30 shadow-md shadow-accent-primary/15'
-                    : 'text-text-secondary hover:text-white hover:bg-surface-base'
+                    ? 'bg-[#232633] text-[#F0A15B] font-semibold border border-[#F0A15B]/35'
+                    : 'text-[#A2A4B1] hover:text-[#F2F0EC] hover:bg-[#191C25]'
                 }`
               }
             >
-              <item.icon className={`w-4 h-4 ${item.accent || 'text-accent-primary'}`} />
+              <item.icon className="w-4 h-4" />
               <span>{item.label}</span>
             </NavLink>
           ))}
 
-          <div className="pt-2 border-t border-border-subtle grid grid-cols-2 gap-2">
+          <div className="pt-2 border-t border-[#343744] grid grid-cols-2 gap-2">
             <Link
               to="/bookmarks"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 min-h-[44px] px-3 py-2 rounded-xl bg-surface-base border border-border-subtle text-xs font-bold text-text-secondary hover:text-white"
+              className="flex items-center justify-center gap-2 min-h-[44px] px-3 py-2 rounded-[10px] bg-[#191C25] border border-[#343744] text-xs font-semibold text-[#F2F0EC]"
             >
-              <Bookmark className="w-4 h-4 text-accent-primary" />
-              <span>Favorit Saya</span>
+              <Bookmark className="w-4 h-4 text-[#F0A15B]" />
+              <span>Favorit</span>
             </Link>
             <Link
               to="/history"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 min-h-[44px] px-3 py-2 rounded-xl bg-surface-base border border-border-subtle text-xs font-bold text-text-secondary hover:text-white"
+              className="flex items-center justify-center gap-2 min-h-[44px] px-3 py-2 rounded-[10px] bg-[#191C25] border border-[#343744] text-xs font-semibold text-[#F2F0EC]"
             >
-              <History className="w-4 h-4 text-accent-secondary" />
+              <History className="w-4 h-4 text-[#F0A15B]" />
               <span>Riwayat</span>
             </Link>
           </div>
