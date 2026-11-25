@@ -10,7 +10,6 @@ import type {
   CreateCommentPayload,
   MovieQueryParams,
 } from '../types/movie';
-import { createPosterFallbackSvg } from '../utils/categoryTheme';
 
 // Default base URLs as specified
 export const PRODUCTION_API_URL = 'https://fazuradex.web.id';
@@ -209,7 +208,7 @@ function mapTmdbItemToMovie(item: any, forceMediaType?: 'movie' | 'tv'): Movie {
     description: item.overview || '',
     posterUrl: item.poster_path
       ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
-      : createPosterFallbackSvg(title, '#F0A15B'),
+      : 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500',
     backdropUrl: item.backdrop_path
       ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
       : undefined,
@@ -505,7 +504,7 @@ export async function getMovieDetail(id: string): Promise<MovieDetailResponse> {
       id,
       title: 'Movie Title #' + id,
       description: 'Sinopsis film memukau dengan alur cerita menarik dan pengalaman visual definisi tinggi.',
-      posterUrl: createPosterFallbackSvg('Movie #' + id, '#F0A15B'),
+      posterUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500',
       mediaType: 'movie' as const,
       ratingValue: 8.0,
       ratingCount: 1000,

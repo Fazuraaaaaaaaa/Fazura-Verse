@@ -41,7 +41,6 @@ const MovieHubPage = lazy(() => import('./pages/MovieHubPage').then((m) => ({ de
 const MovieDetailPage = lazy(() => import('./pages/MovieDetailPage').then((m) => ({ default: m.MovieDetailPage })));
 const MovieWatchPage = lazy(() => import('./pages/MovieWatchPage').then((m) => ({ default: m.MovieWatchPage })));
 const MusicHubPage = lazy(() => import('./pages/MusicHubPage').then((m) => ({ default: m.MusicHubPage })));
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,7 +70,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   const hasActivePlayer = Boolean(currentTrack && !isPlayerDismissed && !isReaderPage);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#12141B] text-[#F2F0EC] selection:bg-[#F0A15B] selection:text-[#0B0C10] relative w-full overflow-x-hidden min-w-0">
+    <div className="min-h-screen flex flex-col bg-bg-primary text-text-primary selection:bg-accent-primary selection:text-white relative w-full overflow-x-hidden min-w-0">
       {!isReaderPage && <OfflineStatusBanner />}
       {!isReaderPage && <Navbar />}
       <main
@@ -142,7 +141,7 @@ export default function App() {
                   <Route path="/history" element={<HistoryPage />} />
 
                   {/* Fallback */}
-                  <Route path="*" element={<NotFoundPage />} />
+                  <Route path="*" element={<LandingPage />} />
                 </Routes>
               </Suspense>
             </ErrorBoundary>

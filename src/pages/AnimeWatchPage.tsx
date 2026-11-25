@@ -403,7 +403,7 @@ export function AnimeWatchPage() {
   if (isLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-20 text-center space-y-4">
-        <div className="w-12 h-12 border-4 border-[#A78BFA] border-t-transparent rounded-full animate-spin mx-auto" />
+        <div className="w-12 h-12 border-4 border-accent-primary border-t-transparent rounded-full animate-spin mx-auto" />
         <p className="text-sm text-text-secondary font-semibold">Memuat pemutar episode anime...</p>
       </div>
     );
@@ -419,7 +419,7 @@ export function AnimeWatchPage() {
         </p>
         <Link
           to="/anime"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] font-bold text-xs transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-primary text-white font-bold text-xs"
         >
           <ArrowLeft className="w-4 h-4" /> Kembali ke Anime Hub
         </Link>
@@ -434,7 +434,7 @@ export function AnimeWatchPage() {
         <div className="flex items-center gap-3 min-w-0">
           <Link
             to={episode.animeId ? `/anime/detail/${effectiveProvider}/${episode.animeId}` : '/anime'}
-            className="p-2.5 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] border border-[#343744] shrink-0 transition-colors"
+            className="p-2.5 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white border border-white/10 shrink-0 transition-colors"
             title="Kembali ke Detail Anime"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -472,12 +472,12 @@ export function AnimeWatchPage() {
               title={bookmarked ? 'Hapus Bookmark' : 'Bookmark Anime'}
               className={`p-2 rounded-xl border transition-all text-xs font-semibold flex items-center gap-1.5 ${
                 bookmarked
-                  ? 'bg-[#232633] text-[#F0A15B] border-[#F0A15B]'
-                  : 'bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] border-[#343744]'
+                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                  : 'bg-surface hover:bg-surface-elevated text-slate-300 border-white/10'
               }`}
             >
               {bookmarked ? (
-                <BookmarkCheck className="w-4 h-4 text-[#F0A15B]" />
+                <BookmarkCheck className="w-4 h-4 text-rose-400" />
               ) : (
                 <Bookmark className="w-4 h-4 text-slate-400" />
               )}
@@ -491,7 +491,7 @@ export function AnimeWatchPage() {
               <select
                 value={episodeId}
                 onChange={(e) => navigate(`/anime/watch/${effectiveProvider}/${e.target.value}`)}
-                className="bg-[#191C25] text-xs text-[#F2F0EC] border border-[#343744] rounded-[10px] px-2.5 py-1.5 focus:outline-none focus:border-[#A78BFA] cursor-pointer max-w-[150px] sm:max-w-[200px] truncate"
+                className="bg-surface text-xs text-slate-200 border border-white/10 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-accent-primary cursor-pointer max-w-[150px] sm:max-w-[200px] truncate"
               >
                 {sortedEpisodes.map((ep) => (
                   <option key={ep.episodeId} value={ep.episodeId}>
@@ -510,7 +510,7 @@ export function AnimeWatchPage() {
               }
             }}
             disabled={!episode.hasPrev || !episode.prevEpisodeId}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3 py-2 rounded-[10px] bg-[#191C25] hover:bg-[#232633] disabled:opacity-35 text-[#F2F0EC] text-xs font-semibold border border-[#343744] transition-colors"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-surface hover:bg-surface-elevated disabled:opacity-30 text-white text-xs font-semibold border border-white/10 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Prev Ep</span>
@@ -524,7 +524,7 @@ export function AnimeWatchPage() {
               }
             }}
             disabled={!episode.hasNext || !episode.nextEpisodeId}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3.5 py-2 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] disabled:opacity-35 text-[#0B0C10] text-xs font-bold transition-colors"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3.5 py-1.5 rounded-xl bg-accent-primary hover:bg-accent-primary/90 disabled:opacity-30 text-white text-xs font-bold transition-all shadow-md shadow-accent-primary/20"
           >
             <span className="hidden sm:inline">Next Ep</span>
             <ChevronRight className="w-4 h-4" />
@@ -534,7 +534,7 @@ export function AnimeWatchPage() {
 
       {/* Video Player Frame */}
       {filteredServers.length === 0 && !activeStream ? (
-        <div className="w-full rounded-2xl overflow-hidden bg-[#0B0C10] border border-[#343744] p-8 sm:p-12 text-center space-y-4">
+        <div className="w-full rounded-2xl overflow-hidden bg-[#0d121d] border border-white/10 shadow-2xl p-8 sm:p-12 text-center space-y-4">
           <AlertCircle className="w-12 h-12 text-amber-400 mx-auto" />
           <div className="space-y-1.5 max-w-md mx-auto">
             <h2 className="text-base sm:text-lg font-bold text-white font-heading">
@@ -548,7 +548,7 @@ export function AnimeWatchPage() {
             <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
               <a
                 href="#downloads"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] font-bold text-xs transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-primary hover:bg-accent-primary/90 text-white font-bold text-xs transition-all shadow-md shadow-accent-primary/20"
               >
                 <Download className="w-4 h-4" />
                 Lihat Tautan Unduhan ({episode.downloads[0]?.urls?.length || 1} Link)
@@ -560,7 +560,7 @@ export function AnimeWatchPage() {
         <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl">
           {switchingServer && (
             <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center space-y-2">
-              <Loader2 className="w-8 h-8 text-[#A78BFA] animate-spin" />
+              <Loader2 className="w-8 h-8 text-accent-primary animate-spin" />
               <p className="text-xs text-text-primary font-medium">
                 {switchingServerName ? `Menghubungkan ke ${switchingServerName}...` : 'Beralih server video...'}
               </p>
@@ -590,13 +590,13 @@ export function AnimeWatchPage() {
                 className="w-full h-full border-0"
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3 bg-[#0B0C10]">
-                <AlertCircle className="w-10 h-10 text-[#F0A15B]" />
+              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3 bg-[#0d121d]">
+                <AlertCircle className="w-10 h-10 text-amber-400" />
                 <div className="space-y-1 max-w-md">
-                  <p className="text-sm font-bold text-[#F2F0EC]">
+                  <p className="text-sm font-bold text-white">
                     Server Memerlukan Pembukaan di Tab Baru
                   </p>
-                  <p className="text-xs text-[#A2A4B1] leading-relaxed">
+                  <p className="text-xs text-text-secondary leading-relaxed">
                     Server video upstream menerapkan proteksi SAMEORIGIN sehingga tidak dapat disematkan langsung di dalam frame website. Anda dapat membukanya langsung di tab baru.
                   </p>
                 </div>
@@ -605,7 +605,7 @@ export function AnimeWatchPage() {
                     href={activeStream}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] font-bold text-xs transition-colors"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent-primary hover:bg-accent-primary/90 text-white font-bold text-xs shadow-md shadow-accent-primary/20"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     Buka Video di Tab Baru
@@ -614,13 +614,13 @@ export function AnimeWatchPage() {
               </div>
             )
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3 bg-[#0B0C10]">
-              <Film className="w-12 h-12 text-[#747887]" />
+            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3 bg-[#0d121d]">
+              <Film className="w-12 h-12 text-slate-600" />
               <div className="space-y-1 max-w-md mx-auto">
-                <p className="text-sm font-semibold text-[#F2F0EC]">
+                <p className="text-sm font-semibold text-text-primary">
                   {switchError || 'Pilih salah satu server atau kualitas di bawah untuk mulai menonton.'}
                 </p>
-                <p className="text-xs text-[#747887]">
+                <p className="text-xs text-text-muted">
                   Server streaming resmi FazuraStream: VidHide, Mega, FileDon, dan Video HD.
                 </p>
               </div>
@@ -637,8 +637,8 @@ export function AnimeWatchPage() {
             {switchError}
           </span>
         ) : (
-          <span className="text-[#747887] flex items-center gap-1.5">
-            <Info className="w-3.5 h-3.5 text-[#A78BFA] shrink-0" />
+          <span className="text-text-muted flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5 text-accent-soft shrink-0" />
             Pilih resolusi dan server resmi: VidHide, Mega, dan FileDon.
           </span>
         )}
@@ -656,10 +656,10 @@ export function AnimeWatchPage() {
           )}
           <button
             onClick={() => setPlayerKey((k) => k + 1)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] border border-[#343744] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white border border-white/10 transition-colors"
             title="Muat ulang pemutar jika terjadi error buffer"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-[#A78BFA]" />
+            <RefreshCw className="w-3.5 h-3.5 text-accent-soft" />
             Reload Player
           </button>
 
@@ -668,7 +668,7 @@ export function AnimeWatchPage() {
               href={activeStream}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F0A15B] border border-[#343744] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-accent-primary border border-white/10 transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               Buka Tab Baru
@@ -679,13 +679,13 @@ export function AnimeWatchPage() {
 
       {/* Server & Quality Selection Bar */}
       {filteredServers && filteredServers.length > 0 && (
-        <div className="p-5 rounded-2xl bg-[#191C25] border border-[#343744] space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-[#343744] pb-3">
-            <h3 className="text-xs sm:text-sm font-bold text-[#F2F0EC] uppercase tracking-wider flex items-center gap-2 font-heading">
-              <Server className="w-4 h-4 text-[#A78BFA]" />
+        <div className="p-5 rounded-2xl bg-surface border border-white/10 shadow-xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-white/5 pb-3">
+            <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 font-heading">
+              <Server className="w-4 h-4 text-accent-primary" />
               Pilihan Kualitas & Server Streaming
             </h3>
-            <span className="text-[11px] text-[#747887]">
+            <span className="text-[11px] text-text-muted">
               Klik server untuk berganti kualitas secara langsung
             </span>
           </div>
@@ -694,10 +694,10 @@ export function AnimeWatchPage() {
             {filteredServers.map((q) => (
               <div
                 key={q.quality}
-                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-2.5 rounded-[10px] bg-[#12141B] border border-[#343744]"
+                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-2.5 rounded-xl bg-surface-elevated/70 border border-white/5"
               >
                 <div className="sm:w-28 shrink-0">
-                  <span className="px-2.5 py-1 rounded-[6px] bg-[#232633] border border-[#343744] text-[#A78BFA] text-xs font-bold uppercase tracking-wider">
+                  <span className="px-2.5 py-1 rounded-lg bg-accent-primary/15 border border-accent-primary/30 text-accent-soft text-xs font-bold uppercase tracking-wider">
                     {q.quality}
                   </span>
                 </div>
@@ -710,16 +710,16 @@ export function AnimeWatchPage() {
                         key={srv.serverId}
                         disabled={switchingServer}
                         onClick={() => handleSelectServer(srv.serverId, `${q.quality} - ${srv.title}`)}
-                        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-[8px] text-xs font-bold transition-colors border ${
+                        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
                           isSelected
-                            ? 'bg-[#F0A15B] text-[#0B0C10] border-[#F0A15B]'
-                            : 'bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] border-[#343744]'
+                            ? 'bg-accent-primary text-white border-accent-soft shadow-md shadow-accent-primary/25'
+                            : 'bg-surface hover:bg-surface-elevated text-slate-200 hover:text-white border-white/5'
                         }`}
                       >
                         {isSelected ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-[#0B0C10]" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-white" />
                         ) : (
-                          <Play className="w-3 h-3 fill-current text-[#A78BFA]" />
+                          <Play className="w-3 h-3 fill-current text-accent-soft" />
                         )}
                         {srv.title}
                       </button>
@@ -734,16 +734,16 @@ export function AnimeWatchPage() {
 
       {/* Visual Episode Drawer / Grid below Player */}
       {animeDetail?.episodeList && animeDetail.episodeList.length > 0 && (
-        <div className="p-5 rounded-2xl bg-[#191C25] border border-[#343744] space-y-4">
-          <div className="flex items-center justify-between border-b border-[#343744] pb-3">
-            <h3 className="text-xs sm:text-sm font-bold text-[#F2F0EC] uppercase tracking-wider flex items-center gap-2 font-heading">
-              <Layers className="w-4 h-4 text-[#A78BFA]" />
+        <div className="p-5 rounded-2xl bg-surface border border-white/10 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-white/5 pb-3">
+            <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 font-heading">
+              <Layers className="w-4 h-4 text-accent-primary" />
               Navigasi Episode Lainnya ({animeDetail.episodeList.length} Episode)
             </h3>
-            <span className="text-[11px] text-[#747887]">Klik untuk langsung menonton</span>
+            <span className="text-[11px] text-text-muted">Klik untuk langsung menonton</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-[360px] overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin">
             {sortedEpisodes.map((ep) => {
               const isCurrent = ep.episodeId === episodeId;
               const isWatched = watchedEpisodeSlugs.has(ep.episodeId);
@@ -753,19 +753,19 @@ export function AnimeWatchPage() {
                 <Link
                   key={ep.episodeId}
                   to={`/anime/watch/${effectiveProvider}/${ep.episodeId}`}
-                  className={`flex items-center justify-between p-2.5 rounded-[8px] text-xs font-semibold transition-colors border ${
+                  className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-bold transition-all border ${
                     isCurrent
-                      ? 'bg-[#F0A15B] text-[#0B0C10] font-bold border-[#F0A15B]'
+                      ? 'bg-accent-primary text-white border-accent-soft shadow-md shadow-accent-primary/25'
                       : isWatched
-                      ? 'bg-[#12141B] border-[#343744] text-[#747887] hover:text-[#F2F0EC] hover:border-[#A78BFA]/50'
-                      : 'bg-[#232633] hover:bg-[#343744] text-[#F2F0EC] border-[#343744] hover:border-[#A78BFA]/50'
+                      ? 'bg-surface-elevated/40 border-white/5 text-slate-400 hover:text-white hover:border-accent-primary/30'
+                      : 'bg-surface-elevated hover:bg-surface text-slate-200 hover:text-white border-white/5 hover:border-accent-primary/40'
                   }`}
                 >
                   <span className="truncate pr-1">{displayName}</span>
                   {isCurrent ? (
-                    <Play className="w-3 h-3 fill-current text-[#0B0C10] shrink-0" />
+                    <Play className="w-3 h-3 fill-current text-white shrink-0" />
                   ) : isWatched ? (
-                    <CheckCircle2 className="w-3 h-3 text-[#75C9A0] shrink-0" />
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
                   ) : null}
                 </Link>
               );
@@ -776,23 +776,23 @@ export function AnimeWatchPage() {
 
       {/* Download Mirrors Section */}
       {episode.downloads && episode.downloads.length > 0 && (
-        <div id="downloads" className="p-5 rounded-2xl bg-[#191C25] border border-[#343744] space-y-4">
-          <div className="flex items-center justify-between border-b border-[#343744] pb-3">
-            <h3 className="text-xs sm:text-sm font-bold text-[#F2F0EC] uppercase tracking-wider flex items-center gap-2 font-heading">
-              <Download className="w-4 h-4 text-[#75C9A0]" />
+        <div id="downloads" className="p-5 rounded-2xl bg-surface border border-white/10 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-white/5 pb-3">
+            <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 font-heading">
+              <Download className="w-4 h-4 text-emerald-400" />
               Link Unduhan Episode
             </h3>
-            <span className="text-[11px] text-[#747887]">Tersedia beragam resolusi dan format</span>
+            <span className="text-[11px] text-text-muted">Tersedia beragam resolusi dan format</span>
           </div>
 
           <div className="space-y-3">
             {episode.downloads.map((d, idx) => (
               <div
                 key={idx}
-                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-2.5 rounded-[10px] bg-[#12141B] border border-[#343744]"
+                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-2.5 rounded-xl bg-surface-elevated/70 border border-white/5"
               >
                 <div className="sm:w-36 shrink-0">
-                  <span className="font-bold text-[#F2F0EC] text-xs">
+                  <span className="font-bold text-slate-200 text-xs">
                     {d.quality} {d.size ? `(${d.size})` : ''}
                   </span>
                 </div>
@@ -804,7 +804,7 @@ export function AnimeWatchPage() {
                       href={u.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-3 py-1 rounded-[6px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#75C9A0] text-xs font-semibold border border-[#343744] transition-colors"
+                      className="px-3 py-1 rounded-lg bg-surface hover:bg-emerald-600/20 text-slate-300 hover:text-emerald-400 text-xs font-semibold border border-white/5 transition-colors"
                     >
                       {u.title}
                     </a>
@@ -818,7 +818,7 @@ export function AnimeWatchPage() {
 
       {/* Rekomendasi Terkait Sesuai Genre Anime */}
       {relatedAnimeList.length > 0 && (
-        <div className="p-5 rounded-2xl bg-[#191C25] border border-[#343744] space-y-4 animate-in fade-in duration-300">
+        <div className="p-5 rounded-2xl bg-surface border border-white/10 shadow-xl space-y-4 animate-in fade-in duration-300">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">

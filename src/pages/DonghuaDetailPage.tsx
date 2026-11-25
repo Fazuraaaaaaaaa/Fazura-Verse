@@ -100,7 +100,7 @@ export function DonghuaDetailPage() {
         </p>
         <Link
           to="/donghua"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] font-bold text-xs transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-black font-bold text-xs"
         >
           <ArrowLeft className="w-4 h-4" /> Kembali ke Donghua Hub
         </Link>
@@ -109,21 +109,21 @@ export function DonghuaDetailPage() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-10 min-w-0">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 min-w-0">
       {/* Header Backdrop */}
-      <div className="relative rounded-2xl overflow-hidden bg-[#191C25] border border-[#343744] p-6 sm:p-10 shadow-dialog">
+      <div className="relative rounded-3xl overflow-hidden bg-card border border-white/10 p-6 sm:p-10 shadow-2xl">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <img
             src={imgError || !donghua.poster ? fallbackPoster : donghua.poster}
             alt={donghua.title}
-            className="w-full h-full object-cover filter blur-2xl scale-125 opacity-20"
+            className="w-full h-full object-cover filter blur-3xl scale-125 opacity-25"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#12141B] via-[#191C25]/90 to-[#191C25]/60" />
+          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/90 to-card/60" />
         </div>
 
         <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-8">
-          {/* Poster (strict 2:3 ratio) */}
-          <div className="relative w-48 sm:w-56 aspect-[2/3] rounded-[12px] overflow-hidden shrink-0 shadow-dialog border border-[#343744] bg-[#232633]">
+          {/* Poster */}
+          <div className="relative w-48 sm:w-60 aspect-[3/4] rounded-2xl overflow-hidden shrink-0 shadow-2xl border-2 border-white/10 bg-slate-900">
             <img
               src={imgError || !donghua.poster ? fallbackPoster : donghua.poster}
               alt={donghua.title}
@@ -131,8 +131,8 @@ export function DonghuaDetailPage() {
               className="w-full h-full object-cover"
             />
             {donghua.rating && (
-              <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-[8px] bg-[#0B0C10]/85 text-[#F0A15B] text-xs font-bold border border-[#343744]">
-                <Star className="w-3.5 h-3.5 fill-[#F0A15B]" />
+              <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/80 text-amber-300 text-xs font-bold border border-white/10 shadow">
+                <Star className="w-3.5 h-3.5 fill-amber-300" />
                 {donghua.rating}
               </div>
             )}
@@ -141,33 +141,33 @@ export function DonghuaDetailPage() {
           {/* Details */}
           <div className="flex-1 space-y-4 text-center md:text-left min-w-0">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#232633] text-[#67BFD5] border border-[#67BFD5]/35">
+              <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                 {donghua.type || 'Donghua 3D/2D'}
               </span>
               {donghua.status && (
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#232633] text-[#67BFD5] border border-[#343744]">
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
                   {donghua.status}
                 </span>
               )}
               {donghua.studio && (
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#232633] text-[#A2A4B1] border border-[#343744]">
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-card text-slate-300 border border-white/5">
                   Studio: {donghua.studio}
                 </span>
               )}
               {donghua.network && (
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#232633] text-[#A2A4B1] border border-[#343744]">
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-card text-slate-300 border border-white/5">
                   {donghua.network}
                 </span>
               )}
             </div>
 
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold font-heading text-[#F2F0EC] tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
               {donghua.title}
             </h1>
 
             {donghua.alterTitle && (
-              <p className="text-xs sm:text-sm text-[#A2A4B1] font-medium">
-                Judul Alternatif: {donghua.alterTitle}
+              <p className="text-xs sm:text-sm text-slate-400 font-medium">
+                Chinese: {donghua.alterTitle}
               </p>
             )}
 
@@ -177,9 +177,9 @@ export function DonghuaDetailPage() {
                 {donghua.genres.map((g) => (
                   <span
                     key={g.slug}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-xs font-semibold bg-[#232633] text-[#A2A4B1] border border-[#343744]"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface/80 text-slate-300 border border-white/5"
                   >
-                    <Tag className="w-3 h-3 text-[#67BFD5]" />
+                    <Tag className="w-3 h-3 text-emerald-400" />
                     {g.name}
                   </span>
                 ))}
@@ -187,11 +187,11 @@ export function DonghuaDetailPage() {
             )}
 
             {/* Synopsis */}
-            <div className="pt-2 text-left">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#747887] mb-1">
+            <div className="pt-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
                 Sinopsis
               </h3>
-              <p className="text-sm text-[#A2A4B1] leading-relaxed max-h-36 overflow-y-auto pr-2">
+              <p className="text-sm text-slate-300 leading-relaxed max-h-36 overflow-y-auto pr-2 scrollbar-thin">
                 {donghua.synopsis}
               </p>
             </div>
@@ -201,16 +201,16 @@ export function DonghuaDetailPage() {
               {latestEpisode && (
                 <Link
                   to={`/donghua/watch/${latestEpisode.slug}`}
-                  className="flex items-center justify-center gap-2 min-h-[44px] px-6 py-2.5 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] font-bold text-sm transition-colors text-center"
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-sm shadow-lg shadow-emerald-500/20 transition-all transform hover:scale-[1.02] text-center"
                 >
-                  <Play className="w-4 h-4 fill-[#0B0C10]" />
+                  <Play className="w-4 h-4 fill-black" />
                   Episode Terbaru
                 </Link>
               )}
               {firstEpisode && (
                 <Link
                   to={`/donghua/watch/${firstEpisode.slug}`}
-                  className="flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-[10px] bg-[#232633] hover:bg-[#343744] text-[#F2F0EC] text-xs sm:text-sm font-semibold border border-[#343744] transition-colors text-center"
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-card hover:bg-slate-800 text-slate-200 text-xs font-semibold border border-white/10 text-center"
                 >
                   <Play className="w-3.5 h-3.5" />
                   Episode 1
@@ -230,20 +230,20 @@ export function DonghuaDetailPage() {
                     addedAt: Date.now(),
                   })
                 }
-                className={`flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-[10px] text-xs font-semibold transition-colors border ${
+                className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all border ${
                   bookmarked
-                    ? 'bg-[#232633] text-[#F0A15B] border-[#F0A15B]'
-                    : 'bg-[#232633] hover:bg-[#343744] text-[#A2A4B1] hover:text-[#F2F0EC] border-[#343744]'
+                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                    : 'bg-card hover:bg-slate-800 text-slate-300 hover:text-white border-white/10'
                 }`}
               >
                 {bookmarked ? (
                   <>
-                    <BookmarkCheck className="w-4 h-4 text-[#F0A15B]" />
+                    <BookmarkCheck className="w-4 h-4 text-rose-400" />
                     Tersimpan di Favorit
                   </>
                 ) : (
                   <>
-                    <Bookmark className="w-4 h-4 text-[#A2A4B1]" />
+                    <Bookmark className="w-4 h-4 text-slate-400" />
                     Simpan ke Favorit
                   </>
                 )}
@@ -251,7 +251,7 @@ export function DonghuaDetailPage() {
 
               <Link
                 to="/donghua"
-                className="flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 rounded-[10px] bg-transparent hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] text-xs font-semibold border border-[#343744] transition-colors text-center"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-white/10 text-center"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Kembali ke Hub
@@ -263,35 +263,32 @@ export function DonghuaDetailPage() {
 
       {/* Episodes Directory */}
       <section className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-[#343744] pb-4">
-          <div className="flex items-start gap-3">
-            <span className="w-1 h-6 rounded-full bg-[#67BFD5] mt-1 shrink-0" />
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold font-heading text-[#F2F0EC] flex items-center gap-2">
-                <Tv className="w-5 h-5 text-[#67BFD5]" />
-                Daftar Episode
-              </h2>
-              <p className="text-xs text-[#747887]">
-                {donghua.episodesList?.length || 0} episode tersedia untuk ditonton
-              </p>
-            </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+              <Tv className="w-5 h-5 text-emerald-400" />
+              Episode List
+            </h2>
+            <p className="text-xs text-slate-400">
+              {donghua.episodesList?.length || 0} episode tersedia untuk ditonton
+            </p>
           </div>
 
           <div className="flex items-center gap-2.5">
             <div className="relative flex-1 sm:w-56">
-              <Search className="w-3.5 h-3.5 text-[#747887] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Cari nomor/judul episode..."
                 value={searchEpisode}
                 onChange={(e) => setSearchEpisode(e.target.value)}
-                className="w-full h-9 pl-8 pr-3 text-xs bg-[#191C25] border border-[#343744] rounded-[10px] text-[#F2F0EC] placeholder-[#747887] focus:outline-none focus:border-[#67BFD5]"
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-card border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             <button
               onClick={() => setSortDescending(!sortDescending)}
-              className="flex items-center gap-1.5 h-9 px-3 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] border border-[#343744] text-xs font-semibold transition-colors shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold"
             >
               <ArrowUpDown className="w-3.5 h-3.5" />
               <span>{sortDescending ? 'Terbaru' : 'Terlama'}</span>
@@ -300,28 +297,28 @@ export function DonghuaDetailPage() {
         </div>
 
         {filteredEpisodes.length === 0 ? (
-          <div className="p-8 text-center rounded-[12px] bg-[#191C25] border border-[#343744] text-sm text-[#A2A4B1]">
+          <div className="p-8 text-center rounded-2xl bg-card/40 border border-white/5 text-sm text-slate-400">
             Tidak ada episode yang cocok dengan pencarian Anda.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[600px] overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[600px] overflow-y-auto pr-1 scrollbar-thin">
             {filteredEpisodes.map((ep) => {
               const displayName = formatEpisodeName(ep.episode, ep.slug);
               return (
                 <Link
                   key={ep.slug}
                   to={`/donghua/watch/${ep.slug}`}
-                  className="flex items-center justify-between p-3.5 rounded-[10px] bg-[#191C25] hover:bg-[#232633] border border-[#343744] hover:border-[#67BFD5]/60 transition-colors group"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-card hover:bg-slate-800 border border-white/10 hover:border-emerald-500/50 transition-all group"
                 >
                   <div className="min-w-0 flex-1 pr-2">
-                    <p className="text-xs sm:text-sm font-semibold text-[#F2F0EC] group-hover:text-[#67BFD5] truncate">
+                    <p className="text-xs sm:text-sm font-bold text-slate-100 group-hover:text-emerald-400 truncate">
                       {displayName}
                     </p>
                     {ep.releaseDate && (
-                      <p className="text-[11px] text-[#747887] mt-0.5">{ep.releaseDate}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{ep.releaseDate}</p>
                     )}
                   </div>
-                  <div className="w-7 h-7 rounded-[8px] bg-[#232633] text-[#67BFD5] flex items-center justify-center shrink-0 group-hover:bg-[#F0A15B] group-hover:text-[#0B0C10] transition-colors">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 group-hover:bg-emerald-500 group-hover:text-black transition-colors">
                     <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
                   </div>
                 </Link>

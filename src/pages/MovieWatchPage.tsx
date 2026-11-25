@@ -160,23 +160,23 @@ export function MovieWatchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#12141B] pb-20">
+    <div className="min-h-screen bg-slate-950 pb-20">
       {/* Top Bar Navigation */}
-      <div className="bg-[#191C25] border-b border-[#343744] py-3 px-4 sm:px-6 lg:px-8">
+      <div className="bg-surface/90 border-b border-white/5 py-3 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <Link
               to={id ? `/movies/${id}` : '/movies'}
-              className="p-2 rounded-[10px] bg-[#232633] hover:bg-[#343744] text-[#A2A4B1] hover:text-[#F2F0EC] border border-[#343744] shrink-0 transition-colors"
+              className="p-2 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white border border-white/5 shrink-0 transition-colors"
               title="Kembali ke Detail Film"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div className="min-w-0">
-              <h1 className="text-xs sm:text-sm font-bold text-[#F2F0EC] truncate">
+              <h1 className="text-xs sm:text-sm font-bold text-white truncate">
                 {movie?.title || 'Memuat Pemutar Video...'}
               </h1>
-              <p className="text-[11px] text-[#F0A15B] font-semibold truncate">
+              <p className="text-[11px] text-rose-400 font-semibold truncate">
                 {isTv ? `Season ${seasonParam} • Episode ${episodeParam}` : 'Full Movie • Box Office'}
                 {activeServerName && ` — ${activeServerName}`}
               </p>
@@ -195,7 +195,7 @@ export function MovieWatchPage() {
             </button>
             <button
               onClick={() => setReloadKey((k) => k + 1)}
-              className="p-2 rounded-[10px] bg-[#232633] hover:bg-[#343744] text-[#A2A4B1] hover:text-[#F2F0EC] border border-[#343744] text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              className="p-2 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white border border-white/5 text-xs font-semibold flex items-center gap-1.5 transition-colors"
               title="Muat Ulang Server"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -203,7 +203,7 @@ export function MovieWatchPage() {
             </button>
             <button
               onClick={() => setIsTheaterMode(!isTheaterMode)}
-              className="p-2 rounded-[10px] bg-[#232633] hover:bg-[#343744] text-[#A2A4B1] hover:text-[#F2F0EC] border border-[#343744] text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              className="p-2 rounded-xl bg-card hover:bg-slate-800 text-slate-300 hover:text-white border border-white/5 text-xs font-semibold flex items-center gap-1.5 transition-colors"
               title="Mode Bioskop"
             >
               {isTheaterMode ? (
@@ -252,7 +252,7 @@ export function MovieWatchPage() {
               <p className="text-sm font-bold text-white">Aliran Video Tidak Tersedia</p>
               <button
                 onClick={() => refetchStream()}
-                className="px-4 py-2 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] text-xs font-bold transition-colors"
+                className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold"
               >
                 Coba Lagi
               </button>
@@ -262,15 +262,15 @@ export function MovieWatchPage() {
 
         {/* Multi-Server Selector Bar */}
         {streamData && streamData.streams.length > 0 && (
-          <div className="mt-4 bg-[#191C25] p-3.5 rounded-[12px] border border-[#343744] space-y-2">
+          <div className="mt-4 bg-card/80 p-3.5 rounded-2xl border border-white/5 space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Server className="w-4 h-4 text-[#F0A15B]" />
-                <span className="text-xs font-bold text-[#F2F0EC] uppercase tracking-wider">
+                <Server className="w-4 h-4 text-rose-400" />
+                <span className="text-xs font-bold text-white uppercase tracking-wider">
                   Pilihan Server Pemutar (Multi-Server):
                 </span>
               </div>
-              <span className="text-[11px] text-[#747887]">
+              <span className="text-[11px] text-slate-400">
                 Ganti server jika pemutaran lambat atau buffering
               </span>
             </div>
@@ -284,8 +284,8 @@ export function MovieWatchPage() {
                     onClick={() => handleSelectServer(server)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${
                       isActive
-                        ? 'bg-[#F0A15B] text-[#0B0C10] border-[#F0A15B] font-bold'
-                        : 'bg-[#12141B] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] border border-[#343744]'
+                        ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 border border-rose-500 font-bold'
+                        : 'bg-surface hover:bg-slate-800 text-slate-300 hover:text-white border border-white/5'
                     }`}
                   >
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -302,7 +302,7 @@ export function MovieWatchPage() {
 
         {/* TV Series Episode Navigator (if TV) */}
         {isTv && (
-          <div className="mt-6 bg-[#191C25] p-5 rounded-[12px] border border-[#343744] space-y-4">
+          <div className="mt-6 bg-card/70 p-5 rounded-2xl border border-white/5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
               <div className="flex items-center gap-2">
                 <Tv className="w-4 h-4 text-indigo-400" />
@@ -314,7 +314,7 @@ export function MovieWatchPage() {
                 <button
                   onClick={handlePrevEpisode}
                   disabled={!hasPrev}
-                  className="px-3 py-1.5 rounded-[10px] bg-[#232633] hover:bg-[#343744] disabled:opacity-35 disabled:pointer-events-none text-[#F2F0EC] text-xs font-semibold border border-[#343744] flex items-center gap-1 transition-colors"
+                  className="px-3 py-1.5 rounded-xl bg-surface hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none text-white text-xs font-semibold border border-white/5 flex items-center gap-1 transition-colors"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                   Eps Sebelumnya
@@ -322,7 +322,7 @@ export function MovieWatchPage() {
                 <button
                   onClick={handleNextEpisode}
                   disabled={!hasNext}
-                  className="px-3 py-1.5 rounded-[10px] bg-[#232633] hover:bg-[#343744] disabled:opacity-35 disabled:pointer-events-none text-[#F2F0EC] text-xs font-semibold border border-[#343744] flex items-center gap-1 transition-colors"
+                  className="px-3 py-1.5 rounded-xl bg-surface hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none text-white text-xs font-semibold border border-white/5 flex items-center gap-1 transition-colors"
                 >
                   Eps Selanjutnya
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -339,8 +339,8 @@ export function MovieWatchPage() {
                     onClick={() => handleSelectSeason(s.seasonNumber)}
                     className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                       seasonParam === s.seasonNumber
-                        ? 'bg-[#F0A15B] text-[#0B0C10] font-bold'
-                        : 'bg-[#12141B] text-[#A2A4B1] hover:text-[#F2F0EC] border border-[#343744]'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-surface text-slate-300 hover:text-white border border-white/5'
                     }`}
                   >
                     {s.name || `Season ${s.seasonNumber}`}
@@ -359,8 +359,8 @@ export function MovieWatchPage() {
                     onClick={() => handleSelectEpisode(ep.episodeNumber)}
                     className={`p-2 rounded-xl text-left transition-all border ${
                       isActive
-                        ? 'bg-[#F0A15B] text-[#0B0C10] border-[#F0A15B] font-bold'
-                        : 'bg-[#12141B] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] border-[#343744]'
+                        ? 'bg-indigo-600 text-white border-indigo-400 font-bold shadow-md shadow-indigo-600/30'
+                        : 'bg-surface hover:bg-slate-800 text-slate-300 border-white/5'
                     }`}
                   >
                     <div className="text-[10px] text-slate-300 font-medium truncate">
@@ -376,7 +376,7 @@ export function MovieWatchPage() {
 
         {/* Video & Movie Information Under Player */}
         {movie && (
-          <div className="mt-6 bg-[#191C25] p-5 rounded-[12px] border border-[#343744] space-y-3">
+          <div className="mt-6 bg-card/60 p-5 rounded-2xl border border-white/5 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg sm:text-xl font-black text-white">{movie.title}</h2>
@@ -404,7 +404,7 @@ export function MovieWatchPage() {
             <div className="pt-2 flex flex-wrap gap-3">
               <Link
                 to={`/movies/${movie.id}`}
-                className="text-xs font-semibold text-[#F0A15B] hover:text-[#F6B779] underline flex items-center gap-1"
+                className="text-xs font-semibold text-rose-400 hover:text-rose-300 underline flex items-center gap-1"
               >
                 <Info className="w-3.5 h-3.5" />
                 Lihat Pemeran, Trailer & Ulasan Lengkap

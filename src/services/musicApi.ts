@@ -1,5 +1,3 @@
-import { MUSIC_FALLBACK_SVG } from '../utils/musicThumbnail';
-
 export interface LyricLine {
   time: number; // in seconds
   text: string;
@@ -1784,11 +1782,11 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
   },
   {
     id: "fb-rdpB8TWwg-c",
-    youtubeId: "NU9JoFKlaZ0",
+    youtubeId: "rdpB8TWwg-c",
     title: "Wake Me Up When September Ends",
     artist: "Green Day",
     album: "American Idiot",
-    thumbnail: "https://i.ytimg.com/vi/NU9JoFKlaZ0/hqdefault.jpg",
+    thumbnail: "https://i.ytimg.com/vi/rdpB8TWwg-c/hqdefault.jpg",
     durationFormatted: "7:12",
     tag: "American Idiot",
     genre: "rock",
@@ -1883,11 +1881,11 @@ export const FAZURA_MUSIC_CATALOG: MusicTrackItem[] = [
   },
   {
     id: "fb-aezstCBHopQ",
-    youtubeId: "jP3X8E9M1jE",
+    youtubeId: "aezstCBHopQ",
     title: "Too Sweet",
     artist: "Hozier",
     album: "Unheard",
-    thumbnail: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/98/80/95/98809581-4a0e-68a6-04de-b72492e35939/196871908191.jpg/600x600bb.jpg",
+    thumbnail: "https://i.ytimg.com/vi/aezstCBHopQ/hqdefault.jpg",
     durationFormatted: "4:11",
     tag: "Unheard",
     genre: "pop",
@@ -2266,7 +2264,7 @@ export async function searchMusic(query: string): Promise<MusicTrackItem[]> {
             title: item.trackName || 'Lagu',
             artist: item.artistName || 'Artis',
             album: item.collectionName,
-            thumbnail: highResArt || item.artworkUrl100 || MUSIC_FALLBACK_SVG,
+            thumbnail: highResArt || item.artworkUrl100 || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
             durationFormatted: formattedDur,
             tag: item.primaryGenreName || 'Music',
             genre: 'pop',

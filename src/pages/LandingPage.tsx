@@ -3,47 +3,34 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { LazyMotion, domAnimation, MotionConfig, m } from 'framer-motion';
 import {
+  BookOpen,
+  Film,
+  Tv,
   Play,
-  Pause,
-  Star,
   Clock,
-  ArrowRight,
   Search,
+  ArrowRight,
+  TrendingUp,
+  ChevronRight,
+  ChevronLeft,
+  Sparkles,
+  Clapperboard,
+  Headphones,
+  Star,
+  RotateCcw,
+  RefreshCw,
 } from 'lucide-react';
 import { getLatest, getPopular } from '../services/api';
 import { getOtakudesuHome } from '../services/animeApi';
-import { getDonghuaHome, proxyDonghuaPoster } from '../services/donghuaApi';
+import { getDonghuaHome } from '../services/donghuaApi';
 import { getMovies } from '../services/movieApi';
 import { FAZURA_MUSIC_CATALOG } from '../services/musicApi';
-import { useAllCategoryHistory, useAllCategoryBookmarks } from '../services/categoryStorage';
+import { useAllCategoryHistory } from '../services/categoryStorage';
 import { useMusic } from '../context/MusicContext';
 import { usePageMeta } from '../hooks/usePageMeta';
-import { SectionHeader } from '../components/common/SectionHeader';
-import { Badge } from '../components/common/Badge';
-import { buttonClasses } from '../components/common/Button';
-import { ErrorState } from '../components/common/StateViews';
-import { MediaCard } from '../components/media/MediaCard';
-import { MediaCarousel } from '../components/media/MediaCarousel';
-import { MangaCard } from '../components/MangaCard';
-import { AnimeGridCard } from '../components/anime/AnimeGridCard';
-import {
-  CATEGORY_THEMES,
-  createPosterFallbackSvg,
-  type MediaCategory,
-} from '../utils/categoryTheme';
-import {
-  MUSIC_FALLBACK_SVG,
-  handleMusicImageError,
-  handleMusicImageLoad,
-} from '../utils/musicThumbnail';
 
-const SPOTLIGHT_CHANNELS: { id: MediaCategory; label: string }[] = [
-  { id: 'movies', label: 'Movies' },
-  { id: 'anime', label: 'Anime' },
-  { id: 'manga', label: 'Manga' },
-  { id: 'donghua', label: 'Donghua' },
-  { id: 'music', label: 'Music' },
-];
+const POSTER_FALLBACK_SVG =
+  "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22400%22%20viewBox%3D%220%200%20300%20400%22%3E%3Crect%20fill%3D%22%23181827%22%20width%3D%22300%22%20height%3D%22400%22%2F%3E%3Ctext%20fill%3D%22%238B5CF6%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3EFAZURASTREAM%3C%2Ftext%3E%3C%2Fsvg%3E";
 
 function formatRelativeTime(timestamp: number): string {
   const diffSec = Math.floor((Date.now() - timestamp) / 1000);
@@ -55,36 +42,14 @@ function formatRelativeTime(timestamp: number): string {
   const diffDays = Math.floor(diffHours / 24);
   if (diffDays === 1) return 'Kemarin';
   if (diffDays < 7) return `${diffDays} hari lalu`;
-  return new Date(timestamp).toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
-  });
-}
-
-function CarouselSkeletonStrip({ square = false }: { square?: boolean }) {
-  return (
-    <div className="flex gap-3.5 sm:gap-4 overflow-hidden py-1">
-      {Array.from({ length: 6 }).map((_, idx) => (
-        <div
-          key={idx}
-          className="w-[152px] sm:w-[172px] lg:w-[184px] shrink-0 rounded-[10px] overflow-hidden bg-[#191C25] border border-[#343744]"
-        >
-          <div className={`${square ? 'aspect-square' : 'aspect-[2/3]'} w-full skeleton-shimmer`} />
-          <div className="p-3 space-y-2">
-            <div className="h-3.5 rounded bg-[#232633] w-4/5" />
-            <div className="h-3 rounded bg-[#232633]/70 w-1/2" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  return new Date(timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 }
 
 export function LandingPage() {
   usePageMeta({
-    title: 'FazuraStream - Your Universe of Entertainment',
+    title: 'FazuraStream - Digital Entertainment Super-Hub',
     description:
-      'FazuraStream - Platform hiburan terpadu untuk streaming anime, film bioskop & serial TV, donghua, komik manga/manhwa/manhua, dan musik online.',
+      'FazuraStream - Portal hiburan digital terlengkap: baca komik manga/manhwa/manhua, streaming anime sub Indo, donghua 3D, movie HD, dan musik online.',
     jsonLd: {
       '@type': 'WebSite',
       name: 'FazuraStream',
@@ -97,22 +62,30 @@ export function LandingPage() {
     },
   });
 
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [spotlightChannel, setSpotlightChannel] = useState<MediaCategory>('movies');
-
+  const [activeMediaTab, setActiveMediaTab] = useState<'all' | 'manga' | 'anime' | 'donghua' | 'movie' | 'music'>('all');
+  const [spotlightChannel, setSpotlightChannel] = useState<'anime' | 'manga' | 'donghua' | 'movie' | 'music'>('anime');
   const { allItems: allHistoryItems } = useAllCategoryHistory();
-  const { allItems: allBookmarks } = useAllCategoryBookmarks();
   const activeHistory = useMemo(() => allHistoryItems.slice(0, 12), [allHistoryItems]);
+  const navigate = useNavigate();
   const { playTrack, currentTrack, isPlaying, togglePlay } = useMusic();
 
-  // Live API queries (preserve original cache keys and fetchers)
+  // Smooth scroll handler for horizontal carousels
+  const scrollCarousel = (id: string, direction: 'left' | 'right') => {
+    const el = document.getElementById(id);
+    if (el) {
+      const scrollAmount = direction === 'left' ? -340 : 340;
+      el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  // Queries for live content feeds from platform APIs
   const { data: mangaData, isLoading: mangaLoading, isError: mangaError, refetch: refetchManga } = useQuery({
     queryKey: ['landing', 'manga'],
     queryFn: () => getLatest(1),
   });
 
-  const { data: popularMangaData, isLoading: popularMangaLoading } = useQuery({
+  const { data: popularManga } = useQuery({
     queryKey: ['landing', 'popular_manga'],
     queryFn: getPopular,
   });
@@ -129,172 +102,8 @@ export function LandingPage() {
 
   const { data: moviesData, isLoading: moviesLoading, isError: moviesError, refetch: refetchMovies } = useQuery({
     queryKey: ['landing', 'movies'],
-    queryFn: () => getMovies({ collection: 'trending', perPage: 12 }),
+    queryFn: () => getMovies({ collection: 'trending', perPage: 10 }),
   });
-
-  const latestManga = mangaData?.komikList?.slice(0, 12) || [];
-  const popularManga = popularMangaData?.komikList?.slice(0, 10) || latestManga.slice(0, 10);
-  const popularAnime = animeData?.ongoing?.slice(0, 12) || [];
-  const latestAnimeUpdates = (animeData?.completed || animeData?.ongoing || []).slice(0, 10);
-  const popularDonghua = donghuaData?.latestRelease?.slice(0, 12) || [];
-  const latestMovies = moviesData?.data?.slice(0, 12) || [];
-  const trendingMusic = FAZURA_MUSIC_CATALOG.slice(0, 12);
-
-  // Featured Spotlight derived strictly from live platform data (zero fake ratings or stock imagery)
-  const topMovie = latestMovies[0];
-  const topAnime = popularAnime[0];
-  const topManga = popularManga[0] || latestManga[0];
-  const topDonghua = popularDonghua[0];
-  const topTrack = trendingMusic[0];
-
-  const featured = useMemo(() => {
-    const heroFallback = createPosterFallbackSvg('FAZURASTREAM', CATEGORY_THEMES[spotlightChannel].accentHex);
-
-    if (spotlightChannel === 'anime' && topAnime) {
-      return {
-        category: 'anime' as MediaCategory,
-        title: topAnime.title,
-        description:
-          'Ikuti episode terbaru dengan subtitle Indonesia, pilihan server HD, dan urutan seri lengkap.',
-        meta: [
-          topAnime.episodes ? `Episode ${topAnime.episodes}` : null,
-          topAnime.releaseDay ? `Rilis ${topAnime.releaseDay}` : null,
-          topAnime.score ? `★ ${topAnime.score}` : null,
-        ].filter(Boolean) as string[],
-        backdrop: topAnime.poster || heroFallback,
-        primaryLabel: 'Tonton Sekarang',
-        primaryLink: `/anime/detail/${topAnime.provider || 'otakudesu'}/${topAnime.id}`,
-        secondaryLink: `/anime/detail/${topAnime.provider || 'otakudesu'}/${topAnime.id}`,
-        isMusic: false,
-      };
-    }
-
-    if (spotlightChannel === 'manga' && topManga) {
-      return {
-        category: 'manga' as MediaCategory,
-        title: topManga.title,
-        description:
-          'Baca chapter terbaru dengan pembaca vertikal halus, navigasi cepat, dan penyimpanan progres otomatis.',
-        meta: [
-          topManga.type || 'Manga',
-          topManga.chapter || null,
-          topManga.rating ? `★ ${topManga.rating}` : null,
-        ].filter(Boolean) as string[],
-        backdrop: topManga.cover || heroFallback,
-        primaryLabel: 'Baca Sekarang',
-        primaryLink: `/manga/${topManga.slug}`,
-        secondaryLink: '/manga',
-        isMusic: false,
-      };
-    }
-
-    if (spotlightChannel === 'donghua' && topDonghua) {
-      const donghuaImg = proxyDonghuaPoster(topDonghua.poster || '') || topDonghua.poster || heroFallback;
-      return {
-        category: 'donghua' as MediaCategory,
-        title: topDonghua.title,
-        description:
-          'Saksikan animasi kultivasi 3D dan 2D populer dengan terjemahan Indonesia dan pemutar multi-server.',
-        meta: [
-          topDonghua.currentEpisode || 'Episode Terbaru',
-          topDonghua.status || null,
-        ].filter(Boolean) as string[],
-        backdrop: donghuaImg,
-        primaryLabel: 'Tonton Sekarang',
-        primaryLink: `/donghua/detail/${topDonghua.slug}`,
-        secondaryLink: '/donghua',
-        isMusic: false,
-      };
-    }
-
-    if (spotlightChannel === 'music' && topTrack) {
-      return {
-        category: 'music' as MediaCategory,
-        title: `${topTrack.title} — ${topTrack.artist}`,
-        description:
-          'Nikmati lagu pilihan dengan pemutar audio persisten lintas halaman, antrean lagu, playlist kustom, dan lirik sinkron.',
-        meta: [
-          topTrack.album || 'Single',
-          topTrack.durationFormatted || null,
-        ].filter(Boolean) as string[],
-        backdrop: topTrack.thumbnail || MUSIC_FALLBACK_SVG,
-        primaryLabel: currentTrack?.id === topTrack.id && isPlaying ? 'Jeda Musik' : 'Putar Sekarang',
-        primaryLink: `/music?play=${encodeURIComponent(topTrack.id)}`,
-        secondaryLink: '/music',
-        isMusic: true,
-      };
-    }
-
-    // Default: Movies spotlight
-    return {
-      category: 'movies' as MediaCategory,
-      title: topMovie?.title || 'FazuraStream Cinema',
-      description:
-        topMovie?.description ||
-        'Jelajahi film bioskop box office dan serial TV populer dari berbagai genre dengan kualitas pemutaran HD.',
-      meta: [
-        topMovie?.mediaType === 'tv' ? 'Serial TV' : 'Film',
-        topMovie?.releaseDate ? String(new Date(topMovie.releaseDate).getFullYear()) : null,
-        topMovie?.ratingValue ? `★ ${topMovie.ratingValue.toFixed(1)}` : null,
-      ].filter(Boolean) as string[],
-      backdrop: topMovie?.backdropUrl || topMovie?.posterUrl || heroFallback,
-      primaryLabel: 'Tonton Sekarang',
-      primaryLink: topMovie ? `/movies/watch/${topMovie.id}` : '/movies',
-      secondaryLink: topMovie ? `/movies/${topMovie.id}` : '/movies',
-      isMusic: false,
-    };
-  }, [spotlightChannel, topMovie, topAnime, topManga, topDonghua, topTrack, currentTrack?.id, isPlaying]);
-
-  // Combined "Trending This Week" top 10 posters from Movies & Manga/Anime
-  const trendingThisWeek = useMemo(() => {
-    const combined: Array<{
-      id: string;
-      category: MediaCategory;
-      title: string;
-      poster: string;
-      link: string;
-      meta: string;
-      rating?: number | string;
-    }> = [];
-
-    latestMovies.slice(0, 5).forEach((m) => {
-      combined.push({
-        id: `trend-movie-${m.id}`,
-        category: 'movies',
-        title: m.title,
-        poster: m.posterUrl || '',
-        link: `/movies/${m.id}`,
-        meta: m.mediaType === 'tv' ? 'Serial TV' : 'Movie',
-        rating: m.ratingValue,
-      });
-    });
-
-    popularManga.slice(0, 5).forEach((mg) => {
-      combined.push({
-        id: `trend-manga-${mg.slug}`,
-        category: 'manga',
-        title: mg.title,
-        poster: mg.cover || '',
-        link: `/manga/${mg.slug}`,
-        meta: mg.chapter || mg.type || 'Manga',
-        rating: mg.rating,
-      });
-    });
-
-    return combined.slice(0, 10);
-  }, [latestMovies, popularManga]);
-
-  // Personalized picks from saved bookmarks' preferred category
-  const preferredCategory: MediaCategory | null = useMemo(() => {
-    if (allBookmarks.length === 0) return null;
-    const counts: Partial<Record<MediaCategory, number>> = {};
-    allBookmarks.forEach((b) => {
-      const cat = b.category as MediaCategory;
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
-    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    return (sorted[0]?.[0] as MediaCategory) || null;
-  }, [allBookmarks]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -302,616 +111,1224 @@ export function LandingPage() {
     navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
+  const latestManga = mangaData?.komikList?.slice(0, 10) || [];
+  const latestAnime = animeData?.ongoing?.slice(0, 10) || [];
+  const latestDonghua = donghuaData?.latestRelease?.slice(0, 10) || [];
+  const latestMovies = moviesData?.data?.slice(0, 10) || [];
+  const trendingMusicList = FAZURA_MUSIC_CATALOG.slice(0, 10);
+
+  // Dynamic Live Spotlight based on active channel
+  const topAnime = animeData?.ongoing?.[0];
+  const topManga = popularManga?.komikList?.[0] || latestManga[0];
+  const topDonghua = donghuaData?.latestRelease?.[0];
+  const topMovie = latestMovies[0];
+
+  const featuredItem = useMemo(() => {
+    if (spotlightChannel === 'movie' && topMovie) {
+      return {
+        title: topMovie.title,
+        japaneseTag: '映画 • CINEMA HD',
+        type: `MOVIE • ${topMovie.mediaType === 'tv' ? 'SERIAL TV' : 'BIOSKOP HD'}`,
+        tag: 'Box Office Trending',
+        rating: topMovie.ratingValue ? topMovie.ratingValue.toFixed(1) : '8.9',
+        qualityBadge: '4K ULTRA HD',
+        description:
+          topMovie.description ||
+          'Tonton film bioskop blockbuster dunia dan serial TV populer dengan multi-server streaming kecepatan tinggi, audio Dolby, dan subtitle Indonesia.',
+        backdrop: topMovie.backdropUrl || topMovie.posterUrl || '',
+        poster: topMovie.posterUrl || '',
+        actionLink: `/movies/watch/${topMovie.id}`,
+        actionText: 'Tonton Film Sekarang',
+        channelLink: '/movies',
+        channelText: 'Jelajahi Movie Hub',
+        accentColor: '#F43F5E',
+        badgeBg: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
+        btnBg: 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 shadow-rose-600/30 text-white',
+      };
+    }
+
+    if (spotlightChannel === 'manga' && topManga) {
+      return {
+        title: topManga.title,
+        japaneseTag: '漫画 • MANGA READER',
+        type: `KOMIK • ${topManga.type || 'MANGA'}`,
+        tag: 'Paling Populer',
+        rating: '9.4',
+        qualityBadge: 'WEBTOON SCROLL',
+        description: `Baca bab terbaru ${topManga.title} dengan kualitas gambar jernih di server BacaKomik. Dilengkapi mode vertical scroll, single page, offline cache, dan bookmark otomatis.`,
+        backdrop: topManga.cover,
+        poster: topManga.cover,
+        actionLink: `/manga/${topManga.slug}`,
+        actionText: 'Baca Komik Sekarang',
+        channelLink: '/manga',
+        channelText: 'Katalog Manga Hub',
+        accentColor: '#8B5CF6',
+        badgeBg: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
+        btnBg: 'bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] hover:from-[#9061F9] hover:to-[#6D28D9] shadow-[#8B5CF6]/30 text-white',
+      };
+    }
+
+    if (spotlightChannel === 'donghua' && topDonghua) {
+      return {
+        title: topDonghua.title,
+        japaneseTag: '动画 • 3D XIANXIA',
+        type: `DONGHUA • ${topDonghua.currentEpisode || 'ONGOING'}`,
+        tag: 'Kultivasi Teranyar',
+        rating: '9.2',
+        qualityBadge: '60FPS 1080P',
+        description: `Tonton episode terbaru serial animasi 3D & 2D ${topDonghua.title} dengan subtitle Indonesia di server Anichin. Petualangan kultivasi tanpa batas dengan multi-server streaming cepat.`,
+        backdrop: topDonghua.poster,
+        poster: topDonghua.poster,
+        actionLink: `/donghua/detail/${topDonghua.slug}`,
+        actionText: 'Nonton Donghua Sekarang',
+        channelLink: '/donghua',
+        channelText: 'Katalog Donghua Hub',
+        accentColor: '#10B981',
+        badgeBg: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+        btnBg: 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-600/30 text-white',
+      };
+    }
+
+    if (spotlightChannel === 'music') {
+      return {
+        title: 'Die With A Smile - Lady Gaga & Bruno Mars',
+        japaneseTag: '音楽 • YOUTUBE MUSIC',
+        type: 'MUSIK • SPOTIFY-STYLE STREAMING',
+        tag: 'Global #1 Hit',
+        rating: '9.9',
+        qualityBadge: 'LOSSLESS AUDIO',
+        description:
+          'Streaming musik modern di FazuraStream: jutaan lagu hits internasional & Indonesia, playlist viral, smart shuffle, audio background playback, lirik interaktif real-time, dan kontrol pop-up mini player.',
+        backdrop: 'https://i.ytimg.com/vi/kPa7bsKwL-c/maxresdefault.jpg',
+        poster: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=80',
+        actionLink: '/music',
+        actionText: 'Putar Musik Sekarang',
+        channelLink: '/music',
+        channelText: 'Buka Sonora Music',
+        accentColor: '#1DB954',
+        badgeBg: 'bg-[#1DB954]/20 text-[#1DB954] border-[#1DB954]/30',
+        btnBg: 'bg-gradient-to-r from-[#1DB954] to-[#1ed760] hover:from-[#1ed760] hover:to-[#17a34a] text-black font-extrabold shadow-[#1DB954]/30',
+      };
+    }
+
+    // Default to Anime Spotlight
+    return {
+      title: topAnime?.title || 'Solo Leveling: Season 2',
+      japaneseTag: 'アニメ • OTAKUDESU STREAM',
+      type: `ANIME • ${topAnime?.episodes ? `Episode ${topAnime.episodes}` : 'SUB INDO ONGOING'}`,
+      tag: 'Trending Hari Ini',
+      rating: '9.6',
+      qualityBadge: '1080P MEGA HD',
+      description: topAnime?.title
+        ? `Streaming episode terbaru anime ${topAnime.title} subtitle Indonesia gratis dengan resolusi hingga 1080p Full HD di server Otakudesu. Bebas buffering dan audio jernih.`
+        : 'Perjalanan Sung Jin-Woo menjadi pemburu terkuat di dunia menghadapi gerbang misterius dan raja bayangan yang mengancam umat manusia.',
+      backdrop:
+        topAnime?.poster ||
+        'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1600&auto=format&fit=crop&q=80',
+      poster:
+        topAnime?.poster ||
+        'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80',
+      actionLink: topAnime?.id ? `/anime/detail/otakudesu/${topAnime.id}` : '/anime',
+      actionText: 'Nonton Anime Sekarang',
+      channelLink: '/anime',
+      channelText: 'Katalog Anime Hub',
+      accentColor: '#F59E0B',
+      badgeBg: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+      btnBg: 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black shadow-amber-500/30',
+    };
+  }, [spotlightChannel, topAnime, topManga, topDonghua, topMovie]);
+
   return (
     <LazyMotion features={domAnimation}>
       <MotionConfig reducedMotion="user">
-        <div className="min-h-screen bg-[#12141B] text-[#F2F0EC] pb-20">
-          {/* 1. FEATURED HERO */}
-          <section className="relative w-full h-[360px] sm:h-[440px] lg:h-[480px] bg-[#0B0C10] border-b border-[#2D303E] overflow-hidden">
-            {/* Top Category Ambient Hairline */}
-            <div
-              className="absolute inset-x-0 top-0 h-[2px] z-20 transition-all duration-700"
-              style={{
-                backgroundColor: CATEGORY_THEMES[featured.category].accentHex,
-                boxShadow: `0 0 20px ${CATEGORY_THEMES[featured.category].accentHex}88`,
-              }}
-            />
+        <div className="min-h-screen bg-bg-primary text-text-primary pb-24 w-full overflow-x-hidden min-w-0 font-sans selection:bg-accent-primary selection:text-white">
+          {/* 1. Grand High-Impact Cinematic Hero Spotlight */}
+          <section className="relative w-full min-h-[500px] sm:min-h-[580px] lg:min-h-[640px] flex items-end overflow-hidden border-b border-white/5 bg-bg-primary">
+        {/* Ambient Glow Spheres */}
+        <div
+          className="absolute -top-32 -left-32 w-[550px] h-[550px] rounded-full bg-[#8B5CF6]/15 blur-[140px] pointer-events-none transform-gpu animate-pulse"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute top-1/4 right-0 w-[450px] h-[450px] rounded-full bg-cyan-500/10 blur-[130px] pointer-events-none transform-gpu"
+          aria-hidden="true"
+        />
 
-            {/* Atmospheric Ambient Glow behind hero */}
-            <div
-              className="absolute -top-20 -left-20 w-[550px] h-[550px] rounded-full blur-[140px] pointer-events-none opacity-25 transition-all duration-700"
-              style={{ backgroundColor: CATEGORY_THEMES[featured.category].accentHex }}
-            />
+        {/* Cinematic Backdrop with Clean Multi-Stop Gradient Overlays */}
+        <div className="absolute inset-0 bg-[#090912]">
+          <img
+            key={featuredItem.backdrop}
+            src={featuredItem.backdrop}
+            alt={featuredItem.title}
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover object-top opacity-35 filter scale-105 transition-all duration-1000 ease-out"
+          />
+          {/* Top subtle vignette */}
+          <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-[#090912] via-[#090912]/80 to-transparent" />
+          {/* Bottom solid vignette merging seamlessly into page */}
+          <div className="absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-[#090912] via-[#090912]/95 to-transparent" />
+          {/* Left horizontal vignette for text legibility */}
+          <div className="absolute inset-y-0 left-0 w-full lg:w-3/4 bg-gradient-to-r from-[#090912] via-[#090912]/90 to-transparent" />
+          {/* Japanese digital grid line pattern overlay */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
+        </div>
 
-            {/* Background Artwork */}
-            <img
-              key={featured.backdrop}
-              src={featured.backdrop}
-              alt={featured.title}
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = createPosterFallbackSvg(
-                  'FAZURASTREAM',
-                  CATEGORY_THEMES[featured.category].accentHex
-                );
-              }}
-              className="absolute inset-0 w-full h-full object-cover object-top opacity-55 sm:opacity-65 transition-opacity duration-500"
-            />
-            {/* Clean Directional Vignettes for Text Readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0B0C10] via-[#0B0C10]/65 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0B0C10] via-[#0B0C10]/85 via-50% to-transparent" />
-
-            <div className="relative z-10 max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex flex-col justify-between py-6 sm:py-10">
-              {/* Channel Switcher */}
-              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
-                {SPOTLIGHT_CHANNELS.map((ch) => {
-                  const isActive = spotlightChannel === ch.id;
-                  const chTheme = CATEGORY_THEMES[ch.id];
-                  return (
-                    <button
-                      key={ch.id}
-                      type="button"
-                      onClick={() => setSpotlightChannel(ch.id)}
-                      className={`px-3.5 py-1.5 min-h-[36px] rounded-[10px] text-xs font-semibold border transition-all duration-200 whitespace-nowrap shrink-0 cursor-pointer ${
-                        isActive
-                          ? `${chTheme.activeTabClass} shadow-[0_2px_12px_rgba(0,0,0,0.5)]`
-                          : 'bg-[#191C25]/80 hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] border-[#343744]'
-                      }`}
-                    >
-                      {ch.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Hero Copy & Max 2 Actions */}
-              <m.div
-                key={spotlightChannel}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="max-w-2xl space-y-3"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="category" category={featured.category}>
-                    {CATEGORY_THEMES[featured.category].label}
-                  </Badge>
-                  {featured.meta.map((item) => (
-                    <span
-                      key={item}
-                      className="text-xs font-semibold px-2.5 py-0.5 rounded-full backdrop-blur-md bg-white/10 border border-white/15 text-white/90 shadow-sm"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
-
-                <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-[#F2F0EC] tracking-tight leading-[1.1] line-clamp-2">
-                  {featured.title}
-                </h1>
-
-                <p className="text-sm text-[#A2A4B1] line-clamp-2 leading-relaxed max-w-xl">
-                  {featured.description}
-                </p>
-
-                <div className="flex flex-wrap items-center gap-3 pt-1">
-                  {featured.isMusic && topTrack ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (currentTrack?.id === topTrack.id) {
-                          togglePlay();
-                        } else {
-                          playTrack(topTrack, FAZURA_MUSIC_CATALOG);
-                        }
-                      }}
-                      className={buttonClasses({ variant: 'primary', size: 'lg' })}
-                    >
-                      {currentTrack?.id === topTrack.id && isPlaying ? (
-                        <Pause className="w-4 h-4 fill-current" />
-                      ) : (
-                        <Play className="w-4 h-4 fill-current" />
-                      )}
-                      <span>{featured.primaryLabel}</span>
-                    </button>
-                  ) : (
-                    <Link
-                      to={featured.primaryLink}
-                      className={buttonClasses({ variant: 'primary', size: 'lg' })}
-                    >
-                      <Play className="w-4 h-4 fill-current" />
-                      <span>{featured.primaryLabel}</span>
-                    </Link>
-                  )}
-
-                  <Link
-                    to={featured.secondaryLink}
-                    className={buttonClasses({ variant: 'secondary', size: 'lg' })}
-                  >
-                    <span>Selengkapnya</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </m.div>
-            </div>
-          </section>
-
-          {/* Compact Search Strip */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-            <form
-              onSubmit={handleSearchSubmit}
-              className="flex items-center gap-2 p-1.5 rounded-[10px] bg-[#191C25] border border-[#343744]"
-            >
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-[#747887] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari anime, film, komik manga, donghua, atau lagu..."
-                  className="w-full h-10 pl-9 pr-4 bg-transparent text-sm text-[#F2F0EC] placeholder-[#747887] focus:outline-none"
-                />
-              </div>
+        {/* Foreground Content Container */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 w-full flex flex-col lg:flex-row lg:items-end justify-between gap-8 sm:gap-12">
+          {/* Left Column: Spotlight details */}
+          <m.div
+            key={spotlightChannel}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="max-w-2xl space-y-4 sm:space-y-5"
+          >
+            {/* Spotlight Channel Switcher Pills */}
+            <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#11111D]/80 backdrop-blur-xl border border-white/10 w-fit overflow-x-auto max-w-full scrollbar-none shadow-2xl">
               <button
-                type="submit"
-                className={buttonClasses({ variant: 'primary', size: 'md' })}
+                type="button"
+                onClick={() => setSpotlightChannel('anime')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-xl text-xs font-black transition-all shrink-0 whitespace-nowrap active:scale-95 ${
+                  spotlightChannel === 'anime'
+                    ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/25'
+                    : 'text-text-secondary hover:text-white hover:bg-white/5'
+                }`}
               >
-                Cari
+                <Film className="w-3.5 h-3.5" />
+                <span>Anime アニメ</span>
               </button>
-            </form>
+
+              <button
+                type="button"
+                onClick={() => setSpotlightChannel('manga')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-xl text-xs font-black transition-all shrink-0 whitespace-nowrap active:scale-95 ${
+                  spotlightChannel === 'manga'
+                    ? 'bg-[#8B5CF6] text-white shadow-lg shadow-[#8B5CF6]/30'
+                    : 'text-text-secondary hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Manga 漫画</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSpotlightChannel('donghua')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-xl text-xs font-black transition-all shrink-0 whitespace-nowrap active:scale-95 ${
+                  spotlightChannel === 'donghua'
+                    ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/25'
+                    : 'text-text-secondary hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Tv className="w-3.5 h-3.5" />
+                <span>Donghua 动画</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSpotlightChannel('movie')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-xl text-xs font-black transition-all shrink-0 whitespace-nowrap active:scale-95 ${
+                  spotlightChannel === 'movie'
+                    ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/25'
+                    : 'text-text-secondary hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Clapperboard className="w-3.5 h-3.5" />
+                <span>Movie 映画</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSpotlightChannel('music')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-xl text-xs font-black transition-all shrink-0 whitespace-nowrap active:scale-95 ${
+                  spotlightChannel === 'music'
+                    ? 'bg-[#1DB954] text-black shadow-lg shadow-[#1DB954]/25'
+                    : 'text-text-secondary hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Headphones className="w-3.5 h-3.5" />
+                <span>Music 音楽</span>
+              </button>
+            </div>
+
+            {/* Badges & Meta strip */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span
+                className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider border backdrop-blur-md ${featuredItem.badgeBg}`}
+              >
+                {featuredItem.tag}
+              </span>
+
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-extrabold">
+                <Star className="w-3.5 h-3.5 fill-amber-400" />
+                <span>{featuredItem.rating}</span>
+              </span>
+
+              <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-text-secondary text-[11px] font-bold tracking-wider">
+                {featuredItem.qualityBadge}
+              </span>
+
+              <span className="text-xs font-bold text-text-muted tracking-wider">
+                {featuredItem.japaneseTag}
+              </span>
+            </div>
+
+            {/* Headline Title */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-text-primary tracking-tight leading-[1.08] drop-shadow-xl line-clamp-2 font-heading">
+              {featuredItem.title}
+            </h1>
+
+            {/* Synopsis */}
+            <p className="text-text-secondary text-xs sm:text-sm md:text-base leading-relaxed line-clamp-3 max-w-xl">
+              {featuredItem.description}
+            </p>
+
+            {/* Action CTA Buttons */}
+            <div className="flex flex-wrap items-center gap-3.5 pt-2">
+              <Link
+                to={featuredItem.actionLink}
+                className={`flex items-center gap-2.5 px-6 sm:px-7 py-3 sm:py-3.5 rounded-xl font-extrabold text-sm sm:text-base transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-xl group ${featuredItem.btnBg}`}
+              >
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current transition-transform group-hover:scale-110" />
+                <span>{featuredItem.actionText}</span>
+              </Link>
+
+              <Link
+                to={featuredItem.channelLink}
+                className="flex items-center gap-2 px-5 py-3 sm:py-3.5 rounded-xl bg-surface-elevated/80 hover:bg-surface-elevated text-text-primary font-bold text-sm sm:text-base border border-white/10 backdrop-blur-md hover:border-white/20 transition-all shadow-md group"
+              >
+                <span>{featuredItem.channelText}</span>
+                <ArrowRight className="w-4 h-4 text-accent-secondary transform group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </m.div>
+
+          {/* Right Column: Floating 3D Artwork Showcase (Desktop only) */}
+          <div className="hidden lg:block relative flex-shrink-0">
+            <div className="relative w-64 h-[350px] rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-surface shadow-black/80 group">
+              <img
+                src={featuredItem.poster}
+                alt={featuredItem.title}
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = POSTER_FALLBACK_SVG;
+                }}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#090912] via-transparent to-transparent opacity-85" />
+              <div className="absolute bottom-4 left-4 right-4 space-y-1 text-center">
+                <span className="inline-block text-[10px] font-black uppercase tracking-widest bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-white">
+                  FAZURA SPOTLIGHT
+                </span>
+                <p className="text-xs font-bold text-white/90 truncate">{featuredItem.title}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Global Search Input Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-7 relative z-20">
+        <form
+          onSubmit={handleSearchSubmit}
+          className="p-2 sm:p-2.5 rounded-2xl bg-[#181827]/90 border border-white/10 shadow-2xl backdrop-blur-2xl flex flex-col sm:flex-row items-center gap-2"
+        >
+          <div className="relative flex-1 w-full">
+            <Search className="w-5 h-5 text-accent-soft absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Cari ribuan komik, anime, donghua, movie, atau lagu favorit..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-transparent text-text-primary text-sm placeholder-text-muted focus:outline-none"
+            />
           </div>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 pt-10">
-            {/* 2. CONTINUE WATCHING / READING (Landscape Cards) */}
-            {activeHistory.length > 0 && (
-              <section className="space-y-4">
-                <SectionHeader
-                  title="Lanjutkan Terakhir"
-                  subtitle="Lanjutkan tontonan, bacaan, atau lagu dari posisi terakhir Anda"
-                  viewAllTo="/history"
-                  viewAllLabel="Semua Riwayat"
-                />
-                <MediaCarousel id="landing-continue">
-                  {activeHistory.map((item) => {
-                    const cat = (item.category as MediaCategory) || 'anime';
-                    const catTheme = CATEGORY_THEMES[cat] || CATEGORY_THEMES.anime;
-                    const progressPct =
-                      typeof item.progress === 'number' && item.progress > 0
-                        ? Math.min(100, Math.max(4, item.progress <= 1 ? Math.round(item.progress * 100) : Math.round(item.progress)))
-                        : null;
+          <button
+            type="submit"
+            className="w-full sm:w-auto px-7 py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-extrabold text-sm transition-all shadow-lg shadow-[#8B5CF6]/25 shrink-0 transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Cari Konten
+          </button>
+        </form>
+      </div>
 
-                    return (
-                      <Link
-                        key={`${item.category}-${item.id}`}
-                        to={item.lastItemLink || `/${item.category}`}
-                        className="group w-64 sm:w-72 shrink-0 snap-start rounded-[10px] overflow-hidden bg-[#191C25] border border-[#343744] hover:border-[#454958] transition-colors flex flex-col"
-                      >
-                        <div className="relative aspect-video w-full bg-[#0B0C10] overflow-hidden">
-                          <img
-                            src={
-                              item.cover ||
-                              createPosterFallbackSvg(catTheme.label.toUpperCase(), catTheme.accentHex)
-                            }
-                            alt={item.title}
-                            loading="lazy"
-                            referrerPolicy="no-referrer"
-                            onLoad={(e) => {
-                              if (cat === 'music') {
-                                handleMusicImageLoad(e);
-                              } else {
-                                const img = e.currentTarget;
-                                if (img.naturalWidth > 0 && img.naturalWidth <= 120 && img.naturalHeight <= 90) {
-                                  img.src = createPosterFallbackSvg(catTheme.label.toUpperCase(), catTheme.accentHex);
-                                }
-                              }
-                            }}
-                            onError={(e) => {
-                              if (cat === 'music') {
-                                handleMusicImageError(e);
-                              } else {
-                                (e.currentTarget as HTMLImageElement).src = createPosterFallbackSvg(
-                                  catTheme.label.toUpperCase(),
-                                  catTheme.accentHex
-                                );
-                              }
-                            }}
-                            className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+      {/* 3. Lanjutkan Tonton & Baca (Quick Resume Section if user has history) */}
+      {activeHistory.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 space-y-4">
+          <div className="flex items-center justify-between border-b border-white/5 pb-3">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8B5CF6] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#8B5CF6]" />
+                </span>
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#A78BFA]">
+                  最近の履歴 • QUICK RESUME
+                </span>
+              </div>
+              <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2 font-heading">
+                <RotateCcw className="w-5 h-5 text-[#8B5CF6]" />
+                <span>Lanjutkan Tonton & Baca</span>
+              </h2>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Link
+                to="/history"
+                className="text-xs font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-1 hidden xs:flex"
+              >
+                <span>Semua Riwayat</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => scrollCarousel('history-carousel', 'left')}
+                  aria-label="Geser riwayat ke kiri"
+                  className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-xl bg-surface border border-white/10 hover:border-[#8B5CF6]/50 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollCarousel('history-carousel', 'right')}
+                  aria-label="Geser riwayat ke kanan"
+                  className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-xl bg-surface border border-white/10 hover:border-[#8B5CF6]/50 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick-Resume Horizontal Carousel */}
+          <div
+            id="history-carousel"
+            className="flex items-stretch gap-3.5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 scroll-smooth"
+          >
+            {activeHistory.map((item) => {
+              const categoryBadgeColor =
+                item.category === 'anime'
+                  ? 'bg-amber-500/90 text-black'
+                  : item.category === 'donghua'
+                  ? 'bg-emerald-500/90 text-black'
+                  : item.category === 'movies'
+                  ? 'bg-rose-500/90 text-white'
+                  : item.category === 'music'
+                  ? 'bg-[#1DB954]/90 text-black'
+                  : 'bg-[#8B5CF6]/90 text-white';
+
+              return (
+                <Link
+                  key={`${item.category}-${item.id}`}
+                  to={item.lastItemLink || `/${item.category}`}
+                  className="w-60 sm:w-72 shrink-0 snap-start flex items-center gap-3 p-2.5 rounded-2xl bg-[#181827]/90 hover:bg-[#1f1f33] border border-white/5 hover:border-[#8B5CF6]/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#8B5CF6]/15 group"
+                >
+                  <div className="relative w-16 h-20 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-white/5">
+                    <img
+                      src={item.cover}
+                      alt={item.title}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22140%22%20viewBox%3D%220%200%20100%20140%22%3E%3Crect%20fill%3D%22%23181827%22%20width%3D%22100%22%20height%3D%22140%22%2F%3E%3C/svg%3E";
+                      }}
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    />
+                    <div className="absolute top-1 left-1">
+                      <span className={`px-1.5 py-0.2 text-[9px] font-black uppercase rounded shadow-sm ${categoryBadgeColor}`}>
+                        {item.category}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-w-0 flex flex-col justify-between h-full py-0.5">
+                    <div>
+                      <h4 className="text-xs font-bold text-white group-hover:text-[#A78BFA] truncate transition-colors">
+                        {item.title}
+                      </h4>
+                      <p className="text-[11px] text-[#A78BFA] font-semibold truncate mt-0.5">
+                        {item.lastItemTitle || 'Lanjutkan'}
+                      </p>
+                    </div>
+
+                    <div className="pt-1">
+                      {typeof item.progress === 'number' && item.progress > 0 && (
+                        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden mb-1">
+                          <div
+                            className="h-full bg-gradient-to-r from-[#8B5CF6] to-[#A78BFA] rounded-full"
+                            style={{ width: `${Math.min(100, Math.max(5, item.progress))}%` }}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#0B0C10]/90 via-transparent to-transparent" />
-                          <span
-                            className="absolute top-2 left-2 px-2 py-0.5 rounded-[6px] bg-[#0B0C10]/85 border border-[#343744] text-[10px] font-semibold uppercase"
-                            style={{ color: catTheme.accentHex }}
-                          >
-                            {catTheme.label}
+                        </div>
+                      )}
+                      <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-slate-500" />
+                        <span>{formatRelativeTime(item.watchedAt)}</span>
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* 4. Five Dedicated Media Gateways (Channel Grid) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-white/5 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-primary" />
+              </span>
+              <span className="text-[11px] font-black uppercase tracking-wider text-accent-soft">
+                チャンネル • SALURAN MEDIA
+              </span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2 mt-1 font-heading">
+              <TrendingUp className="w-5 h-5 text-accent-primary" />
+              <span>PILIH SALURAN HIBURAN</span>
+            </h2>
+          </div>
+          <p className="text-xs text-text-muted">
+            Multi-portal terintegrasi dengan ribuan konten dan server berkecepatan tinggi
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {/* Channel 1: Manga */}
+          <Link
+            to="/manga"
+            className="group relative rounded-2xl overflow-hidden bg-[#181827]/90 border border-white/5 hover:border-violet-500/50 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300 p-5 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-11 h-11 rounded-xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-400 group-hover:scale-110 transition-transform">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-violet-400 bg-violet-500/10 px-2.5 py-1 rounded-md border border-violet-500/20">
+                  漫画 • BacaKomik
+                </span>
+              </div>
+              <div>
+                <h3 className="text-base font-black text-white group-hover:text-violet-400 transition-colors font-heading">
+                  Manga & Komik
+                </h3>
+                <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                  Ribuan manga Jepang, manhwa Korea, & manhua China dengan vertical webtoon reader.
+                </p>
+              </div>
+            </div>
+            <div className="pt-4 mt-3 border-t border-white/5 flex items-center justify-between text-xs font-bold text-text-secondary group-hover:text-white">
+              <span>Buka Saluran Manga</span>
+              <ChevronRight className="w-4 h-4 text-violet-400 transform group-hover:translate-x-1.5 transition-transform" />
+            </div>
+          </Link>
+
+          {/* Channel 2: Anime */}
+          <Link
+            to="/anime"
+            className="group relative rounded-2xl overflow-hidden bg-[#181827]/90 border border-white/5 hover:border-amber-500/50 hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 p-5 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                  <Film className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20">
+                  アニメ • Otakudesu
+                </span>
+              </div>
+              <div>
+                <h3 className="text-base font-black text-white group-hover:text-amber-400 transition-colors font-heading">
+                  Anime Streaming
+                </h3>
+                <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                  Streaming anime sub Indo multi-server 1080p Mega HD & 720p HD rilis ongoing.
+                </p>
+              </div>
+            </div>
+            <div className="pt-4 mt-3 border-t border-white/5 flex items-center justify-between text-xs font-bold text-text-secondary group-hover:text-white">
+              <span>Buka Saluran Anime</span>
+              <ChevronRight className="w-4 h-4 text-amber-400 transform group-hover:translate-x-1.5 transition-transform" />
+            </div>
+          </Link>
+
+          {/* Channel 3: Donghua */}
+          <Link
+            to="/donghua"
+            className="group relative rounded-2xl overflow-hidden bg-[#181827]/90 border border-white/5 hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 p-5 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                  <Tv className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                  动画 • Anichin
+                </span>
+              </div>
+              <div>
+                <h3 className="text-base font-black text-white group-hover:text-emerald-400 transition-colors font-heading">
+                  Donghua 3D/2D
+                </h3>
+                <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                  Animasi kultivasi Xianxia: Soul Land, BTTH, Swallowed Star, & Renegade Immortal.
+                </p>
+              </div>
+            </div>
+            <div className="pt-4 mt-3 border-t border-white/5 flex items-center justify-between text-xs font-bold text-text-secondary group-hover:text-white">
+              <span>Buka Saluran Donghua</span>
+              <ChevronRight className="w-4 h-4 text-emerald-400 transform group-hover:translate-x-1.5 transition-transform" />
+            </div>
+          </Link>
+
+          {/* Channel 4: Movies & Series */}
+          <Link
+            to="/movies"
+            className="group relative rounded-2xl overflow-hidden bg-[#181827]/90 border border-white/5 hover:border-rose-500/50 hover:shadow-xl hover:shadow-rose-500/10 transition-all duration-300 p-5 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-11 h-11 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
+                  <Clapperboard className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-md border border-rose-500/20">
+                  映画 • Cinema HD
+                </span>
+              </div>
+              <div>
+                <h3 className="text-base font-black text-white group-hover:text-rose-400 transition-colors font-heading">
+                  Movie & Series
+                </h3>
+                <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                  Film bioskop box office & serial TV internasional dengan multi-server stream.
+                </p>
+              </div>
+            </div>
+            <div className="pt-4 mt-3 border-t border-white/5 flex items-center justify-between text-xs font-bold text-text-secondary group-hover:text-white">
+              <span>Buka Saluran Movies</span>
+              <ChevronRight className="w-4 h-4 text-rose-400 transform group-hover:translate-x-1.5 transition-transform" />
+            </div>
+          </Link>
+
+          {/* Channel 5: Music */}
+          <Link
+            to="/music"
+            className="group relative rounded-2xl overflow-hidden bg-[#181827]/90 border border-white/5 hover:border-[#1DB954]/50 hover:shadow-xl hover:shadow-[#1DB954]/10 transition-all duration-300 p-5 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-11 h-11 rounded-xl bg-[#1DB954]/15 border border-[#1DB954]/30 flex items-center justify-center text-[#1DB954] group-hover:scale-110 transition-transform">
+                  <Headphones className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#1DB954] bg-[#1DB954]/10 px-2.5 py-1 rounded-md border border-[#1DB954]/20">
+                  音楽 • Spotify Style
+                </span>
+              </div>
+              <div>
+                <h3 className="text-base font-black text-white group-hover:text-[#1DB954] transition-colors font-heading">
+                  Music
+                </h3>
+                <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                  Streaming jutaan lagu YouTube Music: lirik sinkronisasi & mini player.
+                </p>
+              </div>
+            </div>
+            <div className="pt-4 mt-3 border-t border-white/5 flex items-center justify-between text-xs font-bold text-text-secondary group-hover:text-white">
+              <span>Buka Saluran Musik</span>
+              <ChevronRight className="w-4 h-4 text-[#1DB954] transform group-hover:translate-x-1.5 transition-transform" />
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* 5. Live Updates & Realtime Feeds (Optimized Horizontal Carousels to Prevent Endless Vertical Scroll) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+          <div className="space-y-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-accent-primary" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-accent-soft">
+                最新リリース • REALTIME FEEDS
+              </span>
+            </div>
+            <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2 font-heading">
+              <Clock className="w-5 h-5 text-emerald-400 shrink-0" />
+              <span>UPDATE TERBARU HARI INI</span>
+            </h2>
+          </div>
+
+          {/* Interactive Filter Tab Switcher Pills */}
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#181827] border border-white/10 text-xs font-bold overflow-x-auto scrollbar-none max-w-full pb-1">
+            <button
+              onClick={() => setActiveMediaTab('all')}
+              className={`px-3 py-1.5 min-h-[36px] rounded-lg transition-colors shrink-0 whitespace-nowrap active:scale-95 ${
+                activeMediaTab === 'all' ? 'bg-white/10 text-white font-black' : 'text-text-muted hover:text-white'
+              }`}
+            >
+              Semua
+            </button>
+            <button
+              onClick={() => setActiveMediaTab('manga')}
+              className={`px-3 py-1.5 min-h-[36px] rounded-lg transition-colors shrink-0 whitespace-nowrap active:scale-95 ${
+                activeMediaTab === 'manga' ? 'bg-[#8B5CF6] text-white font-black' : 'text-text-muted hover:text-white'
+              }`}
+            >
+              Manga
+            </button>
+            <button
+              onClick={() => setActiveMediaTab('anime')}
+              className={`px-3 py-1.5 min-h-[36px] rounded-lg transition-colors shrink-0 whitespace-nowrap active:scale-95 ${
+                activeMediaTab === 'anime' ? 'bg-amber-500 text-black font-black' : 'text-text-muted hover:text-white'
+              }`}
+            >
+              Anime
+            </button>
+            <button
+              onClick={() => setActiveMediaTab('donghua')}
+              className={`px-3 py-1.5 min-h-[36px] rounded-lg transition-colors shrink-0 whitespace-nowrap active:scale-95 ${
+                activeMediaTab === 'donghua' ? 'bg-emerald-500 text-black font-black' : 'text-text-muted hover:text-white'
+              }`}
+            >
+              Donghua
+            </button>
+            <button
+              onClick={() => setActiveMediaTab('movie')}
+              className={`px-3 py-1.5 min-h-[36px] rounded-lg transition-colors shrink-0 whitespace-nowrap active:scale-95 ${
+                activeMediaTab === 'movie' ? 'bg-rose-500 text-white font-black' : 'text-text-muted hover:text-white'
+              }`}
+            >
+              Movie
+            </button>
+            <button
+              onClick={() => setActiveMediaTab('music')}
+              className={`px-3 py-1.5 min-h-[36px] rounded-lg transition-colors shrink-0 whitespace-nowrap active:scale-95 flex items-center gap-1.5 ${
+                activeMediaTab === 'music' ? 'bg-[#1DB954] text-black font-black shadow-md shadow-[#1DB954]/20' : 'text-text-muted hover:text-white'
+              }`}
+            >
+              <Headphones className="w-3.5 h-3.5" />
+              <span>Musik</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Carousel Stream Rows (Prevent Excessive Vertical Scrolling) */}
+        <div className="space-y-10">
+          {/* Row 1: Manga Carousel */}
+          {(activeMediaTab === 'all' || activeMediaTab === 'manga') && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-[#8B5CF6]/20 pb-2">
+                <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#A78BFA] font-heading">
+                  <BookOpen className="w-4 h-4 text-[#8B5CF6]" />
+                  <span>Komik & Manga Terbaru (BacaKomik)</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <Link to="/manga" className="text-xs text-slate-400 hover:text-white transition-colors">
+                    Lihat Semua →
+                  </Link>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('manga-row', 'left')}
+                      aria-label="Geser manga ke kiri"
+                      className="w-8 h-8 rounded-lg bg-[#181827] border border-white/10 hover:border-[#8B5CF6]/50 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('manga-row', 'right')}
+                      aria-label="Geser manga ke kanan"
+                      className="w-8 h-8 rounded-lg bg-[#181827] border border-white/10 hover:border-[#8B5CF6]/50 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {mangaLoading ? (
+                <div className="flex gap-3 overflow-hidden py-1">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="w-36 sm:w-44 h-60 rounded-2xl bg-surface animate-pulse shrink-0" />
+                  ))}
+                </div>
+              ) : mangaError || latestManga.length === 0 ? (
+                <div className="p-6 rounded-2xl bg-surface/60 border border-border-subtle flex items-center justify-between gap-4 text-xs text-text-secondary">
+                  <span>Feed komik terbaru sedang tidak dapat dijangkau.</span>
+                  <button
+                    type="button"
+                    onClick={() => refetchManga()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent-primary text-white font-bold"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Muat Ulang
+                  </button>
+                </div>
+              ) : (
+                <div
+                  id="manga-row"
+                  className="flex items-stretch gap-3.5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 scroll-smooth"
+                >
+                  {latestManga.map((manga) => (
+                    <Link
+                      key={manga.slug}
+                      to={`/manga/${manga.slug}`}
+                      className="w-36 sm:w-44 shrink-0 snap-start flex flex-col rounded-2xl overflow-hidden bg-surface/90 border border-white/5 hover:border-[#8B5CF6]/40 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-[#8B5CF6]/15 group"
+                    >
+                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-surface-base">
+                        <img
+                          src={manga.cover || POSTER_FALLBACK_SVG}
+                          alt={manga.title}
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = POSTER_FALLBACK_SVG;
+                          }}
+                          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                        />
+                        <div className="absolute top-1.5 left-1.5 z-10">
+                          <span className="px-1.5 py-0.2 text-[9px] font-bold uppercase rounded bg-[#8B5CF6]/90 text-white border border-[#A78BFA]/30">
+                            {manga.type || 'Manga'}
                           </span>
                         </div>
-                        <div className="p-3 space-y-2">
-                          <div>
-                            <h3 className="text-[13px] font-semibold text-[#F2F0EC] group-hover:text-[#F0A15B] transition-colors truncate">
-                              {item.title}
-                            </h3>
-                            <p className="text-xs text-[#A2A4B1] truncate mt-0.5">
-                              {item.lastItemTitle || 'Lanjutkan'}
-                            </p>
-                          </div>
-                          {progressPct !== null && (
-                            <div className="w-full h-1 rounded-full bg-[#232633] overflow-hidden">
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${progressPct}%`,
-                                  backgroundColor: catTheme.accentHex,
-                                }}
-                              />
-                            </div>
-                          )}
-                          <div className="flex items-center justify-between text-[11px] text-[#747887]">
-                            <span className="inline-flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {formatRelativeTime(item.watchedAt)}
+                        {manga.chapter && (
+                          <div className="absolute bottom-1.5 left-1.5 right-1.5 z-10">
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[#C4B5FD] text-[10px] font-bold truncate max-w-full border border-white/10">
+                              {manga.chapter}
                             </span>
-                            {progressPct !== null && <span>{progressPct}%</span>}
                           </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </MediaCarousel>
-              </section>
-            )}
-
-            {/* 3. TRENDING THIS WEEK */}
-            {(trendingThisWeek.length > 0 || moviesLoading || popularMangaLoading) && (
-              <section className="space-y-4">
-                <SectionHeader
-                  title="Trending Minggu Ini"
-                  subtitle="Pilihan film dan komik yang paling ramai diakses minggu ini"
-                  viewAllTo="/search"
-                  viewAllLabel="Jelajahi Semua"
-                />
-                {moviesLoading && trendingThisWeek.length === 0 ? (
-                  <CarouselSkeletonStrip />
-                ) : (
-                  <MediaCarousel id="landing-trending">
-                    {trendingThisWeek.map((entry, idx) => (
-                      <div key={entry.id} className="w-[152px] sm:w-[172px] lg:w-[184px] shrink-0 snap-start">
-                        <MediaCard
-                          id={entry.id}
-                          category={entry.category}
-                          title={entry.title}
-                          imageUrl={entry.poster}
-                          link={entry.link}
-                          ranking={idx + 1}
-                          rating={entry.rating}
-                          metaPrimary={entry.meta}
-                        />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#090912] via-transparent to-transparent opacity-80" />
                       </div>
-                    ))}
-                  </MediaCarousel>
-                )}
-              </section>
-            )}
+                      <div className="p-2.5 flex-1 flex flex-col justify-between gap-1">
+                        <h4 className="text-xs font-bold text-slate-100 group-hover:text-[#A78BFA] line-clamp-2 transition-colors">
+                          {manga.title}
+                        </h4>
+                        <span className="text-[10px] text-slate-500">{manga.date || 'Rilis'}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-            {/* 4. POPULAR ANIME */}
-            <section className="space-y-4">
-              <SectionHeader
-                category="anime"
-                title="Anime Populer & Ongoing"
-                subtitle="Serial anime terbaru subtitle Indonesia dengan server HD"
-                viewAllTo="/anime"
-                viewAllLabel="Lihat Semua Anime"
-              />
+          {/* Row 2: Anime Carousel */}
+          {(activeMediaTab === 'all' || activeMediaTab === 'anime') && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
+                <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-amber-400 font-heading">
+                  <Film className="w-4 h-4" />
+                  <span>Anime Streaming Terbaru (Otakudesu)</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <Link to="/anime" className="text-xs text-slate-400 hover:text-white transition-colors">
+                    Lihat Semua →
+                  </Link>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('anime-row', 'left')}
+                      aria-label="Geser anime ke kiri"
+                      className="w-8 h-8 rounded-lg bg-[#181827] border border-white/10 hover:border-amber-400/50 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('anime-row', 'right')}
+                      aria-label="Geser anime ke kanan"
+                      className="w-8 h-8 rounded-lg bg-[#181827] border border-white/10 hover:border-amber-400/50 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {animeLoading ? (
-                <CarouselSkeletonStrip />
-              ) : animeError || popularAnime.length === 0 ? (
-                <ErrorState
-                  title="Daftar Anime Tidak Tersedia"
-                  description="Feed anime terbaru belum dapat dimuat."
-                  onRetry={() => refetchAnime()}
-                />
-              ) : (
-                <MediaCarousel id="landing-anime">
-                  {popularAnime.map((anime) => (
-                    <div key={anime.id} className="w-[152px] sm:w-[172px] lg:w-[184px] shrink-0 snap-start">
-                      <AnimeGridCard anime={anime} />
-                    </div>
+                <div className="flex gap-3 overflow-hidden py-1">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="w-36 sm:w-44 h-60 rounded-2xl bg-surface animate-pulse shrink-0" />
                   ))}
-                </MediaCarousel>
-              )}
-            </section>
-
-            {/* 5. LATEST MOVIES */}
-            <section className="space-y-4">
-              <SectionHeader
-                category="movies"
-                title="Film & Serial Terbaru"
-                subtitle="Rilis film box office dan tayangan serial pilihan"
-                viewAllTo="/movies"
-                viewAllLabel="Lihat Semua Film"
-              />
-              {moviesLoading ? (
-                <CarouselSkeletonStrip />
-              ) : moviesError || latestMovies.length === 0 ? (
-                <ErrorState
-                  title="Daftar Film Tidak Tersedia"
-                  description="Katalog film sementara tidak dapat diakses."
-                  onRetry={() => refetchMovies()}
-                />
+                </div>
+              ) : animeError || latestAnime.length === 0 ? (
+                <div className="p-6 rounded-2xl bg-surface/60 border border-border-subtle flex items-center justify-between gap-4 text-xs text-text-secondary">
+                  <span>Feed anime terbaru sedang tidak dapat dijangkau.</span>
+                  <button
+                    type="button"
+                    onClick={() => refetchAnime()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 text-black font-bold"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Muat Ulang
+                  </button>
+                </div>
               ) : (
-                <MediaCarousel id="landing-movies">
-                  {latestMovies.map((movie) => (
-                    <div key={movie.id} className="w-[152px] sm:w-[172px] lg:w-[184px] shrink-0 snap-start">
-                      <MediaCard
-                        id={movie.id}
-                        category="movies"
-                        title={movie.title}
-                        imageUrl={movie.posterUrl || ''}
-                        link={`/movies/${movie.id}`}
-                        topBadge={movie.mediaType === 'tv' ? 'Serial TV' : 'Film'}
-                        rating={movie.ratingValue}
-                        metaPrimary={movie.genres?.[0] || (movie.mediaType === 'tv' ? 'Serial TV' : 'Bioskop')}
-                        metaSecondary={
-                          movie.releaseDate
-                            ? String(new Date(movie.releaseDate).getFullYear())
-                            : undefined
-                        }
-                        bookmarkType={movie.mediaType === 'tv' ? 'Serial TV' : 'Movie'}
-                      />
-                    </div>
+                <div
+                  id="anime-row"
+                  className="flex items-stretch gap-3.5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 scroll-smooth"
+                >
+                  {latestAnime.map((anime) => (
+                    <Link
+                      key={anime.id}
+                      to={`/anime/detail/otakudesu/${anime.id}`}
+                      className="w-36 sm:w-44 shrink-0 snap-start flex flex-col rounded-2xl overflow-hidden bg-surface/90 border border-white/5 hover:border-amber-500/40 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-amber-500/10 group"
+                    >
+                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-surface-base">
+                        <img
+                          src={anime.poster || POSTER_FALLBACK_SVG}
+                          alt={anime.title}
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = POSTER_FALLBACK_SVG;
+                          }}
+                          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                        />
+                        <div className="absolute top-1.5 left-1.5 z-10">
+                          <span className="px-1.5 py-0.2 text-[9px] font-black uppercase rounded bg-amber-500/90 text-black border border-amber-400/30">
+                            Anime
+                          </span>
+                        </div>
+                        <div className="absolute bottom-1.5 left-1.5 right-1.5 z-10">
+                          <span className="inline-block px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-amber-300 text-[10px] font-bold truncate max-w-full border border-white/10">
+                            Episode {anime.episodes || '?'}
+                          </span>
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#090912] via-transparent to-transparent opacity-80" />
+                      </div>
+                      <div className="p-2.5 flex-1 flex flex-col justify-between gap-1">
+                        <h4 className="text-xs font-bold text-slate-100 group-hover:text-amber-400 line-clamp-2 transition-colors">
+                          {anime.title}
+                        </h4>
+                        <span className="text-[10px] text-slate-500">{anime.releasedOn || 'Baru'}</span>
+                      </div>
+                    </Link>
                   ))}
-                </MediaCarousel>
+                </div>
               )}
-            </section>
+            </div>
+          )}
 
-            {/* 6. RECENTLY UPDATED MANGA */}
-            <section className="space-y-4">
-              <SectionHeader
-                category="manga"
-                title="Pembaruan Komik Manga"
-                subtitle="Chapter terbaru manga Jepang, manhwa Korea, dan manhua"
-                viewAllTo="/manga"
-                viewAllLabel="Lihat Katalog Manga"
-              />
-              {mangaLoading ? (
-                <CarouselSkeletonStrip />
-              ) : mangaError || latestManga.length === 0 ? (
-                <ErrorState
-                  title="Daftar Komik Tidak Tersedia"
-                  description="Pembaruan chapter manga gagal dimuat."
-                  onRetry={() => refetchManga()}
-                />
-              ) : (
-                <MediaCarousel id="landing-manga">
-                  {latestManga.map((manga) => (
-                    <div key={manga.slug} className="w-[152px] sm:w-[172px] lg:w-[184px] shrink-0 snap-start">
-                      <MangaCard manga={manga} />
-                    </div>
-                  ))}
-                </MediaCarousel>
-              )}
-            </section>
+          {/* Row 3: Donghua Carousel */}
+          {(activeMediaTab === 'all' || activeMediaTab === 'donghua') && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
+                <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-emerald-400 font-heading">
+                  <Tv className="w-4 h-4" />
+                  <span>Donghua Animasi Xianxia (Anichin)</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <Link to="/donghua" className="text-xs text-slate-400 hover:text-white transition-colors">
+                    Lihat Semua →
+                  </Link>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('donghua-row', 'left')}
+                      aria-label="Geser donghua ke kiri"
+                      className="w-8 h-8 rounded-lg bg-[#181827] border border-white/10 hover:border-emerald-400/50 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('donghua-row', 'right')}
+                      aria-label="Geser donghua ke kanan"
+                      className="w-8 h-8 rounded-lg bg-[#181827] border border-white/10 hover:border-emerald-400/50 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-            {/* 7. POPULAR DONGHUA */}
-            <section className="space-y-4">
-              <SectionHeader
-                category="donghua"
-                title="Donghua Populer"
-                subtitle="Animasi 3D dan 2D kultivasi Tiongkok sub Indo"
-                viewAllTo="/donghua"
-                viewAllLabel="Lihat Semua Donghua"
-              />
               {donghuaLoading ? (
-                <CarouselSkeletonStrip />
-              ) : donghuaError || popularDonghua.length === 0 ? (
-                <ErrorState
-                  title="Daftar Donghua Tidak Tersedia"
-                  description="Feed donghua terbaru gagal dimuat."
-                  onRetry={() => refetchDonghua()}
-                />
-              ) : (
-                <MediaCarousel id="landing-donghua">
-                  {popularDonghua.map((donghua) => (
-                    <div key={donghua.slug} className="w-[152px] sm:w-[172px] lg:w-[184px] shrink-0 snap-start">
-                      <MediaCard
-                        id={donghua.slug}
-                        category="donghua"
-                        title={donghua.title}
-                        imageUrl={proxyDonghuaPoster(donghua.poster || '') || donghua.poster}
-                        link={`/donghua/detail/${donghua.slug}`}
-                        topBadge={donghua.currentEpisode}
-                        metaPrimary={donghua.type || 'Donghua'}
-                        metaSecondary={donghua.status}
-                        bookmarkType="Donghua"
-                      />
-                    </div>
+                <div className="flex gap-3 overflow-hidden py-1">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="w-36 sm:w-44 h-60 rounded-2xl bg-surface animate-pulse shrink-0" />
                   ))}
-                </MediaCarousel>
+                </div>
+              ) : donghuaError || latestDonghua.length === 0 ? (
+                <div className="p-6 rounded-2xl bg-surface/60 border border-border-subtle flex items-center justify-between gap-4 text-xs text-text-secondary">
+                  <span>Feed donghua terbaru sedang tidak dapat dijangkau.</span>
+                  <button
+                    type="button"
+                    onClick={() => refetchDonghua()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 text-black font-bold"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Muat Ulang
+                  </button>
+                </div>
+              ) : (
+                <div
+                  id="donghua-row"
+                  className="flex items-stretch gap-3.5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 scroll-smooth"
+                >
+                  {latestDonghua.map((donghua) => (
+                    <Link
+                      key={donghua.slug}
+                      to={`/donghua/detail/${donghua.slug}`}
+                      className="w-36 sm:w-44 shrink-0 snap-start flex flex-col rounded-2xl overflow-hidden bg-[#181827]/90 border border-white/5 hover:border-emerald-500/40 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-emerald-500/10 group"
+                    >
+                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#11111D]">
+                        <img
+                          src={donghua.poster}
+                          alt={donghua.title}
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22140%22%20viewBox%3D%220%200%20100%20140%22%3E%3Crect%20fill%3D%22%23181827%22%20width%3D%22100%22%20height%3D%22140%22%2F%3E%3C/svg%3E";
+                          }}
+                          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                        />
+                        <div className="absolute top-1.5 left-1.5 z-10">
+                          <span className="px-1.5 py-0.2 text-[9px] font-black uppercase rounded bg-emerald-500/90 text-black border border-emerald-400/30">
+                            Donghua
+                          </span>
+                        </div>
+                        {donghua.currentEpisode && (
+                          <div className="absolute bottom-1.5 left-1.5 right-1.5 z-10">
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-emerald-300 text-[10px] font-bold truncate max-w-full border border-white/10">
+                              {donghua.currentEpisode}
+                            </span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#090912] via-transparent to-transparent opacity-80" />
+                      </div>
+                      <div className="p-2.5 flex-1 flex flex-col justify-between gap-1">
+                        <h4 className="text-xs font-bold text-slate-100 group-hover:text-emerald-400 line-clamp-2 transition-colors">
+                          {donghua.title}
+                        </h4>
+                        <span className="text-[10px] text-slate-500">Anichin Sub Indo</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               )}
-            </section>
+            </div>
+          )}
 
-            {/* 8. MUSIC DISCOVERY (Strict 1:1 Square Artwork) */}
-            <section className="space-y-4">
-              <SectionHeader
-                category="music"
-                title="Eksplorasi Musik"
-                subtitle="Putar langsung trek populer ke pemutar persisten FazuraStream"
-                viewAllTo="/music"
-                viewAllLabel="Buka Music Hub"
-              />
-              <MediaCarousel id="landing-music">
-                {trendingMusic.map((track) => {
+          {/* Row 4: Movies & Series Carousel */}
+          {(activeMediaTab === 'all' || activeMediaTab === 'movie') && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-rose-500/20 pb-2">
+                <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-rose-400 font-heading">
+                  <Clapperboard className="w-4 h-4" />
+                  <span>Movie & Serial TV Bioskop (Cinema HD)</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <Link to="/movies" className="text-xs text-slate-400 hover:text-white transition-colors">
+                    Lihat Semua →
+                  </Link>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('movies-row', 'left')}
+                      aria-label="Geser film ke kiri"
+                      className="w-8 h-8 rounded-lg bg-[#181827] border border-white/10 hover:border-rose-400/50 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('movies-row', 'right')}
+                      aria-label="Geser film ke kanan"
+                      className="w-8 h-8 rounded-lg bg-[#181827] border border-white/10 hover:border-rose-400/50 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {moviesLoading ? (
+                <div className="flex gap-3 overflow-hidden py-1">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="w-36 sm:w-44 h-60 rounded-2xl bg-surface animate-pulse shrink-0" />
+                  ))}
+                </div>
+              ) : moviesError || latestMovies.length === 0 ? (
+                <div className="p-6 rounded-2xl bg-surface/60 border border-border-subtle flex items-center justify-between gap-4 text-xs text-text-secondary">
+                  <span>Feed movie terbaru sedang tidak dapat dijangkau.</span>
+                  <button
+                    type="button"
+                    onClick={() => refetchMovies()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500 text-white font-bold"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Muat Ulang
+                  </button>
+                </div>
+              ) : (
+                <div
+                  id="movies-row"
+                  className="flex items-stretch gap-3.5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 scroll-smooth"
+                >
+                  {latestMovies.map((movie) => (
+                    <Link
+                      key={movie.id}
+                      to={`/movies/${movie.id}`}
+                      className="w-36 sm:w-44 shrink-0 snap-start flex flex-col rounded-2xl overflow-hidden bg-surface/90 border border-white/5 hover:border-rose-500/40 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-rose-500/10 group"
+                    >
+                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-surface-base">
+                        <img
+                          src={movie.posterUrl || POSTER_FALLBACK_SVG}
+                          alt={movie.title}
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = POSTER_FALLBACK_SVG;
+                          }}
+                          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                        />
+                        <div className="absolute top-1.5 left-1.5 z-10">
+                          <span
+                            className={`px-1.5 py-0.2 text-[9px] font-black uppercase rounded text-white shadow-sm ${
+                              movie.mediaType === 'tv'
+                                ? 'bg-indigo-600/90 border border-indigo-400/30'
+                                : 'bg-rose-600/90 border border-rose-400/30'
+                            }`}
+                          >
+                            {movie.mediaType === 'tv' ? 'Series' : 'Movie'}
+                          </span>
+                        </div>
+                        {movie.ratingValue && (
+                          <div className="absolute bottom-1.5 left-1.5 z-10">
+                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-amber-400 text-[10px] font-bold border border-white/10">
+                              ★ {movie.ratingValue.toFixed(1)}
+                            </span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#090912] via-transparent to-transparent opacity-80" />
+                      </div>
+                      <div className="p-2.5 flex-1 flex flex-col justify-between gap-1">
+                        <h4 className="text-xs font-bold text-slate-100 group-hover:text-rose-400 line-clamp-2 transition-colors">
+                          {movie.title}
+                        </h4>
+                        <span className="text-[10px] text-slate-500">
+                          {movie.mediaType === 'tv' ? 'Serial TV' : 'Film Bioskop'}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Row 5: Music Hits Carousel */}
+          {(activeMediaTab === 'all' || activeMediaTab === 'music') && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-[#1DB954]/20 pb-2">
+                <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#1DB954] font-heading">
+                  <Headphones className="w-4 h-4" />
+                  <span>Musik & Lagu Trending (YouTube Music)</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <Link to="/music" className="text-xs text-slate-400 hover:text-white transition-colors">
+                    Lihat Semua →
+                  </Link>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('music-row', 'left')}
+                      aria-label="Geser musik ke kiri"
+                      className="w-8 h-8 rounded-lg bg-[#181827] border border-white/10 hover:border-[#1DB954]/50 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('music-row', 'right')}
+                      aria-label="Geser musik ke kanan"
+                      className="w-8 h-8 rounded-lg bg-[#181827] border border-white/10 hover:border-[#1DB954]/50 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                id="music-row"
+                className="flex items-stretch gap-3.5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 scroll-smooth"
+              >
+                {trendingMusicList.map((track) => {
                   const isActiveTrack = currentTrack?.id === track.id;
-                  const isTrackPlaying = isActiveTrack && isPlaying;
-
+                  const isThisPlaying = isActiveTrack && isPlaying;
                   return (
                     <button
-                      key={track.id}
                       type="button"
+                      key={track.id}
                       onClick={() => {
                         if (isActiveTrack) {
                           togglePlay();
                         } else {
-                          playTrack(track, FAZURA_MUSIC_CATALOG);
+                          playTrack(track, trendingMusicList);
                         }
                       }}
-                      className={`group w-[152px] sm:w-[172px] lg:w-[184px] shrink-0 snap-start text-left rounded-[10px] overflow-hidden bg-[#191C25] border transition-colors cursor-pointer ${
+                      className={`w-36 sm:w-44 shrink-0 snap-start flex flex-col text-left rounded-2xl overflow-hidden bg-surface/90 border transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl group cursor-pointer ${
                         isActiveTrack
-                          ? 'border-[#E68BA6]'
-                          : 'border-[#343744] hover:border-[#454958]'
+                          ? 'border-[#1DB954] shadow-lg shadow-[#1DB954]/20'
+                          : 'border-white/5 hover:border-[#1DB954]/40 hover:shadow-[#1DB954]/15'
                       }`}
                     >
-                      <div className="relative aspect-square w-full bg-[#12141B] overflow-hidden">
+                      <div className="relative aspect-square w-full overflow-hidden bg-surface-base">
                         <img
-                          src={track.thumbnail || MUSIC_FALLBACK_SVG}
+                          src={track.thumbnail || POSTER_FALLBACK_SVG}
                           alt={track.title}
                           loading="lazy"
-                          onLoad={handleMusicImageLoad}
-                          onError={handleMusicImageError}
-                          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = POSTER_FALLBACK_SVG;
+                          }}
+                          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 bg-[#0B0C10]/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="w-10 h-10 rounded-full bg-[#F0A15B] text-[#0B0C10] flex items-center justify-center">
-                            {isTrackPlaying ? (
-                              <Pause className="w-4 h-4 fill-current" />
-                            ) : (
-                              <Play className="w-4 h-4 fill-current ml-0.5" />
-                            )}
+                        <div className="absolute top-1.5 left-1.5 z-10">
+                          <span className="px-1.5 py-0.2 text-[9px] font-black uppercase rounded bg-[#1DB954]/90 text-black border border-[#1ed760]/30">
+                            {isThisPlaying ? 'Playing' : 'Lagu'}
                           </span>
                         </div>
+                        <div
+                          className={`absolute inset-0 bg-black/40 transition-opacity flex items-center justify-center ${
+                            isActiveTrack ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                          }`}
+                        >
+                          <div className="w-9 h-9 rounded-full bg-[#1DB954] text-black flex items-center justify-center shadow-lg">
+                            {isThisPlaying ? (
+                              <span className="w-2.5 h-2.5 bg-black rounded-sm" />
+                            ) : (
+                              <Play className="w-4 h-4 fill-black ml-0.5" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/90 via-transparent to-transparent opacity-80" />
                       </div>
-                      <div className="p-3 space-y-1">
-                        <h3 className="text-[13px] font-semibold text-[#F2F0EC] group-hover:text-[#F0A15B] truncate">
-                          {track.title}
-                        </h3>
-                        <p className="text-xs text-[#A2A4B1] truncate">{track.artist}</p>
-                        {track.durationFormatted && (
-                          <p className="text-[11px] text-[#747887]">{track.durationFormatted}</p>
-                        )}
+                      <div className="p-2.5 flex-1 flex flex-col justify-between gap-1 w-full">
+                        <div>
+                          <h4
+                            className={`text-xs font-bold line-clamp-1 transition-colors ${
+                              isActiveTrack ? 'text-[#1DB954]' : 'text-slate-100 group-hover:text-[#1DB954]'
+                            }`}
+                          >
+                            {track.title}
+                          </h4>
+                          <p className="text-[11px] text-text-secondary truncate mt-0.5">{track.artist}</p>
+                        </div>
+                        <span className="text-[10px] text-[#1DB954] font-semibold">
+                          {track.durationFormatted || 'Audio'}
+                        </span>
                       </div>
                     </button>
                   );
                 })}
-              </MediaCarousel>
-            </section>
-
-            {/* 9. PERSONALIZED RECOMMENDATIONS (If saved bookmarks exist) */}
-            {preferredCategory && (
-              <section className="space-y-4">
-                <SectionHeader
-                  category={preferredCategory}
-                  title={`Rekomendasi ${CATEGORY_THEMES[preferredCategory].label} untuk Anda`}
-                  subtitle="Disusun berdasarkan koleksi favorit yang sering Anda simpan"
-                  viewAllTo={`/${preferredCategory === 'movies' ? 'movies' : preferredCategory}`}
-                />
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                  {preferredCategory === 'anime' &&
-                    latestAnimeUpdates.slice(0, 5).map((a) => (
-                      <AnimeGridCard key={`pref-${a.id}`} anime={a} />
-                    ))}
-                  {preferredCategory === 'manga' &&
-                    popularManga.slice(0, 5).map((m) => (
-                      <MangaCard key={`pref-${m.slug}`} manga={m} />
-                    ))}
-                  {preferredCategory === 'movies' &&
-                    latestMovies.slice(0, 5).map((mv) => (
-                      <MediaCard
-                        key={`pref-${mv.id}`}
-                        id={mv.id}
-                        category="movies"
-                        title={mv.title}
-                        imageUrl={mv.posterUrl || ''}
-                        link={`/movies/${mv.id}`}
-                        rating={mv.ratingValue}
-                        metaPrimary={mv.mediaType === 'tv' ? 'Serial TV' : 'Film'}
-                      />
-                    ))}
-                  {preferredCategory === 'donghua' &&
-                    popularDonghua.slice(0, 5).map((d) => (
-                      <MediaCard
-                        key={`pref-${d.slug}`}
-                        id={d.slug}
-                        category="donghua"
-                        title={d.title}
-                        imageUrl={proxyDonghuaPoster(d.poster || '') || d.poster}
-                        link={`/donghua/detail/${d.slug}`}
-                        metaPrimary={d.currentEpisode || 'Donghua'}
-                      />
-                    ))}
-                  {preferredCategory === 'music' &&
-                    trendingMusic.slice(0, 5).map((tr) => (
-                      <button
-                        key={`pref-${tr.id}`}
-                        type="button"
-                        onClick={() => playTrack(tr, FAZURA_MUSIC_CATALOG)}
-                        className="text-left rounded-[10px] overflow-hidden bg-[#191C25] border border-[#343744] hover:border-[#454958] p-3 flex items-center gap-3 cursor-pointer"
-                      >
-                        <img
-                          src={tr.thumbnail || MUSIC_FALLBACK_SVG}
-                          alt={tr.title}
-                          onLoad={handleMusicImageLoad}
-                          onError={handleMusicImageError}
-                          className="w-12 h-12 rounded-[6px] object-cover shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <p className="text-[13px] font-semibold text-[#F2F0EC] truncate">{tr.title}</p>
-                          <p className="text-xs text-[#A2A4B1] truncate">{tr.artist}</p>
-                        </div>
-                      </button>
-                    ))}
-                </div>
-              </section>
-            )}
-
-            {/* 10. LATEST UPDATES SUMMARY */}
-            {latestAnimeUpdates.length > 0 && (
-              <section className="space-y-4">
-                <SectionHeader
-                  title="Update Katalog Terbaru"
-                  subtitle="Daftar rilis terkini lintas seri anime dan komik yang siap ditonton"
-                  viewAllTo="/anime?tab=completed"
-                  viewAllLabel="Lihat Arsip Lengkap"
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {latestAnimeUpdates.slice(0, 6).map((item) => (
-                    <Link
-                      key={`upd-${item.id}`}
-                      to={`/anime/detail/${item.provider || 'otakudesu'}/${item.id}`}
-                      className="flex items-center gap-3 p-2.5 rounded-[10px] bg-[#191C25] border border-[#343744] hover:border-[#454958] transition-colors group"
-                    >
-                      <img
-                        src={item.poster || createPosterFallbackSvg('ANIME', '#A78BFA')}
-                        alt={item.title}
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = createPosterFallbackSvg(
-                            'ANIME',
-                            '#A78BFA'
-                          );
-                        }}
-                        className="w-12 aspect-[2/3] rounded-[6px] object-cover shrink-0 bg-[#12141B]"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[13px] font-semibold text-[#F2F0EC] group-hover:text-[#F0A15B] truncate">
-                          {item.title}
-                        </p>
-                        <div className="flex items-center gap-2 text-[11px] text-[#A2A4B1] mt-1">
-                          {item.episodes && <span>{item.episodes} Ep</span>}
-                          {item.score && (
-                            <span className="inline-flex items-center gap-0.5 text-[#F0A15B]">
-                              <Star className="w-3 h-3 fill-[#F0A15B]" />
-                              {item.score}
-                            </span>
-                          )}
-                          {item.releasedOn && <span className="truncate text-[#747887]">{item.releasedOn}</span>}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
         </div>
       </MotionConfig>
     </LazyMotion>

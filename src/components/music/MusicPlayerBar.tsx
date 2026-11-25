@@ -43,24 +43,24 @@ function formatTime(seconds: number): string {
 function EqualizerVisualizer({ isPlaying }: { isPlaying: boolean }) {
   return (
     <div
-      className="flex items-end gap-0.5 h-3.5 px-1 py-0.5 rounded bg-[#0B0C10]/80 select-none"
+      className="flex items-end gap-0.5 h-3.5 px-1 py-0.5 rounded bg-black/50 backdrop-blur-xs select-none"
       title={isPlaying ? 'Audio Aktif' : 'Audio Dijeda'}
       aria-label={isPlaying ? 'Audio Aktif' : 'Audio Dijeda'}
     >
       <span
-        className={`w-0.5 sm:w-1 bg-[#E68BA6] rounded-full transition-all duration-300 ${
+        className={`w-0.5 sm:w-1 bg-[#1DB954] rounded-full transition-all duration-300 ${
           isPlaying ? 'animate-soundwave-1' : 'h-1 opacity-40'
         }`}
         style={{ height: isPlaying ? undefined : '3px' }}
       />
       <span
-        className={`w-0.5 sm:w-1 bg-[#E68BA6] rounded-full transition-all duration-300 ${
+        className={`w-0.5 sm:w-1 bg-[#1DB954] rounded-full transition-all duration-300 ${
           isPlaying ? 'animate-soundwave-2' : 'h-1 opacity-40'
         }`}
         style={{ height: isPlaying ? undefined : '6px' }}
       />
       <span
-        className={`w-0.5 sm:w-1 bg-[#E68BA6] rounded-full transition-all duration-300 ${
+        className={`w-0.5 sm:w-1 bg-[#1DB954] rounded-full transition-all duration-300 ${
           isPlaying ? 'animate-soundwave-3' : 'h-1 opacity-40'
         }`}
         style={{ height: isPlaying ? undefined : '3px' }}
@@ -150,13 +150,13 @@ export function MusicPlayerBar() {
 
   return (
     <div
-      className={`fixed bottom-14 md:bottom-0 left-0 right-0 z-40 bg-[#0B0C10]/95 border-t border-[#343744] backdrop-blur-md text-[#F2F0EC] shadow-dialog transition-all duration-200 ${
+      className={`fixed bottom-14 md:bottom-0 left-0 right-0 z-40 bg-[#090912]/95 border-t border-border-subtle backdrop-blur-2xl text-white shadow-2xl transition-all duration-300 ease-in-out ${
         isMini ? 'py-1.5 px-3 sm:px-6' : 'py-2 sm:py-3 px-3 sm:px-6'
       }`}
     >
       {/* Audio Error Notification Toast above bar */}
       {playerError && !showQueue && (
-        <div className="absolute bottom-full left-3 right-3 sm:left-auto sm:right-6 mb-2 sm:max-w-md rounded-[10px] bg-[#191C25] border border-rose-500/40 px-3.5 py-2.5 shadow-dialog flex items-center justify-between gap-3 text-xs">
+        <div className="absolute bottom-full left-3 right-3 sm:left-auto sm:right-6 mb-2 sm:max-w-md rounded-2xl bg-surface border border-rose-500/40 px-3.5 py-2.5 shadow-2xl flex items-center justify-between gap-3 text-xs animate-in fade-in slide-in-from-bottom-2">
           <div className="flex items-center gap-2 text-rose-300 min-w-0">
             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
             <span className="truncate">{playerError}</span>
@@ -165,7 +165,7 @@ export function MusicPlayerBar() {
             <button
               type="button"
               onClick={nextTrack}
-              className="px-2.5 py-1 rounded-[6px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] font-semibold text-[11px]"
+              className="px-2.5 py-1 rounded-lg bg-[#1DB954] text-black font-bold text-[11px]"
             >
               Lagu Berikutnya
             </button>
@@ -173,7 +173,7 @@ export function MusicPlayerBar() {
               type="button"
               onClick={clearPlayerError}
               aria-label="Tutup pesan error audio"
-              className="p-1 text-[#747887] hover:text-[#F2F0EC]"
+              className="p-1 text-text-muted hover:text-white"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -183,11 +183,11 @@ export function MusicPlayerBar() {
 
       {/* Playback Queue Drawer */}
       {showQueue && (
-        <div className="absolute bottom-full right-3 left-3 sm:left-auto sm:right-6 mb-2 z-50 sm:w-96 max-h-[60vh] rounded-[16px] bg-[#191C25] border border-[#343744] shadow-dialog overflow-hidden flex flex-col">
-          <div className="px-4 py-3 border-b border-[#343744] flex items-center justify-between bg-[#12141B]">
+        <div className="absolute bottom-full right-3 left-3 sm:left-auto sm:right-6 mb-2 z-50 sm:w-96 max-h-[60vh] rounded-2xl bg-[#11111D] border border-white/15 shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-2">
+          <div className="px-4 py-3 border-b border-border-subtle flex items-center justify-between bg-[#181827]">
             <div className="flex items-center gap-2">
-              <ListMusic className="w-4 h-4 text-[#E68BA6]" />
-              <h4 className="font-heading text-xs sm:text-sm font-semibold text-[#F2F0EC]">
+              <ListMusic className="w-4 h-4 text-[#1DB954]" />
+              <h4 className="text-xs sm:text-sm font-bold text-white">
                 Antrean Pemutaran ({queue.length})
               </h4>
             </div>
@@ -196,7 +196,7 @@ export function MusicPlayerBar() {
                 <button
                   type="button"
                   onClick={clearQueue}
-                  className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 px-2 py-1 rounded-[6px] hover:bg-rose-500/10 transition-colors flex items-center gap-1"
+                  className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 px-2 py-1 rounded-lg hover:bg-rose-500/10 transition-colors flex items-center gap-1"
                 >
                   <Trash2 className="w-3 h-3" />
                   Kosongkan
@@ -206,32 +206,32 @@ export function MusicPlayerBar() {
                 type="button"
                 onClick={() => setShowQueue(false)}
                 aria-label="Tutup antrean"
-                className="p-1.5 rounded-[6px] text-[#747887] hover:text-[#F2F0EC] hover:bg-[#232633]"
+                className="p-1.5 rounded-lg text-text-muted hover:text-white hover:bg-white/5"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          <div className="overflow-y-auto divide-y divide-[#343744]/50 p-1.5 max-h-[48vh]">
+          <div className="overflow-y-auto divide-y divide-white/5 p-1.5 max-h-[48vh]">
             {queue.length === 0 ? (
-              <p className="py-8 text-center text-xs text-[#A2A4B1]">Antrean kosong.</p>
+              <p className="py-8 text-center text-xs text-text-muted">Antrean kosong.</p>
             ) : (
               queue.map((track, idx) => {
                 const isActiveItem = currentTrack.id === track.id;
                 return (
                   <div
                     key={`${track.id}-${idx}`}
-                    className={`flex items-center justify-between gap-2.5 p-2 rounded-[10px] transition-colors group ${
-                      isActiveItem ? 'bg-[#232633]' : 'hover:bg-[#232633]/60'
+                    className={`flex items-center justify-between gap-2.5 p-2 rounded-xl transition-colors group ${
+                      isActiveItem ? 'bg-[#1DB954]/10' : 'hover:bg-white/5'
                     }`}
                   >
                     <button
                       type="button"
                       onClick={() => playTrack(track, queue)}
-                      className="flex items-center gap-2.5 min-w-0 flex-1 text-left cursor-pointer"
+                      className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
                     >
-                      <span className="text-[10px] font-mono text-[#747887] w-4 shrink-0 text-center">
+                      <span className="text-[10px] font-mono text-text-muted w-4 shrink-0 text-center">
                         {isActiveItem ? '▶' : idx + 1}
                       </span>
                       <img
@@ -239,17 +239,17 @@ export function MusicPlayerBar() {
                         alt={track.title}
                         onError={handleMusicImageError}
                         onLoad={handleMusicImageLoad}
-                        className="w-9 h-9 rounded-[6px] object-cover shrink-0 bg-[#12141B]"
+                        className="w-9 h-9 rounded-lg object-cover shrink-0 bg-surface"
                       />
                       <div className="min-w-0 flex-1">
                         <p
-                          className={`text-xs font-semibold truncate ${
-                            isActiveItem ? 'text-[#E68BA6]' : 'text-[#F2F0EC]'
+                          className={`text-xs font-bold truncate ${
+                            isActiveItem ? 'text-[#1DB954]' : 'text-white'
                           }`}
                         >
                           {track.title}
                         </p>
-                        <p className="text-[11px] text-[#A2A4B1] truncate">{track.artist}</p>
+                        <p className="text-[10px] text-text-secondary truncate">{track.artist}</p>
                       </div>
                     </button>
 
@@ -259,7 +259,7 @@ export function MusicPlayerBar() {
                         onClick={() => removeFromQueue(track.id)}
                         aria-label={`Hapus ${track.title} dari antrean`}
                         title="Hapus dari antrean"
-                        className="p-1.5 rounded-[6px] text-[#747887] hover:text-rose-400 hover:bg-rose-500/10 shrink-0"
+                        className="p-1.5 rounded-lg text-text-muted hover:text-rose-400 hover:bg-rose-500/10 shrink-0"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -272,10 +272,10 @@ export function MusicPlayerBar() {
         </div>
       )}
 
-      {/* Top Slim Progress Bar */}
-      <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#343744] overflow-hidden pointer-events-none">
+      {/* Top 2px Slim Real-Time Progress Bar for both Mini & Expanded views */}
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-white/10 overflow-hidden pointer-events-none">
         <div
-          className="h-full bg-[#E68BA6] transition-all duration-200"
+          className="h-full bg-gradient-to-r from-[#1DB954] to-[#1ed760] transition-all duration-200"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -319,7 +319,7 @@ export function MusicPlayerBar() {
               onClick={togglePlay}
               aria-label={isPlaying ? 'Jeda Lagu' : 'Putar Lagu'}
               title={isPlaying ? 'Jeda' : 'Putar'}
-              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] flex items-center justify-center active:scale-95 transition-transform"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-[#1DB954] hover:bg-[#1ed760] text-black flex items-center justify-center shadow-md shadow-[#1DB954]/30 active:scale-95 transition-transform"
             >
               {isPlaying ? (
                 <Pause className="w-5 h-5 fill-current" />
@@ -392,10 +392,10 @@ export function MusicPlayerBar() {
                 onClick={() => setShowQueue((prev) => !prev)}
                 aria-label="Antrean Lagu"
                 title="Antrean Lagu"
-                className={`w-10 h-11 min-w-[40px] min-h-[44px] flex items-center justify-center rounded-[10px] transition-colors ${
+                className={`w-10 h-11 min-w-[40px] min-h-[44px] flex items-center justify-center rounded-xl transition-all ${
                   showQueue
-                    ? 'bg-[#E68BA6]/15 text-[#E68BA6]'
-                    : 'text-[#A2A4B1] hover:text-[#F2F0EC]'
+                    ? 'bg-[#1DB954]/20 text-[#1DB954]'
+                    : 'text-slate-400 hover:text-white active:scale-95'
                 }`}
               >
                 <ListMusic className="w-4 h-4" />
@@ -405,11 +405,11 @@ export function MusicPlayerBar() {
                 onClick={handleBookmarkToggle}
                 aria-label={bookmarked ? 'Hapus dari Lagu Favorit' : 'Simpan ke Lagu Favorit'}
                 title={bookmarked ? 'Hapus dari Lagu Favorit' : 'Simpan ke Lagu Favorit'}
-                className="w-10 h-11 min-w-[40px] min-h-[44px] flex items-center justify-center rounded-[10px] text-[#A2A4B1] hover:text-[#E68BA6] transition-colors"
+                className="w-10 h-11 min-w-[40px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-400 active:scale-95 transition-all"
               >
                 <Heart
                   className={`w-4 h-4 transition-colors ${
-                    bookmarked ? 'fill-[#E68BA6] text-[#E68BA6]' : 'text-[#A2A4B1]'
+                    bookmarked ? 'fill-rose-500 text-rose-500' : 'text-slate-400'
                   }`}
                 />
               </button>
@@ -437,9 +437,9 @@ export function MusicPlayerBar() {
                 value={currentTime}
                 onChange={(e) => seekTo(parseFloat(e.target.value))}
                 aria-label="Seek track position"
-                className="w-full h-1.5 bg-[#232633] rounded-full appearance-none cursor-pointer accent-[#F0A15B]"
+                className="w-full h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-[#1DB954]"
                 style={{
-                  background: `linear-gradient(to right, #E68BA6 ${progressPercent}%, #343744 ${progressPercent}%)`,
+                  background: `linear-gradient(to right, #1DB954 ${progressPercent}%, rgba(255,255,255,0.2) ${progressPercent}%)`,
                 }}
               />
             </div>
@@ -453,8 +453,8 @@ export function MusicPlayerBar() {
               onClick={toggleShuffle}
               aria-label={isShuffle ? 'Acak: Aktif' : 'Acak: Nonaktif'}
               title={isShuffle ? 'Acak: Aktif' : 'Acak: Nonaktif'}
-              className={`w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-[10px] transition-colors ${
-                isShuffle ? 'text-[#E68BA6]' : 'text-[#A2A4B1] hover:text-[#F2F0EC]'
+              className={`w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors active:scale-95 ${
+                isShuffle ? 'text-[#1DB954]' : 'text-slate-400 hover:text-white'
               }`}
             >
               <Shuffle className="w-4 h-4" />
@@ -466,7 +466,7 @@ export function MusicPlayerBar() {
                 onClick={prevTrack}
                 aria-label="Lagu Sebelumnya"
                 title="Lagu Sebelumnya"
-                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-[10px] text-[#A2A4B1] hover:text-[#F2F0EC] transition-colors"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-300 hover:text-white active:scale-95 transition-all"
               >
                 <SkipBack className="w-5 h-5 fill-current" />
               </button>
@@ -475,7 +475,7 @@ export function MusicPlayerBar() {
                 onClick={togglePlay}
                 aria-label={isPlaying ? 'Jeda' : 'Putar'}
                 title={isPlaying ? 'Jeda' : 'Putar'}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] flex items-center justify-center active:scale-95 transition-transform"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-[#1DB954] hover:bg-[#1ed760] text-black flex items-center justify-center shadow-md shadow-[#1DB954]/30 active:scale-95 transition-transform"
               >
                 {isPlaying ? (
                   <Pause className="w-5 h-5 fill-current" />
@@ -488,7 +488,7 @@ export function MusicPlayerBar() {
                 onClick={nextTrack}
                 aria-label="Lagu Berikutnya"
                 title="Lagu Berikutnya"
-                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-[10px] text-[#A2A4B1] hover:text-[#F2F0EC] transition-colors"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-300 hover:text-white active:scale-95 transition-all"
               >
                 <SkipForward className="w-5 h-5 fill-current" />
               </button>
@@ -500,8 +500,8 @@ export function MusicPlayerBar() {
                 onClick={toggleRepeat}
                 aria-label={`Ulangi: ${repeatMode}`}
                 title={`Ulangi: ${repeatMode}`}
-                className={`w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-[10px] transition-colors ${
-                  repeatMode !== 'off' ? 'text-[#E68BA6]' : 'text-[#A2A4B1] hover:text-[#F2F0EC]'
+                className={`w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors active:scale-95 ${
+                  repeatMode !== 'off' ? 'text-[#1DB954]' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 {repeatMode === 'one' ? <Repeat1 className="w-4 h-4" /> : <Repeat className="w-4 h-4" />}
@@ -511,10 +511,10 @@ export function MusicPlayerBar() {
                 onClick={() => setShowLyrics((prev) => !prev)}
                 aria-label="Buka Lirik & Mode Mic Karaoke"
                 title="Buka Lirik & Mode Mic Karaoke"
-                className={`w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-[10px] transition-colors ${
+                className={`w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-all ${
                   showLyrics
-                    ? 'bg-[#E68BA6]/20 text-[#E68BA6] border border-[#E68BA6]/40'
-                    : 'text-[#A2A4B1] hover:text-[#E68BA6]'
+                    ? 'bg-[#1DB954] text-black shadow-lg shadow-[#1DB954]/30 scale-105'
+                    : 'text-slate-400 hover:text-[#1DB954] active:scale-95'
                 }`}
               >
                 <Mic2 className="w-4 h-4" />
@@ -587,8 +587,8 @@ export function MusicPlayerBar() {
               onClick={toggleShuffle}
               title={isShuffle ? 'Acak: Aktif' : 'Acak: Nonaktif'}
               aria-label={isShuffle ? 'Acak: Aktif' : 'Acak: Nonaktif'}
-              className={`p-1.5 rounded-[6px] text-xs transition-colors ${
-                isShuffle ? 'text-[#E68BA6]' : 'text-[#A2A4B1] hover:text-[#F2F0EC]'
+              className={`p-1.5 rounded-lg text-xs transition-colors ${
+                isShuffle ? 'text-[#1DB954]' : 'text-slate-400 hover:text-white'
               }`}
             >
               <Shuffle className="w-4 h-4" />
@@ -598,7 +598,7 @@ export function MusicPlayerBar() {
               onClick={prevTrack}
               title="Lagu Sebelumnya"
               aria-label="Lagu Sebelumnya"
-              className="p-1.5 rounded-[6px] text-[#A2A4B1] hover:text-[#F2F0EC] transition-colors"
+              className="p-1.5 rounded-lg text-slate-300 hover:text-white transition-colors"
             >
               <SkipBack className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
             </button>
@@ -607,14 +607,14 @@ export function MusicPlayerBar() {
               onClick={togglePlay}
               title={isPlaying ? 'Jeda' : 'Putar'}
               aria-label={isPlaying ? 'Jeda' : 'Putar'}
-              className="w-9 h-9 rounded-full bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#1DB954] hover:bg-[#1ed760] text-black flex items-center justify-center transition-transform hover:scale-105 shadow-md shadow-[#1DB954]/30"
             >
               {isLoadingTrack && !isPlaying ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : isPlaying ? (
-                <Pause className="w-4 h-4 fill-current" />
+                <Pause className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
               ) : (
-                <Play className="w-4 h-4 fill-current ml-0.5" />
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current ml-0.5" />
               )}
             </button>
 
@@ -622,7 +622,7 @@ export function MusicPlayerBar() {
               onClick={nextTrack}
               title="Lagu Berikutnya"
               aria-label="Lagu Berikutnya"
-              className="p-1.5 rounded-[6px] text-[#A2A4B1] hover:text-[#F2F0EC] transition-colors"
+              className="p-1.5 rounded-lg text-slate-300 hover:text-white transition-colors"
             >
               <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
             </button>
@@ -631,8 +631,8 @@ export function MusicPlayerBar() {
               onClick={toggleRepeat}
               title={`Ulangi: ${repeatMode}`}
               aria-label={`Ulangi: ${repeatMode}`}
-              className={`p-1.5 rounded-[6px] text-xs transition-colors ${
-                repeatMode !== 'off' ? 'text-[#E68BA6]' : 'text-[#A2A4B1] hover:text-[#F2F0EC]'
+              className={`p-1.5 rounded-lg text-xs transition-colors ${
+                repeatMode !== 'off' ? 'text-[#1DB954]' : 'text-slate-400 hover:text-white'
               }`}
             >
               {repeatMode === 'one' ? (
@@ -644,7 +644,7 @@ export function MusicPlayerBar() {
           </div>
 
           {/* Progress Seek Bar */}
-          <div className="w-full flex items-center gap-2 text-[10px] sm:text-xs text-[#A2A4B1] font-mono">
+          <div className="w-full flex items-center gap-2 text-[10px] sm:text-xs text-slate-400 font-mono">
             <span className="w-8 sm:w-10 text-right">{formatTime(currentTime)}</span>
             <div className="relative flex-1 group py-1 flex items-center cursor-pointer">
               <input
@@ -655,9 +655,9 @@ export function MusicPlayerBar() {
                 value={currentTime}
                 onChange={(e) => seekTo(parseFloat(e.target.value))}
                 aria-label="Seek track position"
-                className="w-full h-1 bg-[#343744] rounded-full appearance-none cursor-pointer accent-[#F0A15B] group-hover:h-1.5 transition-all"
+                className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-[#1DB954] group-hover:h-1.5 transition-all"
                 style={{
-                  background: `linear-gradient(to right, #E68BA6 ${progressPercent}%, #343744 ${progressPercent}%)`,
+                  background: `linear-gradient(to right, #1DB954 ${progressPercent}%, rgba(255,255,255,0.2) ${progressPercent}%)`,
                 }}
               />
             </div>
@@ -671,10 +671,10 @@ export function MusicPlayerBar() {
             onClick={() => setShowQueue((prev) => !prev)}
             title={`Antrean Lagu (${queue.length})`}
             aria-label="Buka Antrean Pemutaran"
-            className={`p-2 rounded-[10px] transition-colors flex items-center gap-1.5 ${
+            className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${
               showQueue
-                ? 'bg-[#E68BA6]/15 text-[#E68BA6] border border-[#E68BA6]/35'
-                : 'text-[#A2A4B1] hover:text-[#F2F0EC] hover:bg-[#191C25]'
+                ? 'bg-[#1DB954]/20 text-[#1DB954] border border-[#1DB954]/30'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
             <ListMusic className="w-4 h-4" />
@@ -685,22 +685,22 @@ export function MusicPlayerBar() {
             onClick={() => setShowLyrics((prev) => !prev)}
             title="Buka Lirik Sinkronisasi Real-Time & Mode Mic Karaoke"
             aria-label="Buka Lirik Sinkronisasi Real-Time & Mode Mic Karaoke"
-            className={`px-3 py-1.5 rounded-[10px] transition-colors flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
               showLyrics
-                ? 'bg-[#E68BA6]/20 text-[#E68BA6] border border-[#E68BA6]/40 font-semibold'
-                : 'text-[#A2A4B1] hover:text-[#E68BA6] hover:bg-[#191C25]'
+                ? 'bg-[#1DB954] text-black font-bold shadow-md shadow-[#1DB954]/30 scale-105'
+                : 'text-slate-400 hover:text-[#1DB954] hover:bg-white/5'
             }`}
           >
             <Mic2 className="w-4 h-4" />
             <span className="hidden md:inline text-xs font-semibold">Lirik & Mic</span>
           </button>
 
-          <div className="flex items-center gap-1.5" title={`Volume: ${isMuted ? 0 : volume}%`}>
+          <div className="flex items-center gap-2" title={`Volume: ${isMuted ? 0 : volume}%`}>
             <button
               onClick={toggleMute}
               title={isMuted ? 'Nyalakan Suara' : 'Bisukan'}
               aria-label={isMuted ? 'Nyalakan Suara' : 'Bisukan'}
-              className="p-1.5 rounded-[6px] text-[#A2A4B1] hover:text-[#F2F0EC] transition-colors"
+              className="p-1 text-slate-400 hover:text-white transition-colors"
             >
               {isMuted || volume === 0 ? (
                 <VolumeX className="w-4 h-4 text-rose-400" />
@@ -715,7 +715,7 @@ export function MusicPlayerBar() {
               value={isMuted ? 0 : volume}
               onChange={(e) => setVolume(parseInt(e.target.value, 10))}
               aria-label="Music volume slider"
-              className="hidden lg:block w-16 lg:w-20 h-1 bg-[#343744] rounded-full appearance-none cursor-pointer accent-[#F0A15B]"
+              className="w-16 md:w-20 h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-[#1DB954]"
             />
           </div>
 

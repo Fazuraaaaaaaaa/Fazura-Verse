@@ -145,12 +145,12 @@ export function MangaDetailPage() {
   if (error || !manga) {
     return (
       <div className="max-w-xl mx-auto py-24 px-4 text-center space-y-5">
-        <div className="w-16 h-16 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto border border-rose-500/20">
+        <div className="w-16 h-16 rounded-3xl bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto border border-rose-500/20 shadow-lg shadow-rose-500/10">
           <AlertCircle className="w-8 h-8" />
         </div>
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold text-[#F2F0EC] font-heading">Komik Tidak Ditemukan</h2>
-          <p className="text-xs text-[#A2A4B1]">
+          <h2 className="text-2xl font-black text-white font-heading">Komik Tidak Ditemukan</h2>
+          <p className="text-xs text-text-secondary">
             {(error as any)?.message ||
               'Tidak dapat memuat judul ini. Judul mungkin sedang tidak tersedia di provider.'}
           </p>
@@ -158,14 +158,14 @@ export function MangaDetailPage() {
         <div className="flex justify-center gap-3 pt-2">
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] font-bold text-xs transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-primary text-white font-bold text-xs shadow-lg shadow-accent-primary/20 hover:bg-accent-primary/90 transition-all"
           >
             <RefreshCw className="w-4 h-4" />
             Coba Lagi
           </button>
           <Link
             to="/manga"
-            className="px-5 py-2.5 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] font-semibold text-xs border border-[#343744] transition-colors"
+            className="px-5 py-2.5 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white font-semibold text-xs border border-white/10 transition-colors"
           >
             Kembali ke Manga Hub
           </Link>
@@ -174,25 +174,33 @@ export function MangaDetailPage() {
     );
   }
 
+  const rawType = (manga.type || 'manga').toLowerCase().trim();
+  const typeBadgeColors =
+    rawType === 'manhwa'
+      ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+      : rawType === 'manhua'
+      ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+      : 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30';
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-10 min-w-0">
       {/* Cinematic Hero Backdrop Header */}
-      <div className="relative rounded-2xl overflow-hidden bg-[#191C25] border border-[#343744] shadow-dialog">
+      <div className="relative rounded-3xl overflow-hidden bg-surface border border-white/10 shadow-2xl">
         {/* Blurred Cover Backdrop */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <img
             src={manga.cover}
             alt={manga.title}
             referrerPolicy="no-referrer"
-            className="w-full h-full object-cover filter blur-2xl scale-125 opacity-20"
+            className="w-full h-full object-cover filter blur-3xl scale-125 opacity-25"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#12141B] via-[#191C25]/90 to-[#191C25]/60" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#12141B]/90 via-transparent to-[#12141B]/90" />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-surface/90 to-surface/60" />
+          <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/90 via-transparent to-bg-primary/90" />
         </div>
 
         <div className="relative z-10 p-6 sm:p-10 flex flex-col md:flex-row items-center md:items-start gap-8">
-          {/* Cover Poster (strict 2:3 ratio) */}
-          <div className="relative group w-48 sm:w-56 aspect-[2/3] rounded-[12px] overflow-hidden shrink-0 shadow-dialog border border-[#343744] bg-[#232633]">
+          {/* Cover Poster with Floating Badges */}
+          <div className="relative group w-52 sm:w-64 aspect-[3/4] rounded-2xl overflow-hidden shrink-0 shadow-2xl border-2 border-white/10 bg-surface-elevated">
             <img
               src={manga.cover}
               alt={manga.title}
@@ -201,15 +209,15 @@ export function MangaDetailPage() {
             />
             {/* Rating Badge */}
             {manga.rating && (
-              <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] bg-[#0B0C10]/85 text-[#F0A15B] text-xs font-bold border border-[#343744]">
-                <Star className="w-3.5 h-3.5 fill-[#F0A15B] text-[#F0A15B]" />
+              <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#090912]/85 backdrop-blur-md text-amber-300 text-xs font-black border border-white/10 shadow-lg">
+                <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
                 {manga.rating}
               </div>
             )}
             {/* Status Pill */}
             {manga.status && (
-              <div className="absolute bottom-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-[6px] bg-[#0B0C10]/85 text-[#75C9A0] text-[11px] font-semibold border border-[#343744]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#75C9A0]" />
+              <div className="absolute bottom-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#090912]/85 backdrop-blur-md text-emerald-400 text-[11px] font-bold border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 {manga.status}
               </div>
             )}
@@ -219,53 +227,55 @@ export function MangaDetailPage() {
           <div className="flex-1 space-y-4 text-center md:text-left min-w-0">
             {/* Chips Header */}
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#232633] text-[#75C9A0] border border-[#75C9A0]/35">
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border shadow-sm ${typeBadgeColors}`}
+              >
                 {manga.type || 'Manga'}
               </span>
               {manga.release && (
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#232633] text-[#A2A4B1] border border-[#343744]">
-                  <Calendar className="w-3.5 h-3.5 text-[#75C9A0]" />
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-surface-elevated text-slate-300 border border-white/8">
+                  <Calendar className="w-3.5 h-3.5 text-accent-soft" />
                   {manga.release}
                 </span>
               )}
               {manga.reader && (
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#232633] text-[#A2A4B1] border border-[#343744]">
-                  <Users className="w-3.5 h-3.5 text-[#75C9A0]" />
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-surface-elevated text-slate-300 border border-white/8">
+                  <Users className="w-3.5 h-3.5 text-accent-primary" />
                   {manga.reader} Pembaca
                 </span>
               )}
               {manga.chapters && (
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#232633] text-[#A2A4B1] border border-[#343744]">
-                  <BookOpen className="w-3.5 h-3.5 text-[#75C9A0]" />
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-surface-elevated text-slate-300 border border-white/8">
+                  <BookOpen className="w-3.5 h-3.5 text-accent-soft" />
                   {manga.chapters.length} Chapter
                 </span>
               )}
             </div>
 
             {/* Title */}
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-[#F2F0EC] font-heading tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white font-heading tracking-tight leading-tight">
               {manga.title}
             </h1>
 
             {manga.otherTitle && (
-              <p className="text-xs sm:text-sm text-[#A2A4B1] font-medium line-clamp-2">
+              <p className="text-xs sm:text-sm text-text-secondary font-medium line-clamp-2">
                 Judul Lain: {manga.otherTitle}
               </p>
             )}
 
             {/* Author / Artist */}
             {(manga.author || manga.artist) && (
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs text-[#A2A4B1] pt-1">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs text-slate-300 pt-1">
                 {manga.author && (
                   <span className="flex items-center gap-1.5">
-                    <PenTool className="w-3.5 h-3.5 text-[#75C9A0]" />
-                    <strong className="text-[#747887]">Author:</strong> {manga.author}
+                    <PenTool className="w-3.5 h-3.5 text-accent-soft" />
+                    <strong className="text-text-muted">Author:</strong> {manga.author}
                   </span>
                 )}
                 {manga.artist && manga.artist !== manga.author && (
                   <span className="flex items-center gap-1.5">
-                    <PenTool className="w-3.5 h-3.5 text-[#75C9A0]" />
-                    <strong className="text-[#747887]">Artist:</strong> {manga.artist}
+                    <PenTool className="w-3.5 h-3.5 text-accent-primary" />
+                    <strong className="text-text-muted">Artist:</strong> {manga.artist}
                   </span>
                 )}
               </div>
@@ -278,9 +288,9 @@ export function MangaDetailPage() {
                   <Link
                     key={g.slug}
                     to={`/browse?genre=${encodeURIComponent(g.slug)}`}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-xs font-semibold bg-[#232633] hover:border-[#75C9A0] text-[#A2A4B1] hover:text-[#F2F0EC] border border-[#343744] transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface-elevated/90 hover:bg-accent-primary/20 text-text-secondary hover:text-white border border-white/5 hover:border-accent-primary/30 transition-all"
                   >
-                    <Tag className="w-3 h-3 text-[#75C9A0]" />
+                    <Tag className="w-3 h-3 text-accent-soft" />
                     {g.title}
                   </Link>
                 ))}
@@ -290,12 +300,12 @@ export function MangaDetailPage() {
             {/* Synopsis */}
             {manga.synopsis && (
               <div className="pt-2 text-left">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#747887] mb-1 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-[#75C9A0]" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-1 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-accent-soft" />
                   Sinopsis
                 </h3>
                 <p
-                  className={`text-xs sm:text-sm text-[#A2A4B1] leading-relaxed ${
+                  className={`text-xs sm:text-sm text-slate-300 leading-relaxed ${
                     !synopsisExpanded ? 'line-clamp-3' : ''
                   }`}
                 >
@@ -304,7 +314,7 @@ export function MangaDetailPage() {
                 {manga.synopsis.length > 250 && (
                   <button
                     onClick={() => setSynopsisExpanded(!synopsisExpanded)}
-                    className="mt-1 text-xs font-semibold text-[#F0A15B] hover:text-[#F6B779] transition-colors"
+                    className="mt-1 text-xs font-bold text-accent-primary hover:text-accent-secondary transition-colors"
                   >
                     {synopsisExpanded ? 'Tampilkan Lebih Sedikit' : 'Baca Selengkapnya...'}
                   </button>
@@ -318,15 +328,15 @@ export function MangaDetailPage() {
               {lastRead ? (
                 <Link
                   to={`/chapter/${lastRead.chapterSlug}`}
-                  className="flex items-center justify-center gap-2 min-h-[44px] px-6 py-2.5 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] font-bold text-xs sm:text-sm transition-colors text-center"
+                  className="flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-accent-primary hover:bg-accent-primary/90 text-white font-black text-xs sm:text-sm shadow-lg shadow-accent-primary/25 transition-all transform hover:scale-[1.02] text-center"
                 >
-                  <PlayCircle className="w-4 h-4" />
+                  <PlayCircle className="w-4 h-4 fill-white" />
                   Lanjutkan {lastRead.chapterTitle}
                 </Link>
               ) : firstChapter ? (
                 <Link
                   to={`/chapter/${firstChapter.slug}`}
-                  className="flex items-center justify-center gap-2 min-h-[44px] px-6 py-2.5 rounded-[10px] bg-[#F0A15B] hover:bg-[#F6B779] text-[#0B0C10] font-bold text-xs sm:text-sm transition-colors text-center"
+                  className="flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-accent-primary hover:bg-accent-primary/90 text-white font-black text-xs sm:text-sm shadow-lg shadow-accent-primary/25 transition-all transform hover:scale-[1.02] text-center"
                 >
                   <BookOpen className="w-4 h-4" />
                   Mulai Baca (Ch. 1)
@@ -344,20 +354,20 @@ export function MangaDetailPage() {
                     type: manga.type,
                   })
                 }
-                className={`flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-[10px] text-xs font-semibold border transition-colors text-center ${
+                className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-bold border transition-all text-center ${
                   bookmarked
-                    ? 'bg-[#232633] border-[#F0A15B] text-[#F0A15B]'
-                    : 'bg-[#232633] hover:bg-[#343744] text-[#A2A4B1] border-[#343744] hover:text-[#F2F0EC]'
+                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-400 shadow-sm'
+                    : 'bg-surface-elevated hover:bg-surface text-slate-200 border-white/10 hover:text-white'
                 }`}
               >
                 {bookmarked ? (
                   <>
-                    <BookmarkCheck className="w-4 h-4 text-[#F0A15B]" />
+                    <BookmarkCheck className="w-4 h-4 text-rose-400" />
                     Tersimpan di Favorit
                   </>
                 ) : (
                   <>
-                    <Bookmark className="w-4 h-4 text-[#A2A4B1]" />
+                    <Bookmark className="w-4 h-4 text-slate-400" />
                     Simpan ke Favorit
                   </>
                 )}
@@ -366,7 +376,7 @@ export function MangaDetailPage() {
               {/* Share Button */}
               <button
                 onClick={handleShare}
-                className="flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 rounded-[10px] bg-[#232633] hover:bg-[#343744] text-[#A2A4B1] hover:text-[#F2F0EC] text-xs font-semibold border border-[#343744] transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-surface-elevated hover:bg-surface text-slate-300 hover:text-white text-xs font-semibold border border-white/10 transition-colors"
                 title="Salin Tautan Komik"
               >
                 <Share2 className="w-4 h-4" />
@@ -376,7 +386,7 @@ export function MangaDetailPage() {
               {/* Back to Manga Hub */}
               <Link
                 to="/manga"
-                className="flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 rounded-[10px] bg-transparent hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] text-xs font-semibold border border-[#343744] text-center transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-surface-elevated hover:bg-surface text-slate-300 hover:text-white text-xs font-semibold border border-white/10 text-center transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Kembali ke Hub
@@ -388,30 +398,27 @@ export function MangaDetailPage() {
 
       {/* Chapters Directory */}
       <section className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-[#343744] pb-4">
-          <div className="flex items-start gap-3">
-            <span className="w-1 h-6 rounded-full bg-[#75C9A0] mt-1 shrink-0" />
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-[#F2F0EC] font-heading flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-[#75C9A0]" />
-                Daftar Chapter
-              </h2>
-              <p className="text-xs text-[#747887] mt-0.5">
-                {manga.chapters?.length || 0} total chapter tersedia untuk dibaca
-              </p>
-            </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black text-white font-heading flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-accent-primary" />
+              Daftar Chapter
+            </h2>
+            <p className="text-xs text-text-secondary mt-0.5">
+              {manga.chapters?.length || 0} total chapter tersedia untuk dibaca
+            </p>
           </div>
 
           <div className="flex items-center gap-2.5">
             {/* Search Chapter */}
             <div className="relative flex-1 sm:w-60">
-              <Search className="w-3.5 h-3.5 text-[#747887] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-3.5 h-3.5 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Cari chapter..."
                 value={searchChapter}
                 onChange={(e) => setSearchChapter(e.target.value)}
-                className="w-full h-9 pl-8 pr-3 text-xs bg-[#191C25] border border-[#343744] rounded-[10px] text-[#F2F0EC] placeholder-[#747887] focus:outline-none focus:border-[#75C9A0] transition-colors"
+                className="w-full pl-8 pr-3 py-2 text-xs bg-surface border border-white/10 rounded-xl text-white placeholder-text-muted focus:outline-none focus:border-accent-primary transition-colors"
               />
             </div>
 
@@ -419,9 +426,9 @@ export function MangaDetailPage() {
             <button
               onClick={() => setSortDescending(!sortDescending)}
               title={sortDescending ? 'Urutkan: Chapter 1 Teratas' : 'Urutkan: Chapter Terbaru'}
-              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#F2F0EC] border border-[#343744] text-xs font-semibold transition-colors shrink-0"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white border border-white/10 text-xs font-semibold transition-colors"
             >
-              <ArrowUpDown className="w-3.5 h-3.5 text-[#75C9A0]" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-accent-soft" />
               <span>{sortDescending ? 'Ch Terbaru' : 'Ch 1 Teratas'}</span>
             </button>
           </div>
@@ -429,47 +436,47 @@ export function MangaDetailPage() {
 
         {/* Chapters Grid */}
         {filteredChapters.length === 0 ? (
-          <div className="p-10 text-center rounded-[12px] bg-[#191C25] border border-[#343744] text-sm text-[#A2A4B1]">
+          <div className="p-10 text-center rounded-2xl bg-surface/50 border border-white/5 text-sm text-text-secondary">
             Tidak ada chapter yang cocok dengan pencarian "{searchChapter}".
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[720px] overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[720px] overflow-y-auto pr-1 scrollbar-thin">
             {filteredChapters.map((ch) => {
               const isRead = readChapterSlugs.has(ch.slug);
               return (
                 <Link
                   key={ch.slug}
                   to={`/chapter/${ch.slug}`}
-                  className={`flex items-center justify-between p-3.5 rounded-[10px] border transition-colors group ${
+                  className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 group ${
                     isRead
-                      ? 'bg-[#12141B] border-[#343744] hover:border-[#75C9A0]/50 opacity-80 hover:opacity-100'
-                      : 'bg-[#191C25] hover:bg-[#232633] border-[#343744] hover:border-[#75C9A0]/60'
+                      ? 'bg-surface/50 border-white/5 hover:border-accent-primary/40 opacity-75 hover:opacity-100'
+                      : 'bg-surface hover:bg-surface-elevated border-white/10 hover:border-accent-primary/50 hover:shadow-lg hover:shadow-accent-primary/10'
                   }`}
                 >
                   <div className="min-w-0 flex-1 pr-2">
                     <p
-                      className={`text-xs sm:text-sm font-semibold truncate group-hover:text-[#75C9A0] transition-colors ${
-                        isRead ? 'text-[#A2A4B1]' : 'text-[#F2F0EC]'
+                      className={`text-xs sm:text-sm font-bold truncate group-hover:text-accent-primary transition-colors ${
+                        isRead ? 'text-slate-400' : 'text-slate-100'
                       }`}
                     >
                       {ch.title}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
                       {ch.date && (
-                        <p className="flex items-center gap-1 text-[11px] text-[#747887]">
-                          <Clock className="w-3 h-3 text-[#75C9A0]" />
+                        <p className="flex items-center gap-1 text-[11px] text-text-muted">
+                          <Clock className="w-3 h-3 text-accent-soft" />
                           {ch.date}
                         </p>
                       )}
                       {isRead && (
-                        <span className="flex items-center gap-1 text-[10px] text-[#75C9A0] font-semibold">
+                        <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold">
                           <CheckCircle className="w-3 h-3" /> Sudah Dibaca
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <span className="text-xs font-semibold text-[#F0A15B] opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  <span className="text-xs font-semibold text-accent-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                     Baca →
                   </span>
                 </Link>
@@ -481,24 +488,24 @@ export function MangaDetailPage() {
 
       {/* Rekomendasi Terkait Sesuai Genre Manga */}
       {relatedMangaList.length > 0 && (
-        <section className="space-y-4 pt-6 border-t border-[#343744] animate-in fade-in duration-300">
+        <section className="space-y-4 pt-6 border-t border-white/5 animate-in fade-in duration-300">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#232633] text-[#75C9A0] border border-[#75C9A0]/35">
-                  Rekomendasi Genre
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#8B5CF6]/20 text-[#A78BFA] border border-[#8B5CF6]/30">
+                  REKOMENDASI GENRE
                 </span>
                 {primaryGenre && (
-                  <span className="text-xs text-[#747887] capitalize">
-                    Genre: <strong className="text-[#75C9A0]">{primaryGenre.title}</strong>
+                  <span className="text-xs text-text-muted capitalize">
+                    Genre: <strong className="text-accent-primary">{primaryGenre.title}</strong>
                   </span>
                 )}
               </div>
-              <h2 className="text-lg sm:text-2xl font-bold text-[#F2F0EC] tracking-tight flex items-center gap-2 font-heading">
-                <Sparkles className="w-5 h-5 text-[#75C9A0]" />
+              <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2 font-heading">
+                <Sparkles className="w-5 h-5 text-accent-primary" />
                 <span>Rekomendasi Komik Terkait</span>
               </h2>
-              <p className="text-xs text-[#A2A4B1]">
+              <p className="text-xs text-text-secondary">
                 Komik populer lainnya dengan genre yang serupa untuk menemani bacaan Anda
               </p>
             </div>
@@ -506,7 +513,7 @@ export function MangaDetailPage() {
             {primaryGenre && (
               <Link
                 to={`/manga?tab=genres&genre=${encodeURIComponent(primaryGenre.slug)}`}
-                className="text-xs font-semibold text-[#F0A15B] hover:text-[#F6B779] flex items-center gap-1 self-start sm:self-auto"
+                className="text-xs font-bold text-accent-primary hover:text-accent-soft flex items-center gap-1 self-start sm:self-auto"
               >
                 <span>Lihat Genre {primaryGenre.title} Lainnya</span>
                 <span aria-hidden="true">→</span>

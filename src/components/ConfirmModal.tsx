@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
-import { Button } from './common/Button';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -39,25 +38,22 @@ export function ConfirmModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B0C10]/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150"
     >
       <div className="absolute inset-0" onClick={onCancel} />
-      <div className="relative w-full max-w-md rounded-[16px] bg-[#191C25] border border-[#343744] p-6 shadow-dialog z-10 space-y-5">
+      <div className="relative w-full max-w-md rounded-3xl bg-surface border border-border-subtle p-6 shadow-2xl z-10 space-y-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div
-              className={`w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 border ${
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
                 variant === 'danger'
-                  ? 'bg-rose-500/15 border-rose-500/35 text-rose-400'
-                  : 'bg-[#F0A15B]/15 border-[#F0A15B]/35 text-[#F0A15B]'
+                  ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
+                  : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
               }`}
             >
               <AlertTriangle className="w-5 h-5" />
             </div>
-            <h3
-              id="confirm-modal-title"
-              className="font-heading text-lg font-semibold text-[#F2F0EC]"
-            >
+            <h3 id="confirm-modal-title" className="text-base sm:text-lg font-black text-white font-heading">
               {title}
             </h3>
           </div>
@@ -65,25 +61,33 @@ export function ConfirmModal({
             type="button"
             onClick={onCancel}
             aria-label="Tutup konfirmasi"
-            className="w-9 h-9 rounded-[10px] text-[#747887] hover:text-[#F2F0EC] hover:bg-[#232633] flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-xl text-text-muted hover:text-white hover:bg-white/5 flex items-center justify-center transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <p className="text-sm text-[#A2A4B1] leading-relaxed">{message}</p>
+        <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">{message}</p>
 
         <div className="flex items-center justify-end gap-2.5 pt-2">
-          <Button variant="secondary" size="md" onClick={onCancel}>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="min-h-[44px] px-4 py-2 rounded-xl bg-surface-elevated hover:bg-white/10 text-text-primary text-xs font-bold border border-border-subtle transition-colors"
+          >
             {cancelLabel}
-          </Button>
-          <Button
-            variant={variant === 'danger' ? 'danger' : 'primary'}
-            size="md"
+          </button>
+          <button
+            type="button"
             onClick={onConfirm}
+            className={`min-h-[44px] px-5 py-2 rounded-xl text-xs font-black transition-all shadow-lg ${
+              variant === 'danger'
+                ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/25'
+                : 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/25'
+            }`}
           >
             {confirmLabel}
-          </Button>
+          </button>
         </div>
       </div>
     </div>
