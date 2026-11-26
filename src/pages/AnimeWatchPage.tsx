@@ -86,6 +86,7 @@ export function AnimeWatchPage() {
   const [playerKey, setPlayerKey] = useState<number>(0);
   const autoSelectedEpisodeRef = useRef<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const SKIP_OP_SECONDS = 85;
 
   usePageMeta({
@@ -159,10 +160,17 @@ export function AnimeWatchPage() {
 
   const skipOpening = () => {
     if (videoRef.current) {
+      // Direct MP4 stream — seek via video element
       videoRef.current.currentTime = Math.min(
         videoRef.current.currentTime + SKIP_OP_SECONDS,
         videoRef.current.duration || Infinity
       );
+    } else if (iframeRef.current?.contentWindow) {
+      // Iframe stream — try postMessage (works if player supports it)
+      const win = iframeRef.current.contentWindow;
+      win.postMessage({ type: 'seek', seconds: SKIP_OP_SECONDS }, '*');
+      win.postMessage({ forward: SKIP_OP_SECONDS }, '*');
+      win.postMessage(`seekforward:${SKIP_OP_SECONDS}`, '*');
     }
   };
 
@@ -581,6 +589,7 @@ export function AnimeWatchPage() {
               />
             ) : isIframeableStream(activeStream) ? (
               <iframe
+                ref={iframeRef}
                 key={`${activeStream}-${playerKey}`}
                 src={activeStream}
                 title={episode.title}
@@ -655,9 +664,8 @@ export function AnimeWatchPage() {
 
           <button
             onClick={skipOpening}
-            disabled={!isDirectVideoStream(activeStream)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#A78BFA] border border-[#343744] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title={isDirectVideoStream(activeStream) ? 'Skip Opening +85 detik' : 'Skip OP hanya untuk stream MP4 langsung'}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#A78BFA] border border-[#343744] transition-colors"
+            title="Skip Opening +85 detik"
           >
             <FastForward className="w-3.5 h-3.5 text-[#A78BFA]" />
             <span className="hidden sm:inline">Skip OP</span>
