@@ -136,20 +136,6 @@ export async function getAnimeServerUrl(
     throw new Error(json?.message || 'Server URL tidak ditemukan dalam respon API.');
   }
 
-  // Attempt to resolve VidHide / DesuStream embed into direct video stream (HLS/MP4)
-  // so that the native HTML5 player is used and Skip OP (+85s) works directly!
-  try {
-    const resolveRes = await fetch(`/api/resolve-stream?url=${encodeURIComponent(url)}`);
-    if (resolveRes.ok) {
-      const resolveJson = await resolveRes.json();
-      if (resolveJson.success && resolveJson.streamUrl) {
-        return resolveJson.streamUrl;
-      }
-    }
-  } catch (e) {
-    console.warn('Direct stream resolution warning:', e);
-  }
-
   return url;
 }
 

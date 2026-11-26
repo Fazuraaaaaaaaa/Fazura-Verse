@@ -226,150 +226,9 @@ function nimegamiProxyPlugin(): Plugin {
   };
 }
 
-function streamResolverPlugin(): Plugin {
-  const handler = async (req: any, res: any) => {
-    try {
-      const urlObj = new URL(req.url, 'http://localhost');
-      const targetUrl = urlObj.searchParams.get('url');
-      if (!targetUrl) {
-        res.statusCode = 400;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ success: false, error: 'Missing url parameter' }));
-        return;
-      }
-
-      const trimmed = targetUrl.trim();
-
-      if (
-        trimmed.endsWith('.mp4') ||
-        trimmed.includes('.mp4?') ||
-        trimmed.endsWith('.m3u8') ||
-        trimmed.includes('.m3u8?')
-      ) {
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Cache-Control', 'public, max-age=3600');
-        res.end(
-          JSON.stringify({
-            success: true,
-            streamUrl: trimmed,
-            type: trimmed.includes('.m3u8') ? 'hls' : 'mp4',
-          })
-        );
-        return;
-      }
-
-      const headers = {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        Referer: 'https://otakudesu.cloud/',
-      };
-
-      if (trimmed.includes('desustream.net')) {
-        const upstream = await fetch(trimmed, { headers });
-        if (upstream.ok) {
-          const html = await upstream.text();
-          const mp4Match = html.match(/https?:\/\/[^\s"'`]+\.mp4[^\s"'`]*/);
-          if (mp4Match) {
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.setHeader('Cache-Control', 'public, max-age=3600');
-            res.end(JSON.stringify({ success: true, streamUrl: mp4Match[0], type: 'mp4' }));
-            return;
-          }
-          const m3u8Match = html.match(/https?:\/\/[^\s"'`]+\.m3u8[^\s"'`]*/);
-          if (m3u8Match) {
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.setHeader('Cache-Control', 'public, max-age=3600');
-            res.end(JSON.stringify({ success: true, streamUrl: m3u8Match[0], type: 'hls' }));
-            return;
-          }
-        }
-      }
-
-      if (
-        trimmed.includes('vidhide') ||
-        trimmed.includes('filedon') ||
-        trimmed.includes('earnvids') ||
-        trimmed.includes('/embed/') ||
-        trimmed.includes('/v/')
-      ) {
-        const upstream = await fetch(trimmed, { headers });
-        if (upstream.ok) {
-          const html = await upstream.text();
-          const evalIdx = html.indexOf('eval(function(p,a,c,k,e,d)');
-          if (evalIdx !== -1) {
-            const scriptEnd = html.indexOf('</script>', evalIdx);
-            const scriptPart = (scriptEnd !== -1 ? html.slice(evalIdx, scriptEnd) : html.slice(evalIdx)).trim();
-            try {
-              const unpackFn = new Function(scriptPart.replace(/^eval/, 'return'));
-              const unpacked = unpackFn();
-              if (typeof unpacked === 'string') {
-                const m3u8Matches = unpacked.match(/https?:\/\/[^\s"'`]+\.m3u8[^\s"'`]*/g);
-                if (m3u8Matches && m3u8Matches.length > 0) {
-                  const best =
-                    m3u8Matches.find((u: string) => u.includes('master') || u.includes('hls')) ||
-                    m3u8Matches[0];
-                  res.statusCode = 200;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.setHeader('Access-Control-Allow-Origin', '*');
-                  res.setHeader('Cache-Control', 'public, max-age=3600');
-                  res.end(JSON.stringify({ success: true, streamUrl: best, type: 'hls' }));
-                  return;
-                }
-                const mp4Matches = unpacked.match(/https?:\/\/[^\s"'`]+\.mp4[^\s"'`]*/g);
-                if (mp4Matches && mp4Matches.length > 0) {
-                  res.statusCode = 200;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.setHeader('Access-Control-Allow-Origin', '*');
-                  res.setHeader('Cache-Control', 'public, max-age=3600');
-                  res.end(JSON.stringify({ success: true, streamUrl: mp4Matches[0], type: 'mp4' }));
-                  return;
-                }
-              }
-            } catch (e) {
-              console.warn('Packer unpack warning:', e);
-            }
-          }
-        }
-      }
-
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.end(JSON.stringify({ success: false, fallbackUrl: trimmed }));
-    } catch (err: any) {
-      res.statusCode = 500;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ success: false, error: err.message || 'Resolve failed' }));
-    }
-  };
-
-  return {
-    name: 'stream-resolver-middleware',
-    configureServer(server) {
-      server.middlewares.use('/api/resolve-stream', handler);
-    },
-    configurePreviewServer(server) {
-      server.middlewares.use('/api/resolve-stream', handler);
-    },
-  };
-}
-
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    imageProxyPlugin(),
-    megaProxyPlugin(),
-    ytSearchPlugin(),
-    nimegamiProxyPlugin(),
-    streamResolverPlugin(),
-  ],
+  plugins: [react(), imageProxyPlugin(), megaProxyPlugin(), ytSearchPlugin(), nimegamiProxyPlugin()],
   build: {
     rollupOptions: {
       output: {
@@ -386,9 +245,6 @@ export default defineConfig({
             }
             if (id.includes('lucide-react')) {
               return 'vendor-icons';
-            }
-            if (id.includes('hls.js')) {
-              return 'vendor-hls';
             }
           }
         },
