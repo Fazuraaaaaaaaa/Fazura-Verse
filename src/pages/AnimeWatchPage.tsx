@@ -154,7 +154,9 @@ export function AnimeWatchPage() {
       u.endsWith('.mp4') ||
       u.includes('.mp4?') ||
       u.includes('stream-stor') ||
-      u.includes('berkasdrive.com/v/')
+      u.includes('berkasdrive.com/v/') ||
+      u.includes('blogger.com/video.g') ||
+      u.includes('bp.blogspot.com')
     );
   };
 
@@ -302,15 +304,11 @@ export function AnimeWatchPage() {
   const franchiseCount = relatedRecommendations?.franchiseCount || 0;
 
   // Server whitelist filter:
-  // For Otakudesu: strictly keep VidHide, FileDon, and Mega
-  // For retro/other providers (Samehadaku, Nimegami, etc.): allow VidHide, FileDon, Mega, plus all working stream alternatives (Kraken, Pixel, Blogger, FastStream, Berkasdrive, Server Video)
+  // Whitelist servers: Mega, KrakenFiles, PixelDrain, Blogger, VidHide, FileDon, DesuStream, etc.
   const filteredServers = useMemo(() => {
     if (!episode?.servers) return [];
     const isAllowed = (title: string, serverId: string) => {
       const clean = (title + ' ' + serverId).toLowerCase();
-      if (effectiveProvider === 'otakudesu') {
-        return clean.includes('vidhide') || clean.includes('mega') || clean.includes('filedon');
-      }
       return (
         clean.includes('vidhide') ||
         clean.includes('mega') ||
@@ -324,6 +322,9 @@ export function AnimeWatchPage() {
         clean.includes('premium') ||
         clean.includes('wibufile') ||
         clean.includes('berkasdrive') ||
+        clean.includes('desu') ||
+        clean.includes('ondesu') ||
+        clean.includes('odstream') ||
         clean.includes('server') ||
         clean.includes('stream') ||
         clean.includes('direct') ||
@@ -648,7 +649,7 @@ export function AnimeWatchPage() {
         ) : (
           <span className="text-text-muted flex items-center gap-1.5">
             <Info className="w-3.5 h-3.5 text-accent-soft shrink-0" />
-            Pilih resolusi dan server resmi: VidHide, Mega, dan FileDon.
+            Pilih resolusi dan server resmi: Mega, Kraken, PixelDrain, Blogger, VidHide, dan FileDon.
           </span>
         )}
 

@@ -204,17 +204,34 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
   const json: any = await fetchJson(`${ANIME_BASE_URL}/episode/${encodeURIComponent(episodeId)}`);
   const data = json?.data || {};
 
-  // Server whitelist: ONLY Mega, FileDon, and VidHide
+  // Server whitelist: Mega, KrakenFiles, PixelDrain, Blogger, FileDon, VidHide, DesuStream
   const isAllowedServer = (title: string): boolean => {
     const clean = (title || '').toLowerCase().trim();
-    return clean.includes('vidhide') || clean.includes('mega') || clean.includes('filedon');
+    return (
+      clean.includes('vidhide') ||
+      clean.includes('mega') ||
+      clean.includes('filedon') ||
+      clean.includes('kraken') ||
+      clean.includes('pixel') ||
+      clean.includes('blogger') ||
+      clean.includes('blogspot') ||
+      clean.includes('desu') ||
+      clean.includes('ondesu') ||
+      clean.includes('odstream') ||
+      clean.includes('gdrive') ||
+      clean.includes('google')
+    );
   };
 
   const formatServerTitle = (title: string) => {
     const clean = (title || '').trim().toLowerCase();
-    if (clean.includes('vidhide')) return 'VidHide';
-    if (clean.includes('filedon')) return 'FileDon';
     if (clean.includes('mega')) return 'Mega';
+    if (clean.includes('kraken')) return 'KrakenFiles';
+    if (clean.includes('pixel')) return 'PixelDrain';
+    if (clean.includes('blogger') || clean.includes('blogspot')) return 'Blogger (Google)';
+    if (clean.includes('ondesu') || clean.includes('desu') || clean.includes('odstream')) return 'DesuStream';
+    if (clean.includes('filedon')) return 'FileDon';
+    if (clean.includes('vidhide')) return 'VidHide';
     return title.trim();
   };
 
@@ -256,7 +273,7 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
     else if (qTitle.includes('480')) displayQuality = '480p (SD)';
     else if (qTitle.includes('360')) displayQuality = '360p (Hemat Data)';
 
-    // Filter serverList to ONLY VidHide, FileDon, and Mega
+    // Filter serverList to allowed high-quality servers
     const serverList = (q.serverList || [])
       .filter((s: any) => isAllowedServer(s.title))
       .map((s: any) => ({
@@ -265,15 +282,19 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
         href: s.href,
       }));
 
-    // Prioritize VidHide first, then FileDon, then Mega
+    // Prioritize high-quality audio servers first (Mega, Kraken, Pixel, Blogger), then VidHide/FileDon
     serverList.sort((a: any, b: any) => {
       const aTitle = (a.title || '').toLowerCase();
       const bTitle = (b.title || '').toLowerCase();
       const getPriority = (t: string) => {
-        if (t.includes('vidhide')) return 1;
-        if (t.includes('filedon')) return 2;
-        if (t.includes('mega')) return 3;
-        return 4;
+        if (t.includes('mega')) return 1;
+        if (t.includes('kraken')) return 2;
+        if (t.includes('pixel')) return 3;
+        if (t.includes('blogger') || t.includes('blogspot')) return 4;
+        if (t.includes('desu')) return 5;
+        if (t.includes('filedon')) return 6;
+        if (t.includes('vidhide')) return 7;
+        return 8;
       };
       return getPriority(aTitle) - getPriority(bTitle);
     });
