@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import Hls from 'hls.js';
 import {
   Film,
   ArrowLeft,
@@ -84,6 +85,7 @@ export function AnimeWatchPage() {
   const [switchingServerName, setSwitchingServerName] = useState<string>('');
   const [switchError, setSwitchError] = useState<string>('');
   const [playerKey, setPlayerKey] = useState<number>(0);
+  const [skipNotice, setSkipNotice] = useState<string>('');
   const autoSelectedEpisodeRef = useRef<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -153,6 +155,8 @@ export function AnimeWatchPage() {
     return (
       u.endsWith('.mp4') ||
       u.includes('.mp4?') ||
+      u.endsWith('.m3u8') ||
+      u.includes('.m3u8?') ||
       u.includes('stream-stor') ||
       u.includes('berkasdrive.com/v/')
     );
@@ -160,17 +164,19 @@ export function AnimeWatchPage() {
 
   const skipOpening = () => {
     if (videoRef.current) {
-      // Direct MP4 stream — seek via video element
       videoRef.current.currentTime = Math.min(
         videoRef.current.currentTime + SKIP_OP_SECONDS,
         videoRef.current.duration || Infinity
       );
+      setSkipNotice('⏩ Berhasil Skip Opening (+85 detik)');
+      setTimeout(() => setSkipNotice(''), 2500);
     } else if (iframeRef.current?.contentWindow) {
-      // Iframe stream — try postMessage (works if player supports it)
       const win = iframeRef.current.contentWindow;
       win.postMessage({ type: 'seek', seconds: SKIP_OP_SECONDS }, '*');
       win.postMessage({ forward: SKIP_OP_SECONDS }, '*');
       win.postMessage(`seekforward:${SKIP_OP_SECONDS}`, '*');
+      setSkipNotice('⚠️ Server iframe ini membatasi kontrol waktu langsung. Silakan pilih server VidHide di bawah.');
+      setTimeout(() => setSkipNotice(''), 3500);
     }
   };
 
@@ -408,6 +414,32 @@ export function AnimeWatchPage() {
     }
   }, [episodeId, episode, filteredServers]);
 
+  // Handle HLS stream attachment to video element
+  useEffect(() => {
+    if (!videoRef.current || !activeStream || !isDirectVideoStream(activeStream)) return;
+
+    if (activeStream.includes('.m3u8')) {
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
+        });
+        hls.loadSource(activeStream);
+        hls.attachMedia(videoRef.current);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          videoRef.current?.play().catch(() => {});
+        });
+        return () => {
+          hls.destroy();
+        };
+      } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+        videoRef.current.src = activeStream;
+      }
+    } else {
+      videoRef.current.src = activeStream;
+    }
+  }, [activeStream, playerKey]);
+
   if (isLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-20 text-center space-y-4">
@@ -566,6 +598,12 @@ export function AnimeWatchPage() {
         </div>
       ) : (
         <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl">
+          {skipNotice && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-xl bg-black/90 backdrop-blur-md border border-accent-primary/40 text-white text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+              <span>{skipNotice}</span>
+            </div>
+          )}
+
           {switchingServer && (
             <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center space-y-2">
               <Loader2 className="w-8 h-8 text-accent-primary animate-spin" />
@@ -580,7 +618,7 @@ export function AnimeWatchPage() {
               <video
                 ref={videoRef}
                 key={`${activeStream}-${playerKey}`}
-                src={activeStream}
+                src={activeStream.includes('.m3u8') ? undefined : activeStream}
                 controls
                 autoPlay
                 playsInline
@@ -664,10 +702,10 @@ export function AnimeWatchPage() {
 
           <button
             onClick={skipOpening}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#A78BFA] border border-[#343744] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-accent-primary border border-white/10 transition-colors"
             title="Skip Opening +85 detik"
           >
-            <FastForward className="w-3.5 h-3.5 text-[#A78BFA]" />
+            <FastForward className="w-3.5 h-3.5 text-accent-soft" />
             <span className="hidden sm:inline">Skip OP</span>
           </button>
 
