@@ -140,8 +140,14 @@ export function AnimeWatchPage() {
   const isIframeableStream = (url?: string): boolean => {
     if (!url) return false;
     const u = url.toLowerCase();
-    // nimegami.id, kusonime, etc. NEVER allow iframe embedding due to SAMEORIGIN
-    if (u.includes('nimegami.id') || u.includes('nimegami.com') || u.includes('kusonime')) {
+    // nimegami.id, kusonime, desustream, etc. NEVER allow iframe embedding due to SAMEORIGIN / CSP frame-ancestors
+    if (
+      u.includes('nimegami.id') ||
+      u.includes('nimegami.com') ||
+      u.includes('kusonime') ||
+      u.includes('desustream.net') ||
+      u.includes('desustream')
+    ) {
       return false;
     }
     return true;
@@ -309,6 +315,10 @@ export function AnimeWatchPage() {
     if (!episode?.servers) return [];
     const isAllowed = (title: string, serverId: string) => {
       const clean = (title + ' ' + serverId).toLowerCase();
+      // Exclude DesuStream because its server blocks iframe embedding via CSP frame-ancestors
+      if (clean.includes('desu') || clean.includes('ondesu') || clean.includes('odstream') || clean.includes('odcdn')) {
+        return false;
+      }
       return (
         clean.includes('vidhide') ||
         clean.includes('mega') ||
@@ -322,9 +332,6 @@ export function AnimeWatchPage() {
         clean.includes('premium') ||
         clean.includes('wibufile') ||
         clean.includes('berkasdrive') ||
-        clean.includes('desu') ||
-        clean.includes('ondesu') ||
-        clean.includes('odstream') ||
         clean.includes('server') ||
         clean.includes('stream') ||
         clean.includes('direct') ||

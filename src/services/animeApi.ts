@@ -204,9 +204,13 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
   const json: any = await fetchJson(`${ANIME_BASE_URL}/episode/${encodeURIComponent(episodeId)}`);
   const data = json?.data || {};
 
-  // Server whitelist: Mega, KrakenFiles, PixelDrain, Blogger, FileDon, VidHide, DesuStream
+  // Server whitelist: Mega, KrakenFiles, PixelDrain, Blogger, FileDon, VidHide
+  // Exclude DesuStream/Ondesu/Odstream because they set CSP frame-ancestors and block external iframe embedding
   const isAllowedServer = (title: string): boolean => {
     const clean = (title || '').toLowerCase().trim();
+    if (clean.includes('desu') || clean.includes('ondesu') || clean.includes('odstream') || clean.includes('odcdn')) {
+      return false;
+    }
     return (
       clean.includes('vidhide') ||
       clean.includes('mega') ||
@@ -215,9 +219,6 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
       clean.includes('pixel') ||
       clean.includes('blogger') ||
       clean.includes('blogspot') ||
-      clean.includes('desu') ||
-      clean.includes('ondesu') ||
-      clean.includes('odstream') ||
       clean.includes('gdrive') ||
       clean.includes('google')
     );
@@ -229,7 +230,6 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
     if (clean.includes('kraken')) return 'KrakenFiles';
     if (clean.includes('pixel')) return 'PixelDrain';
     if (clean.includes('blogger') || clean.includes('blogspot')) return 'Blogger (Google)';
-    if (clean.includes('ondesu') || clean.includes('desu') || clean.includes('odstream')) return 'DesuStream';
     if (clean.includes('filedon')) return 'FileDon';
     if (clean.includes('vidhide')) return 'VidHide';
     return title.trim();
@@ -291,10 +291,9 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
         if (t.includes('kraken')) return 2;
         if (t.includes('pixel')) return 3;
         if (t.includes('blogger') || t.includes('blogspot')) return 4;
-        if (t.includes('desu')) return 5;
-        if (t.includes('filedon')) return 6;
-        if (t.includes('vidhide')) return 7;
-        return 8;
+        if (t.includes('filedon')) return 5;
+        if (t.includes('vidhide')) return 6;
+        return 7;
       };
       return getPriority(aTitle) - getPriority(bTitle);
     });
