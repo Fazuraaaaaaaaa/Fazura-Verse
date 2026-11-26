@@ -204,34 +204,17 @@ export async function getOtakudesuEpisode(episodeId: string): Promise<AnimeEpiso
   const json: any = await fetchJson(`${ANIME_BASE_URL}/episode/${encodeURIComponent(episodeId)}`);
   const data = json?.data || {};
 
-  // Server whitelist: Mega, KrakenFiles, PixelDrain, Blogger, FileDon, VidHide
-  // Exclude DesuStream/Ondesu/Odstream because they set CSP frame-ancestors and block external iframe embedding
+  // Server whitelist: Strictly reliable servers that work in iframe (Mega, VidHide, FileDon)
   const isAllowedServer = (title: string): boolean => {
     const clean = (title || '').toLowerCase().trim();
-    if (clean.includes('desu') || clean.includes('ondesu') || clean.includes('odstream') || clean.includes('odcdn')) {
-      return false;
-    }
-    return (
-      clean.includes('vidhide') ||
-      clean.includes('mega') ||
-      clean.includes('filedon') ||
-      clean.includes('kraken') ||
-      clean.includes('pixel') ||
-      clean.includes('blogger') ||
-      clean.includes('blogspot') ||
-      clean.includes('gdrive') ||
-      clean.includes('google')
-    );
+    return clean.includes('vidhide') || clean.includes('mega') || clean.includes('filedon');
   };
 
   const formatServerTitle = (title: string) => {
     const clean = (title || '').trim().toLowerCase();
     if (clean.includes('mega')) return 'Mega';
-    if (clean.includes('kraken')) return 'KrakenFiles';
-    if (clean.includes('pixel')) return 'PixelDrain';
-    if (clean.includes('blogger') || clean.includes('blogspot')) return 'Blogger (Google)';
-    if (clean.includes('filedon')) return 'FileDon';
     if (clean.includes('vidhide')) return 'VidHide';
+    if (clean.includes('filedon')) return 'FileDon';
     return title.trim();
   };
 
@@ -625,31 +608,17 @@ export async function getSamehadakuEpisode(episodeId: string): Promise<AnimeEpis
   );
   const data = json?.data || {};
 
-  // Server whitelist: VidHide, Mega, FileDon, PLUS stream alternatives for retro anime (Kraken, Pixel, Blogger, Premium)
+  // Server whitelist: Strictly reliable servers that work in iframe (Mega, VidHide, FileDon)
   const isAllowedServer = (title: string): boolean => {
     const clean = (title || '').toLowerCase().trim();
-    return (
-      clean.includes('vidhide') ||
-      clean.includes('mega') ||
-      clean.includes('filedon') ||
-      clean.includes('kraken') ||
-      clean.includes('pixel') ||
-      clean.includes('blogspot') ||
-      clean.includes('blogger') ||
-      clean.includes('premium') ||
-      clean.includes('wibufile')
-    );
+    return clean.includes('vidhide') || clean.includes('mega') || clean.includes('filedon');
   };
 
   const formatServerTitle = (title: string) => {
     const clean = (title || '').trim().toLowerCase();
+    if (clean.includes('mega')) return 'Mega';
     if (clean.includes('vidhide')) return 'VidHide';
     if (clean.includes('filedon')) return 'FileDon';
-    if (clean.includes('mega')) return 'Mega';
-    if (clean.includes('kraken')) return 'KrakenFiles (Stream)';
-    if (clean.includes('pixel')) return 'PixelDrain (Stream)';
-    if (clean.includes('blogspot') || clean.includes('blogger')) return 'Blogger (Google Stream)';
-    if (clean.includes('premium') || clean.includes('wibufile')) return 'FastStream HD';
     return title.trim();
   };
 

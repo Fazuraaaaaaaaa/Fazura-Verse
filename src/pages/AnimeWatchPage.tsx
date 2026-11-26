@@ -309,14 +309,22 @@ export function AnimeWatchPage() {
   const relatedAnimeList = relatedRecommendations?.items || [];
   const franchiseCount = relatedRecommendations?.franchiseCount || 0;
 
-  // Server whitelist filter:
-  // Whitelist servers: Mega, KrakenFiles, PixelDrain, Blogger, VidHide, FileDon, DesuStream, etc.
+  // Server whitelist filter: strictly reliable servers (Mega, VidHide, FileDon, and direct streams)
   const filteredServers = useMemo(() => {
     if (!episode?.servers) return [];
     const isAllowed = (title: string, serverId: string) => {
       const clean = (title + ' ' + serverId).toLowerCase();
-      // Exclude DesuStream because its server blocks iframe embedding via CSP frame-ancestors
-      if (clean.includes('desu') || clean.includes('ondesu') || clean.includes('odstream') || clean.includes('odcdn')) {
+      // Exclude dead/unframeable servers (DesuStream, PixelDrain, Kraken, Blogger)
+      if (
+        clean.includes('desu') ||
+        clean.includes('ondesu') ||
+        clean.includes('odstream') ||
+        clean.includes('odcdn') ||
+        clean.includes('pixel') ||
+        clean.includes('kraken') ||
+        clean.includes('blogger') ||
+        clean.includes('blogspot')
+      ) {
         return false;
       }
       return (
@@ -324,17 +332,8 @@ export function AnimeWatchPage() {
         clean.includes('mega') ||
         clean.includes('filedon') ||
         clean.includes('nimegami') ||
-        clean.includes('kraken') ||
-        clean.includes('pixel') ||
-        clean.includes('blogger') ||
-        clean.includes('blogspot') ||
-        clean.includes('faststream') ||
-        clean.includes('premium') ||
-        clean.includes('wibufile') ||
+        clean.includes('stream-stor') ||
         clean.includes('berkasdrive') ||
-        clean.includes('server') ||
-        clean.includes('stream') ||
-        clean.includes('direct') ||
         serverId.startsWith('nimegami::') ||
         serverId.startsWith('http')
       );
@@ -656,7 +655,7 @@ export function AnimeWatchPage() {
         ) : (
           <span className="text-text-muted flex items-center gap-1.5">
             <Info className="w-3.5 h-3.5 text-accent-soft shrink-0" />
-            Pilih resolusi dan server resmi: Mega, Kraken, PixelDrain, Blogger, VidHide, dan FileDon.
+            Pilih resolusi dan server resmi: Mega, VidHide, dan FileDon.
           </span>
         )}
 
