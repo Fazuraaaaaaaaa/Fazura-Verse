@@ -664,10 +664,15 @@ export function AnimeWatchPage() {
 
           <button
             onClick={skipOpening}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#191C25] hover:bg-[#232633] text-[#A2A4B1] hover:text-[#A78BFA] border border-[#343744] transition-colors"
-            title="Skip Opening +85 detik"
+            disabled={!isDirectVideoStream(activeStream)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white border border-white/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title={
+              isDirectVideoStream(activeStream)
+                ? 'Skip Opening +85 detik'
+                : 'Server iframe (VidHide/Mega) memproteksi kontrol waktu browser. Skip OP aktif di stream MP4.'
+            }
           >
-            <FastForward className="w-3.5 h-3.5 text-[#A78BFA]" />
+            <FastForward className="w-3.5 h-3.5 text-accent-soft" />
             <span className="hidden sm:inline">Skip OP</span>
           </button>
 
