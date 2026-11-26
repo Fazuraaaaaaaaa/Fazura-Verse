@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   RefreshCw,
   Info,
-  FastForward,
   Bookmark,
   BookmarkCheck,
   Layers,
@@ -85,9 +84,6 @@ export function AnimeWatchPage() {
   const [switchError, setSwitchError] = useState<string>('');
   const [playerKey, setPlayerKey] = useState<number>(0);
   const autoSelectedEpisodeRef = useRef<string>('');
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const SKIP_OP_SECONDS = 85;
 
   usePageMeta({
     title: episode?.title ? `${episode.title} - Streaming Anime` : 'Nonton Anime Sub Indo',
@@ -140,14 +136,8 @@ export function AnimeWatchPage() {
   const isIframeableStream = (url?: string): boolean => {
     if (!url) return false;
     const u = url.toLowerCase();
-    // nimegami.id, kusonime, desustream, etc. NEVER allow iframe embedding due to SAMEORIGIN / CSP frame-ancestors
-    if (
-      u.includes('nimegami.id') ||
-      u.includes('nimegami.com') ||
-      u.includes('kusonime') ||
-      u.includes('desustream.net') ||
-      u.includes('desustream')
-    ) {
+    // nimegami.id, kusonime, etc. NEVER allow iframe embedding due to SAMEORIGIN
+    if (u.includes('nimegami.id') || u.includes('nimegami.com') || u.includes('kusonime')) {
       return false;
     }
     return true;
@@ -160,26 +150,8 @@ export function AnimeWatchPage() {
       u.endsWith('.mp4') ||
       u.includes('.mp4?') ||
       u.includes('stream-stor') ||
-      u.includes('berkasdrive.com/v/') ||
-      u.includes('blogger.com/video.g') ||
-      u.includes('bp.blogspot.com')
+      u.includes('berkasdrive.com/v/')
     );
-  };
-
-  const skipOpening = () => {
-    if (videoRef.current) {
-      // Direct MP4 stream — seek via video element
-      videoRef.current.currentTime = Math.min(
-        videoRef.current.currentTime + SKIP_OP_SECONDS,
-        videoRef.current.duration || Infinity
-      );
-    } else if (iframeRef.current?.contentWindow) {
-      // Iframe stream — try postMessage (works if player supports it)
-      const win = iframeRef.current.contentWindow;
-      win.postMessage({ type: 'seek', seconds: SKIP_OP_SECONDS }, '*');
-      win.postMessage({ forward: SKIP_OP_SECONDS }, '*');
-      win.postMessage(`seekforward:${SKIP_OP_SECONDS}`, '*');
-    }
   };
 
   const rawActive = customStreamUrl || (!activeServerId ? episode?.streamUrl : '') || '';
@@ -309,31 +281,32 @@ export function AnimeWatchPage() {
   const relatedAnimeList = relatedRecommendations?.items || [];
   const franchiseCount = relatedRecommendations?.franchiseCount || 0;
 
-  // Server whitelist filter: strictly reliable servers (Mega, VidHide, FileDon, and direct streams)
+  // Server whitelist filter:
+  // For Otakudesu: strictly keep VidHide, FileDon, and Mega
+  // For retro/other providers (Samehadaku, Nimegami, etc.): allow VidHide, FileDon, Mega, plus all working stream alternatives (Kraken, Pixel, Blogger, FastStream, Berkasdrive, Server Video)
   const filteredServers = useMemo(() => {
     if (!episode?.servers) return [];
     const isAllowed = (title: string, serverId: string) => {
       const clean = (title + ' ' + serverId).toLowerCase();
-      // Exclude dead/unframeable servers (DesuStream, PixelDrain, Kraken, Blogger)
-      if (
-        clean.includes('desu') ||
-        clean.includes('ondesu') ||
-        clean.includes('odstream') ||
-        clean.includes('odcdn') ||
-        clean.includes('pixel') ||
-        clean.includes('kraken') ||
-        clean.includes('blogger') ||
-        clean.includes('blogspot')
-      ) {
-        return false;
+      if (effectiveProvider === 'otakudesu') {
+        return clean.includes('vidhide') || clean.includes('mega') || clean.includes('filedon');
       }
       return (
         clean.includes('vidhide') ||
         clean.includes('mega') ||
         clean.includes('filedon') ||
         clean.includes('nimegami') ||
-        clean.includes('stream-stor') ||
+        clean.includes('kraken') ||
+        clean.includes('pixel') ||
+        clean.includes('blogger') ||
+        clean.includes('blogspot') ||
+        clean.includes('faststream') ||
+        clean.includes('premium') ||
+        clean.includes('wibufile') ||
         clean.includes('berkasdrive') ||
+        clean.includes('server') ||
+        clean.includes('stream') ||
+        clean.includes('direct') ||
         serverId.startsWith('nimegami::') ||
         serverId.startsWith('http')
       );
@@ -585,7 +558,6 @@ export function AnimeWatchPage() {
           {activeStream ? (
             isDirectVideoStream(activeStream) ? (
               <video
-                ref={videoRef}
                 key={`${activeStream}-${playerKey}`}
                 src={activeStream}
                 controls
@@ -596,7 +568,6 @@ export function AnimeWatchPage() {
               />
             ) : isIframeableStream(activeStream) ? (
               <iframe
-                ref={iframeRef}
                 key={`${activeStream}-${playerKey}`}
                 src={activeStream}
                 title={episode.title}
@@ -655,7 +626,7 @@ export function AnimeWatchPage() {
         ) : (
           <span className="text-text-muted flex items-center gap-1.5">
             <Info className="w-3.5 h-3.5 text-accent-soft shrink-0" />
-            Pilih resolusi dan server resmi: Mega, VidHide, dan FileDon.
+            Pilih resolusi dan server resmi: VidHide, Mega, dan FileDon.
           </span>
         )}
 
@@ -667,20 +638,6 @@ export function AnimeWatchPage() {
           >
             <RefreshCw className="w-3.5 h-3.5 text-accent-soft" />
             Reload Player
-          </button>
-
-          <button
-            onClick={skipOpening}
-            disabled={!isDirectVideoStream(activeStream)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white border border-white/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title={
-              isDirectVideoStream(activeStream)
-                ? 'Skip Opening +85 detik'
-                : 'Server iframe (VidHide/Mega) memproteksi kontrol waktu browser. Skip OP aktif di stream MP4.'
-            }
-          >
-            <FastForward className="w-3.5 h-3.5 text-accent-soft" />
-            <span className="hidden sm:inline">Skip OP</span>
           </button>
 
           {activeStream && (

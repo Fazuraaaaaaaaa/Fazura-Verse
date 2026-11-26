@@ -13,7 +13,6 @@ import {
   Play,
   RefreshCw,
   Info,
-  FastForward,
   Bookmark,
   BookmarkCheck,
 } from 'lucide-react';
@@ -209,15 +208,6 @@ export function DonghuaWatchPage() {
           >
             <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
             Reload Player
-          </button>
-
-          <button
-            disabled
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#191C25] text-[#747887] border border-[#343744] opacity-40 cursor-not-allowed transition-colors"
-            title="Skip OP hanya tersedia untuk stream langsung MP4 (tidak didukung di iframe)"
-          >
-            <FastForward className="w-3.5 h-3.5 text-[#67BFD5]" />
-            <span className="hidden sm:inline">Skip OP</span>
           </button>
 
           {currentStream && (
